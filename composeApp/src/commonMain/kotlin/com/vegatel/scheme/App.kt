@@ -12,6 +12,7 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.vegatel.scheme.ui.MainMenu
+import com.vegatel.scheme.ui.SchemeConstructor
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
@@ -51,7 +52,7 @@ fun App() {
 
             Divider()
 
-
+            SchemeConstructor()
         }
     }
 }
