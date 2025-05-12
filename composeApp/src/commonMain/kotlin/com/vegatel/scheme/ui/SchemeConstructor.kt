@@ -21,13 +21,22 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.vegatel.scheme.model.Cable
+import com.vegatel.scheme.model.EndElement.Repeater
 import com.vegatel.scheme.model.TopElement
 import com.vegatel.scheme.model.calculateSignalAtRepeater
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 fun SchemeConstructor() {
-    var topElement by remember { mutableStateOf<TopElement>(TopElement.Antenna(signalPower = 35.0)) }
+    // Пример: два верхних элемента
+    var topElements by remember {
+        mutableStateOf(
+            listOf<TopElement>(
+                TopElement.Antenna(signalPower = 35.0, endElement = Repeater()),
+                TopElement.Load(endElement = Repeater())
+            )
+        )
+    }
     var cable by remember {
         mutableStateOf(
             Cable(
@@ -38,7 +47,9 @@ fun SchemeConstructor() {
         )
     }
 
-    var showTopMenu by remember { mutableStateOf(false) }
+    // Индекс элемента, для которого открыто меню, или null если ни для кого
+    var topMenuOpenedForIndex by remember { mutableStateOf<Int?>(null) }
+
     var showCableMenu by remember { mutableStateOf(false) }
     var cableMenuOffset by remember { mutableStateOf(IntOffset.Zero) }
     val density = LocalDensity.current
@@ -47,51 +58,60 @@ fun SchemeConstructor() {
     }
 
     // Геометрия схемы
-    val width = 300.dp
+    val width = 400.dp
     val height = 400.dp
     val topY = 60f
-    val centerX = 150f
+    val elementSpacing = 250
+    val centerX = 150
 
-    val signalAtRepeater = calculateSignalAtRepeater(topElement, cable)
+    val signalAtRepeater = calculateSignalAtRepeater(topElements.first(), cable)
 
     Box(
         Modifier
             .size(width, height)
             .background(Color.White)
     ) {
-        // Верхний элемент (Антенна или Нагрузка)
-        val elementOffset = IntOffset(centerX.toInt() - 30, topY.toInt())
+        // Рисуем все верхние элементы
+        topElements.forEachIndexed { index, el ->
+            val elementOffset = IntOffset(centerX + index * elementSpacing - 30, topY.toInt())
 
-        Box(
-            modifier = Modifier.offset { elementOffset }
-        ) {
-            when (val el = topElement) {
-                is TopElement.Antenna -> {
-                    AntennaView(
-                        signalPower = el.signalPower,
-                        onClick = { showTopMenu = true }
-                    )
-                }
-
-                is TopElement.Load -> {
-                    LoadView(
-                        onClick = { showTopMenu = true }
-                    )
-                }
-            }
-
-            DropdownMenu(
-                expanded = showTopMenu,
-                onDismissRequest = { showTopMenu = false }
+            Box(
+                modifier = Modifier.offset { elementOffset }
             ) {
-                DropdownMenuItem(onClick = {
-                    topElement = TopElement.Antenna(signalPower = 35.0)
-                    showTopMenu = false
-                }) { Text("Антенна (35 дБм)") }
-                DropdownMenuItem(onClick = {
-                    topElement = TopElement.Load(resistance = 0.0)
-                    showTopMenu = false
-                }) { Text("Нагрузка") }
+                when (el) {
+                    is TopElement.Antenna -> {
+                        AntennaView(
+                            signalPower = el.signalPower,
+                            onClick = { topMenuOpenedForIndex = index }
+                        )
+                    }
+
+                    is TopElement.Load -> {
+                        LoadView(
+                            onClick = { topMenuOpenedForIndex = index }
+                        )
+                    }
+                }
+
+                // Меню только для выбранного элемента
+                DropdownMenu(
+                    expanded = topMenuOpenedForIndex == index,
+                    onDismissRequest = { topMenuOpenedForIndex = null }
+                ) {
+                    DropdownMenuItem(onClick = {
+                        topElements = topElements.toMutableList().also {
+                            it[index] =
+                                TopElement.Antenna(signalPower = 35.0, endElement = Repeater())
+                        }
+                        topMenuOpenedForIndex = null
+                    }) { Text("Антенна (35 дБм)") }
+                    DropdownMenuItem(onClick = {
+                        topElements = topElements.toMutableList().also {
+                            it[index] = TopElement.Load(endElement = Repeater())
+                        }
+                        topMenuOpenedForIndex = null
+                    }) { Text("Нагрузка") }
+                }
             }
         }
 
