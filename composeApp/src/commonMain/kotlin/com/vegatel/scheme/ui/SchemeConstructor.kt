@@ -27,7 +27,6 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 fun SchemeConstructor() {
-    // Состояния схемы
     var topElement by remember { mutableStateOf<TopElement>(TopElement.Antenna(signalPower = 35.0)) }
     var cable by remember {
         mutableStateOf(
@@ -39,17 +38,10 @@ fun SchemeConstructor() {
         )
     }
 
-    // Состояния меню и их позиции
-    val density = LocalDensity.current
-
     var showTopMenu by remember { mutableStateOf(false) }
-    var topMenuOffsetPx by remember { mutableStateOf(IntOffset.Zero) }
-    val topMenuOffsetDp = with(density) {
-        DpOffset(topMenuOffsetPx.x.toDp(), topMenuOffsetPx.y.toDp())
-    }
-
     var showCableMenu by remember { mutableStateOf(false) }
     var cableMenuOffset by remember { mutableStateOf(IntOffset.Zero) }
+    val density = LocalDensity.current
     val cableMenuOffsetDp = with(density) {
         DpOffset(cableMenuOffset.x.toDp(), cableMenuOffset.y.toDp())
     }
@@ -58,9 +50,7 @@ fun SchemeConstructor() {
     val width = 300.dp
     val height = 400.dp
     val topY = 60f
-    val bottomY = 340f
     val centerX = 150f
-
 
     val signalAtRepeater = calculateSignalAtRepeater(topElement, cable)
 
@@ -71,26 +61,38 @@ fun SchemeConstructor() {
     ) {
         // Верхний элемент (Антенна или Нагрузка)
         val elementOffset = IntOffset(centerX.toInt() - 30, topY.toInt())
-        when (val el = topElement) {
-            is TopElement.Antenna -> AntennaView(
-                signalPower = el.signalPower,
-                onClick = { offset ->
-                    showTopMenu = true
-                    topMenuOffsetPx = IntOffset(offset.x, offset.y)
-                },
-                modifier = Modifier
-                    .offset { elementOffset }
-            )
 
-            is TopElement.Load -> LoadView(
-                resistance = el.resistance,
-                onClick = { offset ->
-                    showTopMenu = true
-                    topMenuOffsetPx = IntOffset(offset.x, offset.y)
-                },
-                modifier = Modifier
-                    .offset { elementOffset }
-            )
+        Box(
+            modifier = Modifier.offset { elementOffset }
+        ) {
+            when (val el = topElement) {
+                is TopElement.Antenna -> {
+                    AntennaView(
+                        signalPower = el.signalPower,
+                        onClick = { showTopMenu = true }
+                    )
+                }
+
+                is TopElement.Load -> {
+                    LoadView(
+                        onClick = { showTopMenu = true }
+                    )
+                }
+            }
+
+            DropdownMenu(
+                expanded = showTopMenu,
+                onDismissRequest = { showTopMenu = false }
+            ) {
+                DropdownMenuItem(onClick = {
+                    topElement = TopElement.Antenna(signalPower = 35.0)
+                    showTopMenu = false
+                }) { Text("Антенна (35 дБм)") }
+                DropdownMenuItem(onClick = {
+                    topElement = TopElement.Load(resistance = 0.0)
+                    showTopMenu = false
+                }) { Text("Нагрузка") }
+            }
         }
 
         // Репитер всегда внизу по центру
@@ -101,23 +103,7 @@ fun SchemeConstructor() {
                 .padding(bottom = 16.dp)
         )
 
-        // Меню для верхнего элемента
-        DropdownMenu(
-            expanded = showTopMenu,
-            onDismissRequest = { showTopMenu = false },
-            offset = topMenuOffsetDp
-        ) {
-            DropdownMenuItem(onClick = {
-                topElement = TopElement.Antenna(signalPower = 35.0)
-                showTopMenu = false
-            }) { Text("Антенна (35 дБм)") }
-            DropdownMenuItem(onClick = {
-                topElement = TopElement.Load(resistance = 50.0)
-                showTopMenu = false
-            }) { Text("Нагрузка (50 Ом)") }
-        }
-
-        // Меню для кабеля
+        // Меню для кабеля (оставляем как было)
         DropdownMenu(
             expanded = showCableMenu,
             onDismissRequest = { showCableMenu = false },
