@@ -1,4 +1,4 @@
-package com.vegatel.scheme.extansion
+package com.vegatel.scheme.extensions
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalDensity

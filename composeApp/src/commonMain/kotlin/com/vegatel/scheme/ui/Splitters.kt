@@ -19,7 +19,7 @@ import scheme.composeapp.generated.resources.Res
 import scheme.composeapp.generated.resources.load
 
 @Composable
-fun LoadView(
+fun Splitter2(
     signalPower: Double,
     onClick: (IntOffset) -> Unit,
     modifier: Modifier = Modifier
@@ -36,13 +36,66 @@ fun LoadView(
         Icon(
             modifier = Modifier.size(48.dp),
             painter = painterResource(Res.drawable.load),
-            contentDescription = "Нагрузка",
+            contentDescription = "Сплитер 2",
             tint = Color.Black
         )
 
         Text("$signalPower", style = MaterialTheme.typography.caption)
     }
 }
+
+@Composable
+fun Splitter3(
+    signalPower: Double,
+    onClick: (IntOffset) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .pointerInput(Unit) {
+                detectTapGestures { offset ->
+                    onClick(IntOffset(offset.x.toInt(), offset.y.toInt()))
+                }
+            },
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(
+            modifier = Modifier.size(48.dp),
+            painter = painterResource(Res.drawable.load),
+            contentDescription = "Сплитер 2",
+            tint = Color.Black
+        )
+
+        Text("$signalPower", style = MaterialTheme.typography.caption)
+    }
+}
+
+@Composable
+fun Splitter4(
+    signalPower: Double,
+    onClick: (IntOffset) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .pointerInput(Unit) {
+                detectTapGestures { offset ->
+                    onClick(IntOffset(offset.x.toInt(), offset.y.toInt()))
+                }
+            },
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(
+            modifier = Modifier.size(48.dp),
+            painter = painterResource(Res.drawable.load),
+            contentDescription = "Сплитер 2",
+            tint = Color.Black
+        )
+
+        Text("$signalPower", style = MaterialTheme.typography.caption)
+    }
+}
+
 
 @Composable
 @Preview

@@ -13,10 +13,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import com.vegatel.scheme.extansion.toPx
+import com.vegatel.scheme.extensions.toPx
 import com.vegatel.scheme.log
 import com.vegatel.scheme.model.Cable
 import com.vegatel.scheme.model.Element.Antenna
@@ -64,6 +65,55 @@ fun SchemeConstructor(
                 paddingVerticalDp.dp.toPx().toInt() + row * 2 * elementHeightDp.dp.toPx().toInt()
             )
 
+            // Рисуем кабель
+            val cable = element?.fetchCable()
+
+            if (cable != null) {
+                // Получаем координаты первого и второго элемента по id
+                val topElementId = element.fetchTopElementId()
+                val endElementId = element.fetchEndElementId()
+
+                val startElement = elements.findElementById(topElementId)
+                val endElement = elements.findElementById(endElementId)
+
+                log("TEST", "element: $element")
+                log("TEST", "topElementId: $topElementId")
+                log("TEST", "endElementId: $endElementId")
+                log("TEST", "startElement: $startElement")
+                log("TEST", "endElement: $endElement")
+
+                if (startElement != null && endElement != null) {
+                    val (startRow, startCol) = startElement
+                    val (endRow, endCol) = endElement
+
+                    // Вычисляем координаты центра низа и центра верха
+                    val elementWidth = 48.dp.toPx()
+                    val elementHeight = 64.dp.toPx()
+                    val paddingHorizontal = 24.dp.toPx()
+                    val paddingVertical = 24.dp.toPx()
+
+                    val startCenter = Offset(
+                        x = paddingHorizontal + startCol * 2 * elementWidth + elementWidth / 2,
+                        y = paddingVertical + startRow * 2 * elementHeight + elementHeight
+                    )
+
+                    val endCenter = Offset(
+                        x = paddingHorizontal + endCol * 2 * elementWidth + elementWidth / 2,
+                        y = paddingVertical + endRow * 2 * elementHeight
+                    )
+
+                    log("TEST", "startCenter: $startCenter")
+                    log("TEST", "endCenter: $endCenter")
+
+                    CableView(
+                        start = startCenter,
+                        end = endCenter,
+                        cable = cable
+                    )
+                }
+            }
+
+            // Рисуем элементы
             Box(
                 modifier = Modifier.offset { elementOffset }
             ) {

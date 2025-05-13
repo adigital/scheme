@@ -61,10 +61,23 @@ class ElementMatrix(
 
     fun copy(): ElementMatrix {
         val newMatrix = ElementMatrix(rowCount, colCount)
+
         forEachElement { row, col, element ->
             newMatrix[row, col] = element
         }
 
         return newMatrix
+    }
+
+    fun findElementById(id: Int): Pair<Int, Int>? {
+        var result: Pair<Int, Int>? = null
+
+        forEachElement { row, col, element ->
+            if (element?.id == id) {
+                result = row to col
+            }
+        }
+
+        return result
     }
 }

@@ -70,6 +70,13 @@ sealed class Element {
             "Repeater(id=$id, topElementId=$topElementId)"
     }
 
+    fun fetchTopElementId(): Int {
+        return when (this) {
+            is Repeater -> this.topElementId
+            else -> -1
+        }
+    }
+
     fun fetchEndElementId(): Int {
         return when (this) {
             is Antenna -> this.endElementId
@@ -77,7 +84,7 @@ sealed class Element {
             is Splitter2 -> this.endElementId
             is Splitter3 -> this.endElementId
             is Splitter4 -> this.endElementId
-            is Repeater -> this.topElementId
+            else -> -1
         }
     }
 
