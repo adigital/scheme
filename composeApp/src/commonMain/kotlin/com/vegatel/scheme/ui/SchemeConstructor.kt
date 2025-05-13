@@ -107,10 +107,9 @@ fun SchemeConstructor(
                         DropdownMenuItem(onClick = {
                             val newElements = elements.copy()
                             newElements[row, col] = Antenna(
-                                id = 0,
-                                signalPower = 35.0,
-                                endElementId = -1,
-                                cable = Cable(length = 10.0, thickness = 2, lossPerMeter = 0.5)
+                                id = element?.id ?: -1,
+                                endElementId = element?.fetchEndElementId() ?: -1,
+                                cable = element?.fetchCable() ?: Cable()
                             )
                             elementMenuOpenedForIndex = null
 
@@ -120,10 +119,9 @@ fun SchemeConstructor(
                         DropdownMenuItem(onClick = {
                             val newElements = elements.copy()
                             newElements[row, col] = Load(
-                                id = 0,
-                                signalPower = 0.0,
-                                endElementId = -1,
-                                cable = Cable(length = 10.0, thickness = 2, lossPerMeter = 0.5)
+                                id = element?.id ?: -1,
+                                endElementId = element?.fetchEndElementId() ?: -1,
+                                cable = element?.fetchCable() ?: Cable()
                             )
                             elementMenuOpenedForIndex = null
 
@@ -143,9 +141,8 @@ private fun preview() {
 
     elements[0, 0] = Antenna(
         id = 1,
-        signalPower = 35.0,
         endElementId = 2,
-        cable = Cable(length = 10.0, thickness = 2, lossPerMeter = 0.5)
+        cable = Cable()
     )
 
     elements[1, 0] = Repeater(

@@ -36,9 +36,8 @@ fun buildElementMatrix(
 val initialElements = buildElementMatrix(rows = 2, cols = 1) {
     this[0, 0] = Antenna(
         id = 1,
-        signalPower = 35.0,
         endElementId = 2,
-        cable = Cable(length = 10.0, thickness = 2, lossPerMeter = 0.5)
+        cable = Cable()
     )
 
     this[1, 0] = Repeater(
