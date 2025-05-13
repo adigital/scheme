@@ -14,8 +14,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.vegatel.scheme.model.Cable
+import com.vegatel.scheme.model.Element
 import com.vegatel.scheme.model.Element.Antenna
-import com.vegatel.scheme.model.Element.Repeater
+import com.vegatel.scheme.model.Element.Splitter2
 import com.vegatel.scheme.model.ElementMatrix
 import com.vegatel.scheme.ui.MainMenu
 import com.vegatel.scheme.ui.SchemeConstructor
@@ -33,16 +34,39 @@ fun buildElementMatrix(
     return ElementMatrix(initialRows = rows, initialCols = cols).apply(builder)
 }
 
-val initialElements = buildElementMatrix(rows = 2, cols = 1) {
+//val initialElements = buildElementMatrix(rows = 2, cols = 1) {
+//    this[0, 0] = Antenna(
+//        id = 1,
+//        endElementId = 2,
+//        cable = Cable()
+//    )
+//
+//    this[1, 0] = Repeater(
+//        id = 2,
+//        topElementId = 1
+//    )
+//}
+
+val initialElements = buildElementMatrix(rows = 3, cols = 2) {
     this[0, 0] = Antenna(
         id = 1,
-        endElementId = 2,
+        endElementId = 3,
         cable = Cable()
     )
 
-    this[1, 0] = Repeater(
+    this[0, 1] = Antenna(
         id = 2,
-        topElementId = 1
+        endElementId = 3,
+        cable = Cable()
+    )
+
+    this[1, 0] = Splitter2(
+        id = 3,
+        endElementId = 4,
+    )
+
+    this[2, 0] = Element.Repeater(
+        id = 4
     )
 }
 //

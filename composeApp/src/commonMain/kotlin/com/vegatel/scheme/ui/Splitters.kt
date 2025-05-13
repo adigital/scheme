@@ -17,9 +17,10 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import scheme.composeapp.generated.resources.Res
 import scheme.composeapp.generated.resources.load
+import scheme.composeapp.generated.resources.splitter
 
 @Composable
-fun Splitter2(
+fun Splitter2View(
     signalPower: Double,
     onClick: (IntOffset) -> Unit,
     modifier: Modifier = Modifier
@@ -35,7 +36,7 @@ fun Splitter2(
     ) {
         Icon(
             modifier = Modifier.size(48.dp),
-            painter = painterResource(Res.drawable.load),
+            painter = painterResource(Res.drawable.splitter),
             contentDescription = "Сплитер 2",
             tint = Color.Black
         )
@@ -45,7 +46,7 @@ fun Splitter2(
 }
 
 @Composable
-fun Splitter3(
+fun Splitter3View(
     signalPower: Double,
     onClick: (IntOffset) -> Unit,
     modifier: Modifier = Modifier
@@ -61,7 +62,7 @@ fun Splitter3(
     ) {
         Icon(
             modifier = Modifier.size(48.dp),
-            painter = painterResource(Res.drawable.load),
+            painter = painterResource(Res.drawable.splitter),
             contentDescription = "Сплитер 2",
             tint = Color.Black
         )
@@ -71,7 +72,7 @@ fun Splitter3(
 }
 
 @Composable
-fun Splitter4(
+fun Splitter4View(
     signalPower: Double,
     onClick: (IntOffset) -> Unit,
     modifier: Modifier = Modifier
@@ -87,7 +88,7 @@ fun Splitter4(
     ) {
         Icon(
             modifier = Modifier.size(48.dp),
-            painter = painterResource(Res.drawable.load),
+            painter = painterResource(Res.drawable.splitter),
             contentDescription = "Сплитер 2",
             tint = Color.Black
         )

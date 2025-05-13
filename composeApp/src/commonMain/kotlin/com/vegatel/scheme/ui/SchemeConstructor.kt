@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.vegatel.scheme.extensions.toPx
+import com.vegatel.scheme.initialElements
 import com.vegatel.scheme.log
 import com.vegatel.scheme.model.Cable
 import com.vegatel.scheme.model.Element.Antenna
@@ -76,12 +77,6 @@ fun SchemeConstructor(
                 val startElement = elements.findElementById(topElementId)
                 val endElement = elements.findElementById(endElementId)
 
-                log("TEST", "element: $element")
-                log("TEST", "topElementId: $topElementId")
-                log("TEST", "endElementId: $endElementId")
-                log("TEST", "startElement: $startElement")
-                log("TEST", "endElement: $endElement")
-
                 if (startElement != null && endElement != null) {
                     val (startRow, startCol) = startElement
                     val (endRow, endCol) = endElement
@@ -91,6 +86,12 @@ fun SchemeConstructor(
                     val elementHeight = 64.dp.toPx()
                     val paddingHorizontal = 24.dp.toPx()
                     val paddingVertical = 24.dp.toPx()
+                    val endElementInstance = elements[endElement.first, endElement.second]
+                    val endVerticalOffsetDp =
+                        if (endElementInstance is Splitter2 ||
+                            endElementInstance is Splitter3 ||
+                            endElementInstance is Splitter4
+                        ) 9.75.dp.toPx() else 0.0f // Сдвиг верхней точки подключения кабеля в нижнем элементе
 
                     val startCenter = Offset(
                         x = paddingHorizontal + startCol * 2 * elementWidth + elementWidth / 2,
@@ -99,11 +100,8 @@ fun SchemeConstructor(
 
                     val endCenter = Offset(
                         x = paddingHorizontal + endCol * 2 * elementWidth + elementWidth / 2,
-                        y = paddingVertical + endRow * 2 * elementHeight
+                        y = paddingVertical + endRow * 2 * elementHeight + endVerticalOffsetDp
                     )
-
-                    log("TEST", "startCenter: $startCenter")
-                    log("TEST", "endCenter: $endCenter")
 
                     CableView(
                         start = startCenter,
@@ -136,9 +134,33 @@ fun SchemeConstructor(
                         )
                     }
 
-                    is Splitter2 -> TODO()
-                    is Splitter3 -> TODO()
-                    is Splitter4 -> TODO()
+                    is Splitter2 -> {
+                        Splitter2View(
+                            signalPower = element.signalPower,
+                            onClick = {
+                                elementMenuOpenedForIndex = row to col
+                            }
+                        )
+                    }
+
+                    is Splitter3 -> {
+                        Splitter3View(
+                            signalPower = element.signalPower,
+                            onClick = {
+                                elementMenuOpenedForIndex = row to col
+                            }
+                        )
+                    }
+
+                    is Splitter4 -> {
+                        Splitter4View(
+                            signalPower = element.signalPower,
+                            onClick = {
+                                elementMenuOpenedForIndex = row to col
+                            }
+                        )
+                    }
+
                     is Repeater -> {
                         RepeaterView(
                             signalPower = 0.0
@@ -177,6 +199,42 @@ fun SchemeConstructor(
 
                             onElementsChange(newElements)
                         }) { Text("Нагрузка") }
+
+                        DropdownMenuItem(onClick = {
+                            val newElements = elements.copy()
+                            newElements[row, col] = Splitter2(
+                                id = element?.id ?: -1,
+                                endElementId = element?.fetchEndElementId() ?: -1,
+                                cable = element?.fetchCable() ?: Cable()
+                            )
+                            elementMenuOpenedForIndex = null
+
+                            onElementsChange(newElements)
+                        }) { Text("Сплиттер 2") }
+
+                        DropdownMenuItem(onClick = {
+                            val newElements = elements.copy()
+                            newElements[row, col] = Splitter3(
+                                id = element?.id ?: -1,
+                                endElementId = element?.fetchEndElementId() ?: -1,
+                                cable = element?.fetchCable() ?: Cable()
+                            )
+                            elementMenuOpenedForIndex = null
+
+                            onElementsChange(newElements)
+                        }) { Text("Сплиттер 3") }
+
+                        DropdownMenuItem(onClick = {
+                            val newElements = elements.copy()
+                            newElements[row, col] = Splitter4(
+                                id = element?.id ?: -1,
+                                endElementId = element?.fetchEndElementId() ?: -1,
+                                cable = element?.fetchCable() ?: Cable()
+                            )
+                            elementMenuOpenedForIndex = null
+
+                            onElementsChange(newElements)
+                        }) { Text("Сплиттер 4") }
                     }
                 }
             }
@@ -187,21 +245,8 @@ fun SchemeConstructor(
 @Composable
 @Preview
 private fun preview() {
-    val elements = ElementMatrix(initialRows = 2, initialCols = 1)
-
-    elements[0, 0] = Antenna(
-        id = 1,
-        endElementId = 2,
-        cable = Cable()
-    )
-
-    elements[1, 0] = Repeater(
-        id = 2,
-        topElementId = 1
-    )
-
     SchemeConstructor(
-        elements = elements,
+        elements = initialElements,
         onElementsChange = {}
     )
 }
