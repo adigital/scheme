@@ -3,7 +3,6 @@ package com.vegatel.scheme.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
@@ -13,136 +12,126 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import com.vegatel.scheme.extansion.toPx
+import com.vegatel.scheme.log
 import com.vegatel.scheme.model.Cable
-import com.vegatel.scheme.model.EndElement.Repeater
-import com.vegatel.scheme.model.TopElement
-import com.vegatel.scheme.model.calculateSignalAtRepeater
+import com.vegatel.scheme.model.Element.Antenna
+import com.vegatel.scheme.model.Element.Load
+import com.vegatel.scheme.model.Element.Repeater
+import com.vegatel.scheme.model.Element.Splitter2
+import com.vegatel.scheme.model.Element.Splitter3
+import com.vegatel.scheme.model.Element.Splitter4
+import com.vegatel.scheme.model.ElementMatrix
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
-fun SchemeConstructor() {
-    // Пример: два верхних элемента
-    var topElements by remember {
-        mutableStateOf(
-            listOf<TopElement>(
-                TopElement.Antenna(signalPower = 35.0, endElement = Repeater()),
-                TopElement.Load(endElement = Repeater())
-            )
-        )
-    }
-    var cable by remember {
-        mutableStateOf(
-            Cable(
-                length = 10.0,
-                thickness = 2,
-                lossPerMeter = 0.5
-            )
-        )
-    }
-
-    // Индекс элемента, для которого открыто меню, или null если ни для кого
-    var topMenuOpenedForIndex by remember { mutableStateOf<Int?>(null) }
-
-    var showCableMenu by remember { mutableStateOf(false) }
-    var cableMenuOffset by remember { mutableStateOf(IntOffset.Zero) }
-    val density = LocalDensity.current
-    val cableMenuOffsetDp = with(density) {
-        DpOffset(cableMenuOffset.x.toDp(), cableMenuOffset.y.toDp())
+fun SchemeConstructor(
+    elements: ElementMatrix,
+    onElementsChange: (ElementMatrix) -> Unit
+) {
+    elements.forEachElement { row, col, element ->
+        log("Test", "init row = $row, col = $col, element = $element")
     }
 
     // Геометрия схемы
-    val width = 400.dp
-    val height = 400.dp
-    val topY = 60f
-    val elementSpacing = 250
-    val centerX = 150
+    val elementWidthDp = 48
+    val elementHeightDp = 64
 
-    val signalAtRepeater = calculateSignalAtRepeater(topElements.first(), cable)
+    val paddingHorizontalDp = 24
+    val paddingVerticalDp = 24
+
+    val width = elements.colCount * 2 * elementWidthDp
+    val height = elements.rowCount * 2 * elementHeightDp
+
+    // Расчет сигнала на репитере
+    val signalAtRepeater = 0.0 //calculateSignalAtRepeater(elements.first(), cable)
+
+    // Состояние: для какого элемента открыто меню (row, col)
+    var elementMenuOpenedForIndex by remember { mutableStateOf<Pair<Int, Int>?>(null) }
 
     Box(
         Modifier
-            .size(width, height)
+            .size(width.dp, height.dp)
             .background(Color.White)
     ) {
-        // Рисуем все верхние элементы
-        topElements.forEachIndexed { index, el ->
-            val elementOffset = IntOffset(centerX + index * elementSpacing - 30, topY.toInt())
+        elements.forEachElementComposable { row, col, element ->
+            val elementOffset = IntOffset(
+                paddingHorizontalDp.dp.toPx().toInt() + col * 2 * elementWidthDp.dp.toPx().toInt(),
+                paddingVerticalDp.dp.toPx().toInt() + row * 2 * elementHeightDp.dp.toPx().toInt()
+            )
 
             Box(
                 modifier = Modifier.offset { elementOffset }
             ) {
-                when (el) {
-                    is TopElement.Antenna -> {
+                when (element) {
+                    is Antenna -> {
                         AntennaView(
-                            signalPower = el.signalPower,
-                            onClick = { topMenuOpenedForIndex = index }
+                            signalPower = element.signalPower,
+                            onClick = {
+                                elementMenuOpenedForIndex = row to col
+                            }
                         )
                     }
 
-                    is TopElement.Load -> {
+                    is Load -> {
                         LoadView(
-                            onClick = { topMenuOpenedForIndex = index }
+                            signalPower = element.signalPower,
+                            onClick = {
+                                elementMenuOpenedForIndex = row to col
+                            }
                         )
                     }
+
+                    is Splitter2 -> TODO()
+                    is Splitter3 -> TODO()
+                    is Splitter4 -> TODO()
+                    is Repeater -> {
+                        RepeaterView(
+                            signalPower = 0.0
+                        )
+                    }
+
+                    null -> Unit
                 }
 
-                // Меню только для выбранного элемента
-                DropdownMenu(
-                    expanded = topMenuOpenedForIndex == index,
-                    onDismissRequest = { topMenuOpenedForIndex = null }
-                ) {
-                    DropdownMenuItem(onClick = {
-                        topElements = topElements.toMutableList().also {
-                            it[index] =
-                                TopElement.Antenna(signalPower = 35.0, endElement = Repeater())
-                        }
-                        topMenuOpenedForIndex = null
-                    }) { Text("Антенна (35 дБм)") }
-                    DropdownMenuItem(onClick = {
-                        topElements = topElements.toMutableList().also {
-                            it[index] = TopElement.Load(endElement = Repeater())
-                        }
-                        topMenuOpenedForIndex = null
-                    }) { Text("Нагрузка") }
+                // Меню для текущего элемента
+                if (elementMenuOpenedForIndex == row to col) {
+                    DropdownMenu(
+                        expanded = true,
+                        onDismissRequest = { elementMenuOpenedForIndex = null },
+                    ) {
+                        DropdownMenuItem(onClick = {
+                            val newElements = elements.copy()
+                            newElements[row, col] = Antenna(
+                                id = 0,
+                                signalPower = 35.0,
+                                endElementId = -1,
+                                cable = Cable(length = 10.0, thickness = 2, lossPerMeter = 0.5)
+                            )
+                            elementMenuOpenedForIndex = null
+
+                            onElementsChange(newElements)
+                        }) { Text("Антенна (35 дБм)") }
+
+                        DropdownMenuItem(onClick = {
+                            val newElements = elements.copy()
+                            newElements[row, col] = Load(
+                                id = 0,
+                                signalPower = 0.0,
+                                endElementId = -1,
+                                cable = Cable(length = 10.0, thickness = 2, lossPerMeter = 0.5)
+                            )
+                            elementMenuOpenedForIndex = null
+
+                            onElementsChange(newElements)
+                        }) { Text("Нагрузка") }
+                    }
                 }
             }
-        }
-
-        // Репитер всегда внизу по центру
-        RepeaterView(
-            signalPower = signalAtRepeater,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 16.dp)
-        )
-
-        // Меню для кабеля (оставляем как было)
-        DropdownMenu(
-            expanded = showCableMenu,
-            onDismissRequest = { showCableMenu = false },
-            offset = cableMenuOffsetDp
-        ) {
-            listOf(1, 2, 3).forEach { thickness ->
-                DropdownMenuItem(onClick = {
-                    cable = cable.copy(thickness = thickness)
-                    showCableMenu = false
-                }) { Text("Толщина $thickness") }
-            }
-            DropdownMenuItem(onClick = {
-                cable = cable.copy(length = cable.length + 5)
-                showCableMenu = false
-            }) { Text("Увеличить длину на 5м") }
-            DropdownMenuItem(onClick = {
-                cable = cable.copy(length = (cable.length - 5).coerceAtLeast(1.0))
-                showCableMenu = false
-            }) { Text("Уменьшить длину на 5м") }
         }
     }
 }
@@ -150,5 +139,22 @@ fun SchemeConstructor() {
 @Composable
 @Preview
 private fun preview() {
-    SchemeConstructor()
+    val elements = ElementMatrix(initialRows = 2, initialCols = 1)
+
+    elements[0, 0] = Antenna(
+        id = 1,
+        signalPower = 35.0,
+        endElementId = 2,
+        cable = Cable(length = 10.0, thickness = 2, lossPerMeter = 0.5)
+    )
+
+    elements[1, 0] = Repeater(
+        id = 2,
+        topElementId = 1
+    )
+
+    SchemeConstructor(
+        elements = elements,
+        onElementsChange = {}
+    )
 }

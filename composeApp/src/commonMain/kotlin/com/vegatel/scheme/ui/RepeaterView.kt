@@ -4,6 +4,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
@@ -26,10 +27,12 @@ fun RepeaterView(
 
         Box(
             modifier = Modifier
+                .size(48.dp)
                 .border(4.dp, Color.Black, RoundedCornerShape(4.dp))
-                .padding(8.dp)
+                .padding(8.dp),
+            contentAlignment = Alignment.Center
         ) {
-            Text("Репитер", color = Color.Black)
+            Text("Реп", color = Color.Black)
         }
 
         Text("$signalPower", style = MaterialTheme.typography.caption)

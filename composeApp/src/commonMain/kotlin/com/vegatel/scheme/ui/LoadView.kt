@@ -4,6 +4,8 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.Icon
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -18,6 +20,7 @@ import scheme.composeapp.generated.resources.load
 
 @Composable
 fun LoadView(
+    signalPower: Double,
     onClick: (IntOffset) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -36,6 +39,8 @@ fun LoadView(
             contentDescription = "Нагрузка",
             tint = Color.Black
         )
+
+        Text("$signalPower", style = MaterialTheme.typography.caption)
     }
 }
 
@@ -44,6 +49,7 @@ fun LoadView(
 @Preview
 private fun preview() {
     LoadView(
+        signalPower = 35.0,
         onClick = {}
     )
 }
