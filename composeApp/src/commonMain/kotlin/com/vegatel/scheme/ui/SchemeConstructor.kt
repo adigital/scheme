@@ -39,6 +39,8 @@ fun SchemeConstructor(
         log("Test", "init row = $row, col = $col, element = $element")
     }
 
+    val isRepeaterHalfShiftRender = elements.isRepeaterHalfShiftRender()
+
     // Геометрия схемы
     val elementWidthDp = 48
     val elementHeightDp = 64
@@ -62,7 +64,9 @@ fun SchemeConstructor(
     ) {
         elements.forEachElementComposable { row, col, element ->
             val elementOffset = IntOffset(
-                paddingHorizontalDp.dp.toPx().toInt() + col * 2 * elementWidthDp.dp.toPx().toInt(),
+                paddingHorizontalDp.dp.toPx().toInt() + col * 2 * elementWidthDp.dp.toPx()
+                    .toInt() + if (element?.isHalfShiftRender() == true || (element?.isRepeater() == true && isRepeaterHalfShiftRender)) 48.dp.toPx()
+                    .toInt() else 0.dp.toPx().toInt(),
                 paddingVerticalDp.dp.toPx().toInt() + row * 2 * elementHeightDp.dp.toPx().toInt()
             )
 
@@ -81,31 +85,72 @@ fun SchemeConstructor(
                     val (startRow, startCol) = startElement
                     val (endRow, endCol) = endElement
 
+                    val startElementInstance = elements[startElement.first, startElement.second]
+                    val endElementInstance = elements[endElement.first, endElement.second]
+
+                    val isShiftLeft =
+                        endElementInstance?.isHalfShiftRender() == true && (startElement.second == endElement.second)
+                    val isShiftRight =
+                        endElementInstance?.isHalfShiftRender() == true && (startElement.second == endElement.second + 1)
+
+                    log("TEST", "$startElement, - $endElement")
+                    log("TEST", "isShiftLeft $isShiftLeft, - isShiftRight $isShiftRight")
+
                     // Вычисляем координаты центра низа и центра верха
                     val elementWidth = 48.dp.toPx()
                     val elementHeight = 64.dp.toPx()
+
                     val paddingHorizontal = 24.dp.toPx()
                     val paddingVertical = 24.dp.toPx()
-                    val endElementInstance = elements[endElement.first, endElement.second]
+
+                    // Горизонтальный сдвиг верхней точки подключения кабеля для сплиттера
+                    val startHorizontalOffsetDp =
+                        when {
+                            startElementInstance?.isHalfShiftRender() == true -> {
+                                48.dp.toPx()
+                            }
+
+                            else -> 0.dp.toPx()
+                        }
+                    // Горизонтальный сдвиг нижней точки подключения кабеля для сплиттера
+                    val endHorizontalOffsetDp =
+                        when {
+                            endElementInstance?.isHalfShiftRender() == true ||
+                                    (endElementInstance?.isRepeater() == true && isRepeaterHalfShiftRender) -> {
+                                48.dp.toPx() +
+                                        when {
+                                            isShiftLeft -> {
+                                                -4.dp.toPx()
+                                            }
+
+                                            isShiftRight -> {
+                                                4.dp.toPx()
+                                            }
+
+                                            else -> 0.dp.toPx()
+                                        }
+                            }
+
+                            else -> 0.dp.toPx()
+                        }
+                    // Вертикальный сдвиг нижней точки подключения кабеля для сплиттера
                     val endVerticalOffsetDp =
-                        if (endElementInstance is Splitter2 ||
-                            endElementInstance is Splitter3 ||
-                            endElementInstance is Splitter4
-                        ) 9.75.dp.toPx() else 0.0f // Сдвиг верхней точки подключения кабеля в нижнем элементе
+                        if (endElementInstance?.isSplitter() == true && !(isShiftLeft || isShiftRight)) 9.75.dp.toPx() else 0.0f
 
                     val startCenter = Offset(
-                        x = paddingHorizontal + startCol * 2 * elementWidth + elementWidth / 2,
+                        x = paddingHorizontal + startCol * 2 * elementWidth + elementWidth / 2 + startHorizontalOffsetDp,
                         y = paddingVertical + startRow * 2 * elementHeight + elementHeight
                     )
 
                     val endCenter = Offset(
-                        x = paddingHorizontal + endCol * 2 * elementWidth + elementWidth / 2,
+                        x = paddingHorizontal + endCol * 2 * elementWidth + elementWidth / 2 + endHorizontalOffsetDp,
                         y = paddingVertical + endRow * 2 * elementHeight + endVerticalOffsetDp
                     )
 
                     CableView(
                         start = startCenter,
                         end = endCenter,
+                        isTwoCorners = isShiftLeft || isShiftRight,
                         cable = cable
                     )
                 }
@@ -135,7 +180,7 @@ fun SchemeConstructor(
                     }
 
                     is Splitter2 -> {
-                        Splitter2View(
+                        SplitterView(
                             signalPower = element.signalPower,
                             onClick = {
                                 elementMenuOpenedForIndex = row to col
@@ -144,7 +189,7 @@ fun SchemeConstructor(
                     }
 
                     is Splitter3 -> {
-                        Splitter3View(
+                        SplitterView(
                             signalPower = element.signalPower,
                             onClick = {
                                 elementMenuOpenedForIndex = row to col
@@ -153,7 +198,7 @@ fun SchemeConstructor(
                     }
 
                     is Splitter4 -> {
-                        Splitter4View(
+                        SplitterView(
                             signalPower = element.signalPower,
                             onClick = {
                                 elementMenuOpenedForIndex = row to col

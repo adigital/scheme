@@ -1,5 +1,7 @@
 package com.vegatel.scheme.model
 
+const val REPEATER_ID = 0
+
 sealed class Element {
 
     abstract val id: Int
@@ -56,11 +58,10 @@ sealed class Element {
             "Splitter4(id=$id, endElementId=$endElementId, cable=$cable)"
     }
 
-    data class Repeater(
-        override val id: Int,
-    ) : Element() {
-        override fun toString(): String =
-            "Repeater(id=$id)"
+    object Repeater : Element() {
+        override val id: Int = REPEATER_ID
+
+        override fun toString(): String = "Repeater(id=$id)"
     }
 
     fun fetchTopElementId(): Int {
@@ -95,6 +96,12 @@ sealed class Element {
             else -> Cable()
         }
     }
+
+    fun isSplitter(): Boolean = this is Splitter2 || this is Splitter3 || this is Splitter4
+
+    fun isRepeater(): Boolean = this is Repeater
+
+    fun isHalfShiftRender(): Boolean = this is Splitter2 || this is Splitter4
 }
 
 data class Cable(

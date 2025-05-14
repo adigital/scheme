@@ -80,4 +80,20 @@ class ElementMatrix(
 
         return result
     }
+
+    fun isRepeaterHalfShiftRender(): Boolean {
+        var result = false
+
+        forEachElement { row, col, element ->
+            if (element?.isHalfShiftRender() == true &&
+                ((element is Element.Splitter2 && element.endElementId == REPEATER_ID) ||
+                        element is Element.Splitter4 && element.endElementId == REPEATER_ID)
+            ) {
+                result = true
+                return@forEachElement
+            }
+        }
+
+        return result
+    }
 }

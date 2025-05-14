@@ -14,6 +14,7 @@ import com.vegatel.scheme.model.Cable
 fun CableView(
     start: Offset,
     end: Offset,
+    isTwoCorners: Boolean = false,
     cable: Cable,
     modifier: Modifier = Modifier
 ) {
@@ -22,9 +23,16 @@ fun CableView(
 
         val path = Path().apply {
             moveTo(start.x, start.y)
-            // Сначала строго вниз до уровня Y конца, затем горизонтально к X конца
-            lineTo(start.x, end.y)
-            lineTo(end.x, end.y)
+
+            if (isTwoCorners) {
+                val midY = (start.y + end.y) / 2
+                lineTo(start.x, midY)
+                lineTo(end.x, midY)
+                lineTo(end.x, end.y)
+            } else {
+                lineTo(start.x, end.y)
+                lineTo(end.x, end.y)
+            }
         }
 
         drawPath(
