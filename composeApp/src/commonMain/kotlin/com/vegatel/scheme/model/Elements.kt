@@ -95,6 +95,12 @@ sealed class Element {
             else -> Cable()
         }
     }
+
+    fun isSplitter(): Boolean = this is Splitter2 || this is Splitter3 || this is Splitter4
+
+    fun isRepeater(): Boolean = this is Repeater
+
+    fun isHalfShiftRender(): Boolean = this is Splitter2 || this is Splitter4
 }
 
 data class Cable(
