@@ -105,7 +105,7 @@ sealed class Element {
 }
 
 data class Cable(
-    val length: Double = 10.0,
+    val length: Double = 5.0,
     val thickness: Int = 1,
     val lossPerMeter: Double = 0.5
 )

@@ -32,7 +32,7 @@ fun RepeaterView(
                 .padding(8.dp),
             contentAlignment = Alignment.Center
         ) {
-            Text("Реп", color = Color.Black)
+            Text("Rep", color = Color.Black)
         }
 
         Text("$signalPower", style = MaterialTheme.typography.caption)

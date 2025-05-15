@@ -16,8 +16,6 @@ import androidx.compose.ui.Modifier
 import com.vegatel.scheme.model.Cable
 import com.vegatel.scheme.model.Element
 import com.vegatel.scheme.model.Element.Antenna
-import com.vegatel.scheme.model.Element.Splitter2
-import com.vegatel.scheme.model.Element.Splitter3
 import com.vegatel.scheme.model.Element.Splitter4
 import com.vegatel.scheme.model.ElementMatrix
 import com.vegatel.scheme.ui.MainMenu
