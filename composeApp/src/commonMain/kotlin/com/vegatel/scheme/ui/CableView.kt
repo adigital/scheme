@@ -38,8 +38,16 @@ fun CableView(
     val strokeWidth = 4 * cable.thickness.toFloat()
     val density = LocalDensity.current
 
+    // Функция для выбора цвета по толщине
+    fun getCableColorByThickness(thickness: Int): Color = when (thickness) {
+        1 -> Color.Black
+        2 -> Color.Blue
+        3 -> Color.Green
+        else -> Color.Black
+    }
+
     // Состояние для цвета линии
-    var cableColor by remember { mutableStateOf(Color.Black) }
+    var cableColor by remember { mutableStateOf(getCableColorByThickness(cable.thickness)) }
     var isRed by remember { mutableStateOf(false) }
 
     // Вычисляем сегменты линии
@@ -93,12 +101,14 @@ fun CableView(
     }
 
     // Эффект для смены цвета на 1 секунду
-    LaunchedEffect(isRed) {
+    LaunchedEffect(isRed, cable.thickness) {
         if (isRed) {
             cableColor = Color.Red
             delay(1000)
-            cableColor = Color.Black
+            cableColor = getCableColorByThickness(cable.thickness)
             isRed = false
+        } else {
+            cableColor = getCableColorByThickness(cable.thickness)
         }
     }
 

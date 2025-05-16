@@ -1,6 +1,7 @@
 package com.vegatel.scheme.model
 
 import androidx.compose.runtime.Composable
+import com.vegatel.scheme.model.Element.Repeater
 
 class ElementMatrix(
     initialRows: Int,
@@ -95,5 +96,18 @@ class ElementMatrix(
         }
 
         return result
+    }
+
+    fun getNextForRepeaterElementId(): Int {
+        var endElementId = -1
+
+        forEachElement { row, col, element ->
+            if (element is Repeater) {
+                endElementId = element.endElementId
+                return@forEachElement
+            }
+        }
+
+        return endElementId
     }
 }

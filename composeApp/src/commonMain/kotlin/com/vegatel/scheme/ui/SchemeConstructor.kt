@@ -44,6 +44,7 @@ fun SchemeConstructor(
     }
 
     val isRepeaterHalfShiftRender = elements.isRepeaterHalfShiftRender()
+    val nextForRepeaterElementId = elements.getNextForRepeaterElementId()
 
     // Геометрия схемы
     val elementWidthDp = 48
@@ -79,11 +80,140 @@ fun SchemeConstructor(
             elements.forEachElementComposable { row, col, element ->
                 val elementOffset = IntOffset(
                     paddingHorizontalDp.dp.toPx().toInt() + col * 2 * elementWidthDp.dp.toPx()
-                        .toInt() + if (element?.isHalfShiftRender() == true || (element?.isRepeater() == true && isRepeaterHalfShiftRender)) 48.dp.toPx()
-                        .toInt() else 0.dp.toPx().toInt(),
+                        .toInt() +
+                            if (element?.isHalfShiftRender() == true ||
+                                (element?.isRepeater() == true && isRepeaterHalfShiftRender) ||
+                                (element?.id == nextForRepeaterElementId && isRepeaterHalfShiftRender)
+                            ) 48.dp.toPx().toInt() else 0.dp.toPx().toInt(),
                     paddingVerticalDp.dp.toPx().toInt() + row * 2 * elementHeightDp.dp.toPx()
                         .toInt()
                 )
+
+                // Рисуем элементы
+                Box(
+                    modifier = Modifier.offset { elementOffset }
+                ) {
+                    when (element) {
+                        is Antenna -> {
+                            AntennaView(
+                                signalPower = element.signalPower,
+                                onClick = {
+                                    elementMenuOpenedForIndex = row to col
+                                }
+                            )
+                        }
+
+                        is Load -> {
+                            LoadView(
+                                signalPower = element.signalPower,
+                                onClick = {
+                                    elementMenuOpenedForIndex = row to col
+                                }
+                            )
+                        }
+
+                        is Splitter2 -> {
+                            SplitterView(
+                                signalPower = element.signalPower,
+                                onClick = {
+                                    elementMenuOpenedForIndex = row to col
+                                }
+                            )
+                        }
+
+                        is Splitter3 -> {
+                            SplitterView(
+                                signalPower = element.signalPower,
+                                onClick = {
+                                    elementMenuOpenedForIndex = row to col
+                                }
+                            )
+                        }
+
+                        is Splitter4 -> {
+                            SplitterView(
+                                signalPower = element.signalPower,
+                                onClick = {
+                                    elementMenuOpenedForIndex = row to col
+                                }
+                            )
+                        }
+
+                        is Repeater -> {
+                            RepeaterView(
+                                signalPower = element.signalPower,
+                                onClick = {
+                                }
+                            )
+                        }
+
+                        null -> Unit
+                    }
+
+                    // Меню для текущего элемента
+                    if (elementMenuOpenedForIndex == row to col) {
+                        DropdownMenu(
+                            expanded = true,
+                            onDismissRequest = { elementMenuOpenedForIndex = null },
+                        ) {
+                            DropdownMenuItem(onClick = {
+                                val newElements = elements.copy()
+                                newElements[row, col] = Antenna(
+                                    id = element?.id ?: -1,
+                                    endElementId = element?.fetchEndElementId() ?: -1,
+                                    cable = element?.fetchCable() ?: Cable()
+                                )
+                                elementMenuOpenedForIndex = null
+                                onElementsChange(newElements)
+                            }) { Text("Антенна (35 дБм)") }
+
+                            DropdownMenuItem(onClick = {
+                                val newElements = elements.copy()
+                                newElements[row, col] = Load(
+                                    id = element?.id ?: -1,
+                                    endElementId = element?.fetchEndElementId() ?: -1,
+                                    cable = element?.fetchCable() ?: Cable()
+                                )
+                                elementMenuOpenedForIndex = null
+                                onElementsChange(newElements)
+                            }) { Text("Нагрузка") }
+
+                            DropdownMenuItem(onClick = {
+                                val newElements = elements.copy()
+                                newElements[row, col] = Splitter2(
+                                    id = element?.id ?: -1,
+                                    endElementId = element?.fetchEndElementId() ?: -1,
+                                    cable = element?.fetchCable() ?: Cable()
+                                )
+                                elementMenuOpenedForIndex = null
+                                onElementsChange(newElements)
+                            }) { Text("Сплиттер 2") }
+
+                            DropdownMenuItem(onClick = {
+                                val newElements = elements.copy()
+                                newElements[row, col] = Splitter3(
+                                    id = element?.id ?: -1,
+                                    endElementId = element?.fetchEndElementId() ?: -1,
+                                    cable = element?.fetchCable() ?: Cable()
+                                )
+                                elementMenuOpenedForIndex = null
+                                onElementsChange(newElements)
+                            }) { Text("Сплиттер 3") }
+
+                            DropdownMenuItem(onClick = {
+                                val newElements = elements.copy()
+                                newElements[row, col] = Splitter4(
+                                    id = element?.id ?: -1,
+                                    endElementId = element?.fetchEndElementId() ?: -1,
+                                    cable = element?.fetchCable() ?: Cable()
+                                )
+                                elementMenuOpenedForIndex = null
+                                onElementsChange(newElements)
+                            }) { Text("Сплиттер 4") }
+                        }
+                    }
+                }
+
 
                 // Рисуем кабель
                 val cable = element?.fetchCable()
@@ -118,20 +248,21 @@ fun SchemeConstructor(
                         val paddingHorizontal = 24.dp.toPx()
                         val paddingVertical = 24.dp.toPx()
 
-                        // Горизонтальный сдвиг верхней точки подключения кабеля для сплиттера
+                        // Горизонтальный сдвиг верхней точки подключения кабеля
                         val startHorizontalOffsetDp =
                             when {
-                                startElementInstance?.isHalfShiftRender() == true -> {
+                                (startElementInstance?.isHalfShiftRender() == true) or (startElementInstance?.isRepeater() == true && isRepeaterHalfShiftRender) -> {
                                     48.dp.toPx()
                                 }
 
                                 else -> 0.dp.toPx()
                             }
-                        // Горизонтальный сдвиг нижней точки подключения кабеля для сплиттера
+                        // Горизонтальный сдвиг нижней точки подключения кабеля
                         val endHorizontalOffsetDp =
                             when {
                                 endElementInstance?.isHalfShiftRender() == true ||
-                                        (endElementInstance?.isRepeater() == true && isRepeaterHalfShiftRender) -> {
+                                        (endElementInstance?.isRepeater() == true && isRepeaterHalfShiftRender) ||
+                                        (endElementInstance?.id == nextForRepeaterElementId && isRepeaterHalfShiftRender) -> {
                                     48.dp.toPx() +
                                             when {
                                                 isShiftLeft -> {
@@ -199,7 +330,7 @@ fun SchemeConstructor(
                                                 is Splitter2 -> oldElement.copy(cable = newCable)
                                                 is Splitter3 -> oldElement.copy(cable = newCable)
                                                 is Splitter4 -> oldElement.copy(cable = newCable)
-                                                else -> oldElement
+                                                is Repeater -> oldElement.copy(cable = newCable)
                                             }
                                         }
                                         cableMenuOpenedForIndex = null
@@ -218,7 +349,7 @@ fun SchemeConstructor(
                                                 is Splitter2 -> oldElement.copy(cable = newCable)
                                                 is Splitter3 -> oldElement.copy(cable = newCable)
                                                 is Splitter4 -> oldElement.copy(cable = newCable)
-                                                else -> oldElement
+                                                is Repeater -> oldElement.copy(cable = newCable)
                                             }
                                         }
                                         cableMenuOpenedForIndex = null
@@ -237,7 +368,7 @@ fun SchemeConstructor(
                                                 is Splitter2 -> oldElement.copy(cable = newCable)
                                                 is Splitter3 -> oldElement.copy(cable = newCable)
                                                 is Splitter4 -> oldElement.copy(cable = newCable)
-                                                else -> oldElement
+                                                is Repeater -> oldElement.copy(cable = newCable)
                                             }
                                         }
                                         cableMenuOpenedForIndex = null
@@ -245,129 +376,6 @@ fun SchemeConstructor(
                                     }) { Text("Тип3 (самый толстый)") }
                                 }
                             }
-                        }
-                    }
-                }
-
-                // Рисуем элементы
-                Box(
-                    modifier = Modifier.offset { elementOffset }
-                ) {
-                    when (element) {
-                        is Antenna -> {
-                            AntennaView(
-                                signalPower = element.signalPower,
-                                onClick = {
-                                    elementMenuOpenedForIndex = row to col
-                                }
-                            )
-                        }
-
-                        is Load -> {
-                            LoadView(
-                                signalPower = element.signalPower,
-                                onClick = {
-                                    elementMenuOpenedForIndex = row to col
-                                }
-                            )
-                        }
-
-                        is Splitter2 -> {
-                            SplitterView(
-                                signalPower = element.signalPower,
-                                onClick = {
-                                    elementMenuOpenedForIndex = row to col
-                                }
-                            )
-                        }
-
-                        is Splitter3 -> {
-                            SplitterView(
-                                signalPower = element.signalPower,
-                                onClick = {
-                                    elementMenuOpenedForIndex = row to col
-                                }
-                            )
-                        }
-
-                        is Splitter4 -> {
-                            SplitterView(
-                                signalPower = element.signalPower,
-                                onClick = {
-                                    elementMenuOpenedForIndex = row to col
-                                }
-                            )
-                        }
-
-                        is Repeater -> {
-                            RepeaterView(
-                                signalPower = 0.0
-                            )
-                        }
-
-                        null -> Unit
-                    }
-
-                    // Меню для текущего элемента
-                    if (elementMenuOpenedForIndex == row to col) {
-                        DropdownMenu(
-                            expanded = true,
-                            onDismissRequest = { elementMenuOpenedForIndex = null },
-                        ) {
-                            DropdownMenuItem(onClick = {
-                                val newElements = elements.copy()
-                                newElements[row, col] = Antenna(
-                                    id = element?.id ?: -1,
-                                    endElementId = element?.fetchEndElementId() ?: -1,
-                                    cable = element?.fetchCable() ?: Cable()
-                                )
-                                elementMenuOpenedForIndex = null
-                                onElementsChange(newElements)
-                            }) { Text("Антенна (35 дБм)") }
-
-                            DropdownMenuItem(onClick = {
-                                val newElements = elements.copy()
-                                newElements[row, col] = Load(
-                                    id = element?.id ?: -1,
-                                    endElementId = element?.fetchEndElementId() ?: -1,
-                                    cable = element?.fetchCable() ?: Cable()
-                                )
-                                elementMenuOpenedForIndex = null
-                                onElementsChange(newElements)
-                            }) { Text("Нагрузка") }
-
-                            DropdownMenuItem(onClick = {
-                                val newElements = elements.copy()
-                                newElements[row, col] = Splitter2(
-                                    id = element?.id ?: -1,
-                                    endElementId = element?.fetchEndElementId() ?: -1,
-                                    cable = element?.fetchCable() ?: Cable()
-                                )
-                                elementMenuOpenedForIndex = null
-                                onElementsChange(newElements)
-                            }) { Text("Сплиттер 2") }
-
-                            DropdownMenuItem(onClick = {
-                                val newElements = elements.copy()
-                                newElements[row, col] = Splitter3(
-                                    id = element?.id ?: -1,
-                                    endElementId = element?.fetchEndElementId() ?: -1,
-                                    cable = element?.fetchCable() ?: Cable()
-                                )
-                                elementMenuOpenedForIndex = null
-                                onElementsChange(newElements)
-                            }) { Text("Сплиттер 3") }
-
-                            DropdownMenuItem(onClick = {
-                                val newElements = elements.copy()
-                                newElements[row, col] = Splitter4(
-                                    id = element?.id ?: -1,
-                                    endElementId = element?.fetchEndElementId() ?: -1,
-                                    cable = element?.fetchCable() ?: Cable()
-                                )
-                                elementMenuOpenedForIndex = null
-                                onElementsChange(newElements)
-                            }) { Text("Сплиттер 4") }
                         }
                     }
                 }

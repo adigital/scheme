@@ -64,8 +64,6 @@ fun MainMenu(
                         Text("Новая")
                     }
 
-                    Divider()
-
                     DropdownMenuItem(onClick = {
                         expanded = false
                         openSubmenu1Expanded = false
@@ -74,8 +72,6 @@ fun MainMenu(
                         Text("Открыть")
                     }
 
-                    Divider()
-
                     DropdownMenuItem(onClick = {
                         expanded = false
                         openSubmenu1Expanded = false
@@ -83,8 +79,6 @@ fun MainMenu(
                     }) {
                         Text("Сохранить")
                     }
-
-                    Divider()
 
                     DropdownMenuItem(onClick = {
                         expanded = false

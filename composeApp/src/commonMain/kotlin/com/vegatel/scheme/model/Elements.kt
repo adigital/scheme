@@ -11,8 +11,8 @@ sealed class Element {
     data class Antenna(
         override val id: Int,
         val signalPower: Double = 35.0,
-        val endElementId: Int,
-        val cable: Cable
+        val endElementId: Int = -1,
+        val cable: Cable = Cable()
     ) : Element() {
         override fun toString(): String =
             "Antenna(id=$id, signalPower=$signalPower, endElementId=$endElementId, cable=$cable)"
@@ -58,9 +58,12 @@ sealed class Element {
             "Splitter4(id=$id, endElementId=$endElementId, cable=$cable)"
     }
 
-    object Repeater : Element() {
-        override val id: Int = REPEATER_ID
-
+    data class Repeater(
+        override val id: Int = REPEATER_ID,
+        val signalPower: Double = 50.0,
+        val endElementId: Int,
+        val cable: Cable = Cable()
+    ) : Element() {
         override fun toString(): String = "Repeater(id=$id)"
     }
 
@@ -71,6 +74,7 @@ sealed class Element {
             is Splitter2 -> this.id
             is Splitter3 -> this.id
             is Splitter4 -> this.id
+            is Repeater -> this.id
             else -> -1
         }
     }
@@ -82,6 +86,7 @@ sealed class Element {
             is Splitter2 -> this.endElementId
             is Splitter3 -> this.endElementId
             is Splitter4 -> this.endElementId
+            is Repeater -> this.endElementId
             else -> -1
         }
     }
@@ -93,7 +98,7 @@ sealed class Element {
             is Splitter2 -> this.cable
             is Splitter3 -> this.cable
             is Splitter4 -> this.cable
-            else -> Cable()
+            is Repeater -> this.cable
         }
     }
 
