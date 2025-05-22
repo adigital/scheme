@@ -17,6 +17,7 @@ import com.vegatel.scheme.model.Element.Antenna
 import com.vegatel.scheme.model.Element.Repeater
 import com.vegatel.scheme.model.Element.Splitter4
 import com.vegatel.scheme.model.ElementMatrix
+import com.vegatel.scheme.model.saveElementMatrixToFile
 import com.vegatel.scheme.ui.MainMenu
 import com.vegatel.scheme.ui.SchemeConstructor
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -129,11 +130,19 @@ fun App() {
                 )
         ) {
             MainMenu(
-                onNew = { log("TEST", "onNew") }
+                onNew = {
+                    _elements.value = initialElements
+                },
+                onOpen = {
+                    openElementMatrixFromDialog(_elements)
+                },
+                onSave = {
+                    val filename = "elements.json"
+                    saveElementMatrixToFile(elements, filename)
+                }
             )
 
             Divider()
-
 
             SchemeConstructor(
                 elements = elements,
