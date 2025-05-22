@@ -40,7 +40,7 @@ fun SchemeConstructor(
     onElementsChange: (ElementMatrix) -> Unit
 ) {
     elements.forEachElement { row, col, element ->
-        log("Test", "init row = $row, col = $col, element = $element")
+        log("TEST", "init row = $row, col = $col, element = $element")
     }
 
     val isRepeaterHalfShiftRender = elements.isRepeaterHalfShiftRender()

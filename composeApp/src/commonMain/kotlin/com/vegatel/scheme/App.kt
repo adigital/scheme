@@ -25,7 +25,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
-//
+// Elements
 fun buildElementMatrix(
     rows: Int,
     cols: Int,
@@ -33,19 +33,6 @@ fun buildElementMatrix(
 ): ElementMatrix {
     return ElementMatrix(initialRows = rows, initialCols = cols).apply(builder)
 }
-
-//val initialElements = buildElementMatrix(rows = 2, cols = 1) {
-//    this[0, 0] = Antenna(
-//        id = 1,
-//        endElementId = 2,
-//        cable = Cable()
-//    )
-//
-//    this[1, 0] = Repeater(
-//        id = 2,
-//        topElementId = 1
-//    )
-//}
 
 val initialElements = buildElementMatrix(rows = 5, cols = 5) {
     this[1, 0] = Antenna(
@@ -93,63 +80,67 @@ val initialElements = buildElementMatrix(rows = 5, cols = 5) {
 }
 //
 
-private val _elements = MutableStateFlow(initialElements)
-val elements: StateFlow<ElementMatrix> = _elements.asStateFlow()
+// SchemeState
+data class SchemeState(
+    val elements: ElementMatrix,
+    val fileName: String? = null,
+    val isDirty: Boolean = false
+)
+
+val initialSchemeState = SchemeState(
+    elements = initialElements,
+    fileName = null,
+    isDirty = false
+)
+//
+
+private val _schemeState = MutableStateFlow(initialSchemeState)
+val schemeState: StateFlow<SchemeState> = _schemeState.asStateFlow()
 
 @Composable
 @Preview
 fun App() {
     MaterialTheme {
-//        var showContent by remember { mutableStateOf(false) }
-
-//            Button(onClick = { showContent = !showContent }) {
-//                Text("Click me!")
-//            }
-//
-//            AnimatedVisibility(showContent) {
-//                val greeting = remember { Greeting().greet() }
-//
-//                Column(
-//                    Modifier.fillMaxWidth(),
-//                    horizontalAlignment = Alignment.CenterHorizontally
-//                ) {
-//                    Image(painterResource(Res.drawable.compose_multiplatform), null)
-//                    Text("Compose: $greeting")
-//                }
-//            }
-
-        val elements by elements.collectAsState()
+        val schemeState by schemeState.collectAsState()
 
         Column(
             Modifier
                 .fillMaxWidth()
                 .padding(
                     top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
-                    bottom = WindowInsets.navigationBars.asPaddingValues()
-                        .calculateBottomPadding()
+                    bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
                 )
         ) {
             MainMenu(
+                fileName = schemeState.fileName,
+                isDirty = schemeState.isDirty,
                 onNew = {
-                    _elements.value = initialElements
+                    _schemeState.value = initialSchemeState
                 },
                 onOpen = {
-                    openElementMatrixFromDialog(_elements)
+                    openElementMatrixFromDialog(_schemeState)
                 },
                 onSave = {
-                    val filename = "elements.json"
-                    saveElementMatrixToFile(elements, filename)
+                    if (schemeState.fileName == null) {
+                        saveElementMatrixFromDialog(_schemeState)
+                    } else {
+                        saveElementMatrixToFile(schemeState.elements, schemeState.fileName!!)
+                        _schemeState.value = schemeState.copy(isDirty = false)
+                    }
                 },
                 onSaveAs = {
-                    saveElementMatrixFromDialog(_elements)
+                    saveElementMatrixFromDialog(_schemeState)
                 }
             )
 
             Divider()
 
             SchemeConstructor(
-                elements = elements,
-                onElementsChange = { _elements.value = it }
+                elements = schemeState.elements,
+                onElementsChange = { newElements ->
+                    val isDirty = newElements != schemeState.elements || schemeState.isDirty.not()
+                    _schemeState.value = schemeState.copy(elements = newElements, isDirty = isDirty)
+                }
             )
         }
     }

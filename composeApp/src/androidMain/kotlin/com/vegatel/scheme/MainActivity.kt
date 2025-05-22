@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 
 class MainActivity : ComponentActivity() {
 
-    private val _elements = MutableStateFlow<ElementMatrix>(initialElements)
+    private val _schemeState = MutableStateFlow<SchemeState>(initialSchemeState)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -19,8 +19,8 @@ class MainActivity : ComponentActivity() {
         WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars =
             true
 
-        registerOpenElementMatrixFromDialog(_elements)
-        registerSaveElementMatrixFromDialog(_elements)
+        registerOpenElementMatrixFromDialog(_schemeState)
+        registerSaveElementMatrixFromDialog(_schemeState)
 
         setContent {
             App()

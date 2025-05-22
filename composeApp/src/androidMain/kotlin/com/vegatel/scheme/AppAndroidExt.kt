@@ -3,22 +3,20 @@ package com.vegatel.scheme
 import android.net.Uri
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
-import com.vegatel.scheme.model.ElementMatrix
 import com.vegatel.scheme.model.SerializableElementMatrix
 import com.vegatel.scheme.model.toElementMatrix
 import com.vegatel.scheme.model.toSerializable
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.json.Json
 
 // Open
 private var openFileCallback: (() -> Unit)? = null
-private var openFileElements: MutableStateFlow<ElementMatrix>? = null
+private var openFileState: MutableStateFlow<SchemeState>? = null
 
 fun ComponentActivity.registerOpenElementMatrixFromDialog(
-    elements: MutableStateFlow<ElementMatrix>
+    state: MutableStateFlow<SchemeState>
 ) {
-    openFileElements = elements
+    openFileState = state
     val openFileLauncher =
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
             if (uri != null) {
@@ -27,7 +25,11 @@ fun ComponentActivity.registerOpenElementMatrixFromDialog(
                     val json = inputStream?.bufferedReader()?.use { it.readText() }
                     if (json != null) {
                         val serializable = Json.decodeFromString<SerializableElementMatrix>(json)
-                        openFileElements?.value = serializable.toElementMatrix()
+                        openFileState?.value = openFileState?.value?.copy(
+                            elements = serializable.toElementMatrix(),
+                            fileName = uri.toString(),
+                            isDirty = false
+                        ) ?: return@registerForActivityResult
                     }
                 } catch (e: Exception) {
                     log("App", "Ошибка открытия файла: $e")
@@ -39,25 +41,25 @@ fun ComponentActivity.registerOpenElementMatrixFromDialog(
     }
 }
 
-actual fun openElementMatrixFromDialog(elements: MutableStateFlow<ElementMatrix>) {
-    openFileElements = elements
+actual fun openElementMatrixFromDialog(state: MutableStateFlow<SchemeState>) {
+    openFileState = state
     openFileCallback?.invoke()
 }
 
 // Save
-private var saveFileElements: StateFlow<ElementMatrix>? = null
+private var saveFileState: MutableStateFlow<SchemeState>? = null
 private var saveFileCallback: (() -> Unit)? = null
 
 fun ComponentActivity.registerSaveElementMatrixFromDialog(
-    elements: StateFlow<ElementMatrix>
+    state: MutableStateFlow<SchemeState>
 ) {
-    saveFileElements = elements
+    saveFileState = state
     val saveFileLauncher =
         registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri: Uri? ->
             if (uri != null) {
                 try {
                     val outputStream = contentResolver.openOutputStream(uri, "wt")
-                    val serializable = saveFileElements?.value?.toSerializable()
+                    val serializable = saveFileState?.value?.elements?.toSerializable()
                     val json =
                         serializable?.let {
                             Json.encodeToString(
@@ -67,6 +69,11 @@ fun ComponentActivity.registerSaveElementMatrixFromDialog(
                         }
                     outputStream?.bufferedWriter()
                         ?.use { writer -> if (json != null) writer.write(json) }
+                    // После успешного сохранения обновляем fileName и isDirty
+                    saveFileState?.value = saveFileState?.value?.copy(
+                        fileName = uri.toString(),
+                        isDirty = false
+                    ) ?: return@registerForActivityResult
                 } catch (e: Exception) {
                     log("App", "Ошибка сохранения файла: $e")
                 }
@@ -74,11 +81,11 @@ fun ComponentActivity.registerSaveElementMatrixFromDialog(
         }
 
     saveFileCallback = {
-        saveFileLauncher.launch("elements.json")
+        saveFileLauncher.launch("Схема.json")
     }
 }
 
-actual fun saveElementMatrixFromDialog(elements: StateFlow<ElementMatrix>) {
-    saveFileElements = elements
+actual fun saveElementMatrixFromDialog(state: MutableStateFlow<SchemeState>) {
+    saveFileState = state
     saveFileCallback?.invoke()
 }

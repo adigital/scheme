@@ -17,9 +17,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.vegatel.scheme.extensions.displayFileName
 
 @Composable
 fun MainMenu(
+    fileName: String?,
+    isDirty: Boolean,
     onNew: () -> Unit = {},
     onOpen: () -> Unit = {},
     onSave: () -> Unit = {},
@@ -37,6 +40,15 @@ fun MainMenu(
         Button(onClick = { expanded = true }) {
             Icon(Icons.Default.Menu, contentDescription = null)
         }
+
+        Text(
+            text = buildString {
+                append(displayFileName(fileName))
+                if (isDirty) append(" *")
+            },
+            modifier = Modifier.padding(start = 8.dp)
+        )
+
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = {
