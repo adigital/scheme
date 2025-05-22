@@ -20,6 +20,7 @@ class MainActivity : ComponentActivity() {
             true
 
         registerOpenElementMatrixFromDialog(_elements)
+        registerSaveElementMatrixFromDialog(_elements)
 
         setContent {
             App()

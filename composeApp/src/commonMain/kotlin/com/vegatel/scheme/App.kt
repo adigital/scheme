@@ -139,6 +139,9 @@ fun App() {
                 onSave = {
                     val filename = "elements.json"
                     saveElementMatrixToFile(elements, filename)
+                },
+                onSaveAs = {
+                    saveElementMatrixFromDialog(_elements)
                 }
             )
 
