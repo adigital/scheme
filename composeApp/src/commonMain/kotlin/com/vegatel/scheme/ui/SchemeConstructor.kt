@@ -75,7 +75,7 @@ fun SchemeConstructor(
         Box(
             Modifier
                 .size(width.dp, height.dp)
-                .background(Color.White)
+                .background(Color.LightGray)
         ) {
             elements.forEachElementComposable { row, col, element ->
                 val elementOffset = IntOffset(
@@ -180,11 +180,59 @@ fun SchemeConstructor(
 
                             DropdownMenuItem(onClick = {
                                 val newElements = elements.copy()
-                                newElements[row, col] = Splitter2(
-                                    id = element?.id ?: -1,
+
+                                // Если мы в верхней строке, добавляем новую строку сверху
+                                var currentRow = row
+                                if (row == 0) {
+                                    newElements.insertRow(0)
+                                    currentRow = 1 // Теперь наш элемент находится в строке 1
+                                }
+
+                                // Сначала создаем сплиттер на месте кликнутого элемента
+                                val splitterId = element?.id ?: newElements.generateNewId()
+                                newElements[currentRow, col] = Splitter2(
+                                    id = splitterId,
                                     endElementId = element?.fetchEndElementId() ?: -1,
                                     cable = element?.fetchCable() ?: Cable()
                                 )
+
+                                // Теперь сдвигаем все элементы правее позиции сплиттера
+                                newElements.shiftColumnAndRightElementsRight(col + 1)
+
+                                val targetRow = currentRow - 1
+                                val leftAntennaCol = col
+                                val rightAntennaCol = col + 1
+
+                                if (rightAntennaCol >= newElements.colCount) {
+                                    newElements.insertCol(newElements.colCount)
+                                }
+
+                                // Проверяем, есть ли элементы на местах антенн после сдвига
+                                val leftBusy = newElements.hasElementAt(targetRow, leftAntennaCol)
+                                val rightBusy = newElements.hasElementAt(targetRow, rightAntennaCol)
+                                if (leftBusy && rightBusy) {
+                                    newElements.shiftColumnAndRightElementsRight(leftAntennaCol)
+                                } else if (rightBusy) {
+                                    newElements.shiftColumnAndRightElementsRight(rightAntennaCol)
+                                } else if (leftBusy) {
+                                    newElements.shiftColumnAndRightElementsRight(leftAntennaCol)
+                                }
+
+                                // Создаем антенны
+                                val leftAntennaId = newElements.generateNewId()
+                                newElements[targetRow, leftAntennaCol] = Antenna(
+                                    id = leftAntennaId,
+                                    endElementId = splitterId,
+                                    cable = Cable()
+                                )
+
+                                val rightAntennaId = newElements.generateNewId()
+                                newElements[targetRow, rightAntennaCol] = Antenna(
+                                    id = rightAntennaId,
+                                    endElementId = splitterId,
+                                    cable = Cable()
+                                )
+
                                 elementMenuOpenedForIndex = null
                                 onElementsChange(newElements)
                             }) { Text("Сплиттер 2") }
@@ -234,9 +282,13 @@ fun SchemeConstructor(
                         val endElementInstance = elements[endElement.first, endElement.second]
 
                         val isShiftLeft =
-                            endElementInstance?.isHalfShiftRender() == true && (startElement.second == endElement.second)
+                            endElementInstance?.isHalfShiftRender() == true &&
+                                    (startElement.second == endElement.second) &&
+                                    startElementInstance?.isHalfShiftRender() == false
                         val isShiftRight =
-                            endElementInstance?.isHalfShiftRender() == true && (startElement.second == endElement.second + 1)
+                            endElementInstance?.isHalfShiftRender() == true &&
+                                    (startElement.second == endElement.second + 1)
+                                    && startElementInstance?.isHalfShiftRender() == false
 
                         log("TEST", "$startElement, - $endElement")
                         log("TEST", "isShiftLeft $isShiftLeft, - isShiftRight $isShiftRight")
