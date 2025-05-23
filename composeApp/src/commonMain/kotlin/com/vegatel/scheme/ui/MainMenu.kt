@@ -18,6 +18,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.vegatel.scheme.extensions.displayFileName
+import com.vegatel.scheme.getPlatform
 
 @Composable
 fun MainMenu(
@@ -84,12 +85,14 @@ fun MainMenu(
                         Text("Открыть")
                     }
 
-                    DropdownMenuItem(onClick = {
-                        expanded = false
-                        openSubmenu1Expanded = false
-                        onSave()
-                    }) {
-                        Text("Сохранить")
+                    if (getPlatform() == "Desktop") {
+                        DropdownMenuItem(onClick = {
+                            expanded = false
+                            openSubmenu1Expanded = false
+                            onSave()
+                        }) {
+                            Text("Сохранить")
+                        }
                     }
 
                     DropdownMenuItem(onClick = {
