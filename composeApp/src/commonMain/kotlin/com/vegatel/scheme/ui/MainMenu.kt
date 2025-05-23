@@ -1,7 +1,12 @@
 package com.vegatel.scheme.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material.Button
 import androidx.compose.material.Divider
 import androidx.compose.material.DropdownMenu
@@ -16,7 +21,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import com.vegatel.scheme.extensions.displayFileName
 import com.vegatel.scheme.getPlatform
 
@@ -37,7 +44,16 @@ fun MainMenu(
     var openSubmenu1Expanded by remember { mutableStateOf(false) }
     var openSubmenu2Expanded by remember { mutableStateOf(false) }
 
-    Row(modifier = Modifier.padding(start = 16.dp)) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.White)
+            .padding(
+                top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
+            )
+            .zIndex(1f)
+            .padding(start = 16.dp)
+    ) {
         Button(onClick = { expanded = true }) {
             Icon(Icons.Default.Menu, contentDescription = null)
         }

@@ -1,13 +1,9 @@
 package com.vegatel.scheme.ui
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Text
@@ -18,7 +14,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.vegatel.scheme.extensions.toPx
@@ -33,6 +29,7 @@ import com.vegatel.scheme.model.Element.Splitter3
 import com.vegatel.scheme.model.Element.Splitter4
 import com.vegatel.scheme.model.ElementMatrix
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.zIndex
 
 @Composable
 fun SchemeConstructor(
@@ -56,9 +53,8 @@ fun SchemeConstructor(
     val width = elements.colCount * 2 * elementWidthDp
     val height = elements.rowCount * 2 * elementHeightDp
 
-    // Состояние скроллов
-    val verticalScrollState = rememberScrollState()
-    val horizontalScrollState = rememberScrollState()
+    // Состояние смещения для перетаскивания
+    var dragOffset by remember { mutableStateOf(Offset.Zero) }
 
     // Расчет сигнала на репитере
     val signalAtRepeater = 0.0 //calculateSignalAtRepeater(elements.first(), cable)
@@ -69,13 +65,30 @@ fun SchemeConstructor(
 
     Box(
         Modifier
-            .verticalScroll(verticalScrollState)
-            .horizontalScroll(horizontalScrollState)
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        // Обрабатываем только события левой кнопки мыши
+                        if (event.changes.first().pressed) {
+                            val position = event.changes.first().position
+                            val lastPosition = event.changes.first().previousPosition
+
+                            // Вычисляем смещение
+                            val delta = position - lastPosition
+                            dragOffset = dragOffset + delta
+
+                            // Потребляем событие
+                            event.changes.forEach { it.consume() }
+                        }
+                    }
+                }
+            }
+            .offset { IntOffset(dragOffset.x.toInt(), dragOffset.y.toInt()) }
+            .zIndex(0f)  // Схема будет находиться на нижнем слое
     ) {
         Box(
-            Modifier
-                .size(width.dp, height.dp)
-                .background(Color.LightGray)
+            Modifier.size(width.dp, height.dp)
         ) {
             elements.forEachElementComposable { row, col, element ->
                 val elementOffset = IntOffset(
@@ -239,14 +252,14 @@ fun SchemeConstructor(
 
                             DropdownMenuItem(onClick = {
                                 val newElements = elements.copy()
-                                
+
                                 // Если мы в верхней строке, добавляем новую строку сверху
                                 var currentRow = row
                                 if (row == 0) {
                                     newElements.insertRow(0)
                                     currentRow = 1 // Теперь наш элемент находится в строке 1
                                 }
-                                
+
                                 // Сначала создаем сплиттер на месте кликнутого элемента
                                 val splitterId = element?.id ?: newElements.generateNewId()
                                 newElements[currentRow, col] = Splitter3(
@@ -254,17 +267,17 @@ fun SchemeConstructor(
                                     endElementId = element?.fetchEndElementId() ?: -1,
                                     cable = element?.fetchCable() ?: Cable()
                                 )
-                                
+
                                 // Проверяем, нужно ли сдвинуть сплиттер и элементы правее
                                 val targetRow = currentRow - 1
                                 var currentCol = col
-                                
+
                                 // Если мы в крайней левой колонке, добавляем новую колонку слева
                                 if (col == 0) {
                                     newElements.insertCol(0)
                                     currentCol = 1
                                 }
-                                
+
                                 // Функция для проверки наличия элементов в столбце
                                 fun hasElementsInColumn(colIndex: Int): Boolean {
                                     if (colIndex < 0) return false
@@ -272,31 +285,35 @@ fun SchemeConstructor(
                                         newElements.hasElementAt(r, colIndex)
                                     }
                                 }
-                                
+
                                 // Проверяем наличие элементов:
                                 // 1. Над сплиттером
                                 // 2. Слева от позиции центральной антенны (если такая позиция существует)
                                 // 3. В столбце слева от сплиттера
-                                if (newElements.hasElementAt(targetRow, currentCol) || 
-                                    (currentCol > 0 && newElements.hasElementAt(targetRow, currentCol - 1)) ||
-                                    (currentCol > 0 && hasElementsInColumn(currentCol - 1))) {
+                                if (newElements.hasElementAt(targetRow, currentCol) ||
+                                    (currentCol > 0 && newElements.hasElementAt(
+                                        targetRow,
+                                        currentCol - 1
+                                    )) ||
+                                    (currentCol > 0 && hasElementsInColumn(currentCol - 1))
+                                ) {
                                     newElements.shiftColumnAndRightElementsRight(currentCol)
                                     currentCol += 1
                                 }
-                                
+
                                 // Теперь сдвигаем все элементы правее позиции сплиттера
                                 newElements.shiftColumnAndRightElementsRight(currentCol + 1)
-                                
+
                                 // Определяем позиции для трех антенн
                                 val leftAntennaCol = currentCol - 1
                                 val centerAntennaCol = currentCol
                                 val rightAntennaCol = currentCol + 1
-                                
+
                                 // Убеждаемся, что у нас достаточно места справа
                                 if (rightAntennaCol >= newElements.colCount) {
                                     newElements.insertCol(newElements.colCount)
                                 }
-                                
+
                                 // Проверяем, есть ли элементы на местах антенн после сдвига
                                 if (newElements.hasElementAt(targetRow, leftAntennaCol)) {
                                     newElements.shiftColumnAndRightElementsRight(leftAntennaCol)
@@ -307,14 +324,14 @@ fun SchemeConstructor(
                                 if (newElements.hasElementAt(targetRow, rightAntennaCol)) {
                                     newElements.shiftColumnAndRightElementsRight(rightAntennaCol)
                                 }
-                                
+
                                 // Обновляем позицию сплиттера после всех сдвигов
                                 newElements[currentRow, currentCol] = Splitter3(
                                     id = splitterId,
                                     endElementId = element?.fetchEndElementId() ?: -1,
                                     cable = element?.fetchCable() ?: Cable()
                                 )
-                                
+
                                 // Создаем три антенны
                                 val leftAntennaId = newElements.generateNewId()
                                 newElements[targetRow, leftAntennaCol] = Antenna(
@@ -322,35 +339,35 @@ fun SchemeConstructor(
                                     endElementId = splitterId,
                                     cable = Cable()
                                 )
-                                
+
                                 val centerAntennaId = newElements.generateNewId()
                                 newElements[targetRow, centerAntennaCol] = Antenna(
                                     id = centerAntennaId,
                                     endElementId = splitterId,
                                     cable = Cable()
                                 )
-                                
+
                                 val rightAntennaId = newElements.generateNewId()
                                 newElements[targetRow, rightAntennaCol] = Antenna(
                                     id = rightAntennaId,
                                     endElementId = splitterId,
                                     cable = Cable()
                                 )
-                                
+
                                 elementMenuOpenedForIndex = null
                                 onElementsChange(newElements)
                             }) { Text("Сплиттер 3") }
 
                             DropdownMenuItem(onClick = {
                                 val newElements = elements.copy()
-                                
+
                                 // Если мы в верхней строке, добавляем новую строку сверху
                                 var currentRow = row
                                 if (row == 0) {
                                     newElements.insertRow(0)
                                     currentRow = 1 // Теперь наш элемент находится в строке 1
                                 }
-                                
+
                                 // Сначала создаем сплиттер на месте кликнутого элемента
                                 val splitterId = element?.id ?: newElements.generateNewId()
                                 newElements[currentRow, col] = Splitter4(
@@ -358,17 +375,17 @@ fun SchemeConstructor(
                                     endElementId = element?.fetchEndElementId() ?: -1,
                                     cable = element?.fetchCable() ?: Cable()
                                 )
-                                
+
                                 // Проверяем, нужно ли сдвинуть сплиттер и элементы правее
                                 val targetRow = currentRow - 1
                                 var currentCol = col
-                                
+
                                 // Если мы в крайней левой колонке или рядом с ней, добавляем новые колонки слева
                                 while (currentCol < 1) {
                                     newElements.insertCol(0)
                                     currentCol += 1
                                 }
-                                
+
                                 // Функция для проверки наличия элементов в столбце
                                 fun hasElementsInColumn(colIndex: Int): Boolean {
                                     if (colIndex < 0) return false
@@ -376,36 +393,43 @@ fun SchemeConstructor(
                                         newElements.hasElementAt(r, colIndex)
                                     }
                                 }
-                                
+
                                 // Проверяем наличие элементов:
                                 // 1. Над сплиттером
                                 // 2. Слева от позиции центральной антенны
                                 // 3. В столбце слева от сплиттера
                                 // 4. В позициях для всех антенн
-                                if (newElements.hasElementAt(targetRow, currentCol) || 
-                                    (currentCol > 0 && newElements.hasElementAt(targetRow, currentCol - 1)) ||
-                                    (currentCol > 0 && hasElementsInColumn(currentCol - 1)) ||
-                                    newElements.hasElementAt(targetRow, currentCol + 1) ||
-                                    newElements.hasElementAt(targetRow, currentCol + 2)) {
+                                if (!(!newElements.hasElementAt(
+                                        targetRow,
+                                        currentCol
+                                    ) && !newElements.hasElementAt(
+                                        targetRow,
+                                        currentCol - 1
+                                    ) && !hasElementsInColumn(currentCol - 1) && !newElements.hasElementAt(
+                                        targetRow,
+                                        currentCol + 1
+                                    ) && !newElements.hasElementAt(targetRow, currentCol + 2))
+                                ) {
                                     newElements.shiftColumnAndRightElementsRight(currentCol)
                                     currentCol += 1
                                 }
-                                
+
                                 // Теперь сдвигаем все элементы правее позиции сплиттера для места под правые антенны
                                 newElements.shiftColumnAndRightElementsRight(currentCol + 1)
                                 newElements.shiftColumnAndRightElementsRight(currentCol + 2)
-                                
+
                                 // Определяем позиции для четырех антенн
                                 val leftAntennaCol = currentCol - 1    // Левая антенна
-                                val centerAntennaCol = currentCol      // Центральная антенна (над сплиттером)
+                                val centerAntennaCol =
+                                    currentCol      // Центральная антенна (над сплиттером)
                                 val rightAntennaCol = currentCol + 1   // Правая антенна
                                 val farRightAntennaCol = currentCol + 2 // Крайняя правая антенна
-                                
+
                                 // Убеждаемся, что у нас достаточно места справа
                                 while (farRightAntennaCol >= newElements.colCount) {
                                     newElements.insertCol(newElements.colCount)
                                 }
-                                
+
                                 // Создаем четыре антенны
                                 val leftAntennaId = newElements.generateNewId()
                                 newElements[targetRow, leftAntennaCol] = Antenna(
@@ -413,35 +437,35 @@ fun SchemeConstructor(
                                     endElementId = splitterId,
                                     cable = Cable()
                                 )
-                                
+
                                 val centerAntennaId = newElements.generateNewId()
                                 newElements[targetRow, centerAntennaCol] = Antenna(
                                     id = centerAntennaId,
                                     endElementId = splitterId,
                                     cable = Cable()
                                 )
-                                
+
                                 val rightAntennaId = newElements.generateNewId()
                                 newElements[targetRow, rightAntennaCol] = Antenna(
                                     id = rightAntennaId,
                                     endElementId = splitterId,
                                     cable = Cable()
                                 )
-                                
+
                                 val farRightAntennaId = newElements.generateNewId()
                                 newElements[targetRow, farRightAntennaCol] = Antenna(
                                     id = farRightAntennaId,
                                     endElementId = splitterId,
                                     cable = Cable()
                                 )
-                                
+
                                 // Обновляем позицию сплиттера после всех сдвигов
                                 newElements[currentRow, currentCol] = Splitter4(
                                     id = splitterId,
                                     endElementId = element?.fetchEndElementId() ?: -1,
                                     cable = element?.fetchCable() ?: Cable()
                                 )
-                                
+
                                 elementMenuOpenedForIndex = null
                                 onElementsChange(newElements)
                             }) { Text("Сплиттер 4") }

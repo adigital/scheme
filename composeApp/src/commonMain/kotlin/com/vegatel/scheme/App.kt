@@ -1,18 +1,15 @@
 package com.vegatel.scheme
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.Divider
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import com.vegatel.scheme.model.Element.Antenna
 import com.vegatel.scheme.model.Element.Repeater
 import com.vegatel.scheme.model.Element.Splitter4
@@ -105,11 +102,8 @@ fun App() {
 
         Column(
             Modifier
-                .fillMaxWidth()
-                .padding(
-                    top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
-                    bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-                )
+                .fillMaxSize()
+                .background(Color.White)
         ) {
             MainMenu(
                 fileName = schemeState.fileName,
