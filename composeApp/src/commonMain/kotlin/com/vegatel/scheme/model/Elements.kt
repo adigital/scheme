@@ -31,7 +31,7 @@ sealed class Element {
 
     data class Splitter2(
         override val id: Int,
-        override val signalPower: Double = -2.0,
+        override val signalPower: Double = -3.0,
         val endElementId: Int,
         val cable: Cable = Cable()
     ) : Element() {
@@ -41,7 +41,7 @@ sealed class Element {
 
     data class Splitter3(
         override val id: Int,
-        override val signalPower: Double = -3.0,
+        override val signalPower: Double = -4.8,
         val endElementId: Int,
         val cable: Cable = Cable()
     ) : Element() {
@@ -51,7 +51,7 @@ sealed class Element {
 
     data class Splitter4(
         override val id: Int,
-        override val signalPower: Double = -4.0,
+        override val signalPower: Double = -6.0,
         val endElementId: Int,
         val cable: Cable = Cable()
     ) : Element() {
@@ -109,7 +109,7 @@ sealed class Element {
 }
 
 data class Cable(
-    val length: Double = 5.0,
+    val length: Double = 0.0,
     val thickness: Int = 1,
     val lossPerMeter: Double = -0.5
 )

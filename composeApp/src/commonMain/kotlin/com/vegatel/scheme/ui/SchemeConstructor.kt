@@ -30,6 +30,8 @@ import com.vegatel.scheme.model.Element.Splitter3
 import com.vegatel.scheme.model.Element.Splitter4
 import com.vegatel.scheme.model.ElementMatrix
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import kotlin.math.log10
+import kotlin.math.pow
 
 // Добавляем функции для расчета сигнала перед @Composable SchemeConstructor
 
@@ -61,6 +63,16 @@ private fun ElementMatrix.isElementBelowRepeater(elementId: Int): Boolean {
     return false
 }
 
+// Конвертация дБм в милливатты
+private fun dBmToMw(dBm: Double): Double {
+    return Math.pow(10.0, dBm / 10.0)
+}
+
+// Конвертация милливатт в дБм
+private fun mwToDBm(mw: Double): Double {
+    return 10.0 * Math.log10(mw)
+}
+
 // Рассчитывает суммарную мощность сигнала для элемента
 private fun ElementMatrix.calculateSignalPower(elementId: Int): Double {
     val element = findElementById(elementId)?.let { (row, col) -> this[row, col] } ?: return 0.0
@@ -77,22 +89,44 @@ private fun ElementMatrix.calculateSignalPower(elementId: Int): Double {
         // Для всех остальных элементов считаем входящий сигнал
         else -> {
             // Находим все элементы, подключенные сверху
-            var inputSignal = 0.0
+            val inputSignals = mutableListOf<Double>()
             forEachElement { row, col, connectedElement ->
                 if (connectedElement?.fetchEndElementId() == elementId) {
                     // Получаем сигнал от подключенного элемента
                     val sourceSignal = calculateSignalPower(connectedElement.id)
                     // Учитываем потери в кабеле
                     val cableLoss = calculateCableLoss(connectedElement.fetchCable())
-                    inputSignal += sourceSignal + cableLoss
+                    inputSignals.add(sourceSignal + cableLoss)
                 }
             }
 
             // Применяем характеристики текущего элемента
             when (element) {
-                is Splitter2, is Splitter3, is Splitter4 -> inputSignal + element.signalPower
-                is Repeater -> inputSignal + element.signalPower
-                is Antenna, is Load -> inputSignal
+                is Splitter2, is Splitter3, is Splitter4 -> {
+                    if (inputSignals.isEmpty()) {
+                        0.0
+                    } else {
+                        // Преобразуем все входящие сигналы из дБм в мВт
+                        val inputPowersMw = inputSignals.map { dBmToMw(it) }
+                        
+                        // Суммируем мощности в мВт
+                        val totalInputPowerMw = inputPowersMw.sum()
+                        
+                        // Преобразуем обратно в дБм
+                        val totalInputPowerDBm = mwToDBm(totalInputPowerMw)
+                        
+                        // Добавляем потери сплиттера из его характеристики signalPower
+                        totalInputPowerDBm + element.signalPower
+                    }
+                }
+                is Repeater -> {
+                    // Для репитера берем максимальный входящий сигнал
+                    val maxInputSignal = inputSignals.maxOrNull() ?: 0.0
+                    maxInputSignal + element.signalPower
+                }
+                is Antenna, is Load -> {
+                    inputSignals.firstOrNull() ?: 0.0
+                }
             }
         }
     }

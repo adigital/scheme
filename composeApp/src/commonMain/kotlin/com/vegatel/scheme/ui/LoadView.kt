@@ -59,7 +59,10 @@ fun LoadView(
             tint = elementColor
         )
 
-        Text("$signalPower", style = MaterialTheme.typography.caption)
+        Text(
+            String.format("%.1f", signalPower),
+            style = MaterialTheme.typography.caption
+        )
     }
 }
 
