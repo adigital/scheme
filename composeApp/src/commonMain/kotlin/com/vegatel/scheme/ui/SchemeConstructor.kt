@@ -4,17 +4,30 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.AlertDialog
+import androidx.compose.material.Button
+import androidx.compose.material.Divider
 import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Text
+import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
@@ -65,12 +78,12 @@ private fun ElementMatrix.isElementBelowRepeater(elementId: Int): Boolean {
 
 // Конвертация дБм в милливатты
 private fun dBmToMw(dBm: Double): Double {
-    return Math.pow(10.0, dBm / 10.0)
+    return 10.0.pow(dBm / 10.0)
 }
 
 // Конвертация милливатт в дБм
 private fun mwToDBm(mw: Double): Double {
-    return 10.0 * Math.log10(mw)
+    return 10.0 * log10(mw)
 }
 
 // Рассчитывает суммарную мощность сигнала для элемента
@@ -108,22 +121,24 @@ private fun ElementMatrix.calculateSignalPower(elementId: Int): Double {
                     } else {
                         // Преобразуем все входящие сигналы из дБм в мВт
                         val inputPowersMw = inputSignals.map { dBmToMw(it) }
-                        
+
                         // Суммируем мощности в мВт
                         val totalInputPowerMw = inputPowersMw.sum()
-                        
+
                         // Преобразуем обратно в дБм
                         val totalInputPowerDBm = mwToDBm(totalInputPowerMw)
-                        
+
                         // Добавляем потери сплиттера из его характеристики signalPower
                         totalInputPowerDBm + element.signalPower
                     }
                 }
+
                 is Repeater -> {
                     // Для репитера берем максимальный входящий сигнал
                     val maxInputSignal = inputSignals.maxOrNull() ?: 0.0
                     maxInputSignal + element.signalPower
                 }
+
                 is Antenna, is Load -> {
                     inputSignals.firstOrNull() ?: 0.0
                 }
@@ -137,6 +152,11 @@ fun SchemeConstructor(
     elements: ElementMatrix,
     onElementsChange: (ElementMatrix) -> Unit
 ) {
+    // Состояние для диалога длины кабеля
+    var cableLengthDialogState: Pair<Int, Int>? by remember { mutableStateOf<Pair<Int, Int>?>(null) }
+    var cableLengthInput: TextFieldValue by remember { mutableStateOf(TextFieldValue()) }
+    val focusRequester = remember { FocusRequester() }
+
     elements.forEachElement { row, col, element ->
         log("TEST", "init row = $row, col = $col, element = $element")
     }
@@ -155,11 +175,15 @@ fun SchemeConstructor(
     val height = elements.rowCount * 2 * elementHeightDp
 
     // Состояние смещения для перетаскивания
-    var dragOffset by remember { mutableStateOf(Offset.Zero) }
+    var dragOffset: Offset by remember { mutableStateOf(Offset.Zero) }
 
     // Состояние: для какого элемента открыто меню (row, col)
-    var elementMenuOpenedForIndex by remember { mutableStateOf<Pair<Int, Int>?>(null) }
-    var cableMenuOpenedForIndex by remember { mutableStateOf<Pair<Int, Int>?>(null) }
+    var elementMenuOpenedForIndex: Pair<Int, Int>? by remember {
+        mutableStateOf<Pair<Int, Int>?>(
+            null
+        )
+    }
+    var cableMenuOpenedForIndex: Pair<Int, Int>? by remember { mutableStateOf<Pair<Int, Int>?>(null) }
 
     Box(
         Modifier
@@ -733,6 +757,18 @@ fun SchemeConstructor(
                                     onDismissRequest = { cableMenuOpenedForIndex = null },
                                 ) {
                                     DropdownMenuItem(onClick = {
+                                        cableMenuOpenedForIndex = null
+                                        cableLengthDialogState = row to col
+                                        val text = cable.length.toString()
+                                        cableLengthInput = TextFieldValue(
+                                            text = text,
+                                            selection = TextRange(0, text.length)
+                                        )
+                                    }) { Text("Длина") }
+
+                                    Divider()
+
+                                    DropdownMenuItem(onClick = {
                                         val newElements = elements.copy()
                                         val oldElement = newElements[row, col]
                                         if (oldElement != null) {
@@ -792,6 +828,93 @@ fun SchemeConstructor(
                                         onElementsChange(newElements)
                                     }) { Text("Тип3 (самый толстый, -1.5 дБм)") }
                                 }
+                            }
+
+                            // Диалог изменения длины кабеля
+                            if (cableLengthDialogState == row to col) {
+                                AlertDialog(
+                                    onDismissRequest = { cableLengthDialogState = null },
+                                    title = { Text("Укажите длину кабеля") },
+                                    text = {
+                                        TextField(
+                                            value = cableLengthInput,
+                                            onValueChange = { input ->
+                                                // Заменяем запятую на точку и удаляем пробелы
+                                                val withDot =
+                                                    input.text.replace(",", ".").replace(" ", "")
+
+                                                // Разрешаем ввод только цифр и одной точки
+                                                if (withDot.matches(Regex("^\\d*\\.?\\d*$"))) {
+                                                    when {
+                                                        // Пустая строка или одна точка - разрешаем
+                                                        withDot.isEmpty() || withDot == "." -> {
+                                                            cableLengthInput = TextFieldValue(
+                                                                text = withDot,
+                                                                selection = input.selection
+                                                            )
+                                                        }
+                                                        // Если есть число после точки или целое число
+                                                        else -> {
+                                                            withDot.toDoubleOrNull()?.let { value ->
+                                                                if (value in 0.0..100.0) {
+                                                                    cableLengthInput =
+                                                                        TextFieldValue(
+                                                                            text = withDot,
+                                                                            selection = input.selection
+                                                                        )
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            keyboardOptions = KeyboardOptions(
+                                                keyboardType = KeyboardType.Number,
+                                                imeAction = ImeAction.Done
+                                            ),
+                                            keyboardActions = KeyboardActions(
+                                                onDone = {
+                                                    handleCableLengthUpdate(
+                                                        cableLengthInput.text,
+                                                        elements,
+                                                        row,
+                                                        col,
+                                                        onElementsChange
+                                                    )
+                                                    cableLengthDialogState = null
+                                                }
+                                            ),
+                                            placeholder = { Text("0.0 - 100.0") },
+                                            singleLine = true,
+                                            modifier = Modifier.focusRequester(focusRequester)
+                                        )
+
+                                        LaunchedEffect(Unit) {
+                                            focusRequester.requestFocus()
+                                        }
+                                    },
+                                    confirmButton = {
+                                        Button(
+                                            onClick = {
+                                                handleCableLengthUpdate(
+                                                    cableLengthInput.text,
+                                                    elements,
+                                                    row,
+                                                    col,
+                                                    onElementsChange
+                                                )
+                                                cableLengthDialogState = null
+                                            }
+                                        ) {
+                                            Text("OK")
+                                        }
+                                    },
+                                    dismissButton = {
+                                        Button(onClick = { cableLengthDialogState = null }) {
+                                            Text("Отмена")
+                                        }
+                                    }
+                                )
                             }
                         }
                     }
@@ -870,6 +993,35 @@ fun ElementMatrix.optimizeSpace() {
         // Проверяем, не является ли эта строка единственной
         if (rowCount > 1) {
             removeRow(row)
+        }
+    }
+}
+
+// Вынесем логику обновления длины кабеля в отдельную функцию
+private fun handleCableLengthUpdate(
+    input: String,
+    elements: ElementMatrix,
+    row: Int,
+    col: Int,
+    onElementsChange: (ElementMatrix) -> Unit
+) {
+    input.toDoubleOrNull()?.let { length ->
+        if (length in 0.0..100.0) {
+            val newElements = elements.copy()
+            val oldElement = newElements[row, col]
+            if (oldElement != null) {
+                val newCable = oldElement.fetchCable().copy(length = length)
+                log("TEST", "Updating cable length to $length")
+                newElements[row, col] = when (oldElement) {
+                    is Antenna -> oldElement.copy(cable = newCable)
+                    is Load -> oldElement.copy(cable = newCable)
+                    is Splitter2 -> oldElement.copy(cable = newCable)
+                    is Splitter3 -> oldElement.copy(cable = newCable)
+                    is Splitter4 -> oldElement.copy(cable = newCable)
+                    is Repeater -> oldElement.copy(cable = newCable)
+                }
+                onElementsChange(newElements)
+            }
         }
     }
 }
