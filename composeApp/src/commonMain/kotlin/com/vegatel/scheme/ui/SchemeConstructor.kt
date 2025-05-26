@@ -21,6 +21,7 @@ import com.vegatel.scheme.extensions.toPx
 import com.vegatel.scheme.initialElements
 import com.vegatel.scheme.log
 import com.vegatel.scheme.model.Cable
+import com.vegatel.scheme.model.Element
 import com.vegatel.scheme.model.Element.Antenna
 import com.vegatel.scheme.model.Element.Load
 import com.vegatel.scheme.model.Element.Repeater
@@ -171,22 +172,44 @@ fun SchemeConstructor(
                         ) {
                             DropdownMenuItem(onClick = {
                                 val newElements = elements.copy()
+                                val oldElement = newElements[row, col]
+                                
+                                // Если заменяем сплиттер на не сплиттер, удаляем подключенные элементы
+                                if (oldElement != null && (oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4)) {
+                                    newElements.removeConnectedElementsAbove(oldElement.id)
+                                }
+                                
                                 newElements[row, col] = Antenna(
-                                    id = element?.id ?: -1,
-                                    endElementId = element?.fetchEndElementId() ?: -1,
-                                    cable = element?.fetchCable() ?: Cable()
+                                    id = oldElement?.id ?: newElements.generateNewId(),
+                                    endElementId = oldElement?.fetchEndElementId() ?: -1,
+                                    cable = oldElement?.fetchCable() ?: Cable()
                                 )
+                                
+                                // Оптимизируем пространство после замены
+                                newElements.optimizeSpace()
+                                
                                 elementMenuOpenedForIndex = null
                                 onElementsChange(newElements)
                             }) { Text("Антенна (35 дБм)") }
 
                             DropdownMenuItem(onClick = {
                                 val newElements = elements.copy()
+                                val oldElement = newElements[row, col]
+                                
+                                // Если заменяем сплиттер на нагрузку, удаляем подключенные элементы
+                                if (oldElement != null && (oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4)) {
+                                    newElements.removeConnectedElementsAbove(oldElement.id)
+                                }
+                                
                                 newElements[row, col] = Load(
-                                    id = element?.id ?: -1,
-                                    endElementId = element?.fetchEndElementId() ?: -1,
-                                    cable = element?.fetchCable() ?: Cable()
+                                    id = oldElement?.id ?: newElements.generateNewId(),
+                                    endElementId = oldElement?.fetchEndElementId() ?: -1,
+                                    cable = oldElement?.fetchCable() ?: Cable()
                                 )
+                                
+                                // Оптимизируем пространство после замены
+                                newElements.optimizeSpace()
+                                
                                 elementMenuOpenedForIndex = null
                                 onElementsChange(newElements)
                             }) { Text("Нагрузка") }
@@ -199,6 +222,12 @@ fun SchemeConstructor(
                                 if (row == 0) {
                                     newElements.insertRow(0)
                                     currentRow = 1 // Теперь наш элемент находится в строке 1
+                                }
+
+                                // Удаляем старые подключенные элементы, если они есть
+                                val oldElement = newElements[currentRow, col]
+                                if (oldElement != null && (oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4)) {
+                                    newElements.removeConnectedElementsAbove(oldElement.id)
                                 }
 
                                 // Сначала создаем сплиттер на месте кликнутого элемента
@@ -246,6 +275,9 @@ fun SchemeConstructor(
                                     cable = Cable()
                                 )
 
+                                // Оптимизируем пространство после замены
+                                newElements.optimizeSpace()
+
                                 elementMenuOpenedForIndex = null
                                 onElementsChange(newElements)
                             }) { Text("Сплиттер 2") }
@@ -258,6 +290,12 @@ fun SchemeConstructor(
                                 if (row == 0) {
                                     newElements.insertRow(0)
                                     currentRow = 1 // Теперь наш элемент находится в строке 1
+                                }
+
+                                // Удаляем старые подключенные элементы, если они есть
+                                val oldElement = newElements[currentRow, col]
+                                if (oldElement != null && (oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4)) {
+                                    newElements.removeConnectedElementsAbove(oldElement.id)
                                 }
 
                                 // Сначала создаем сплиттер на месте кликнутого элемента
@@ -354,6 +392,9 @@ fun SchemeConstructor(
                                     cable = Cable()
                                 )
 
+                                // Оптимизируем пространство после замены
+                                newElements.optimizeSpace()
+
                                 elementMenuOpenedForIndex = null
                                 onElementsChange(newElements)
                             }) { Text("Сплиттер 3") }
@@ -366,6 +407,12 @@ fun SchemeConstructor(
                                 if (row == 0) {
                                     newElements.insertRow(0)
                                     currentRow = 1 // Теперь наш элемент находится в строке 1
+                                }
+
+                                // Удаляем старые подключенные элементы, если они есть
+                                val oldElement = newElements[currentRow, col]
+                                if (oldElement != null && (oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4)) {
+                                    newElements.removeConnectedElementsAbove(oldElement.id)
                                 }
 
                                 // Сначала создаем сплиттер на месте кликнутого элемента
@@ -465,6 +512,9 @@ fun SchemeConstructor(
                                     endElementId = element?.fetchEndElementId() ?: -1,
                                     cable = element?.fetchCable() ?: Cable()
                                 )
+
+                                // Оптимизируем пространство после замены
+                                newElements.optimizeSpace()
 
                                 elementMenuOpenedForIndex = null
                                 onElementsChange(newElements)
@@ -654,4 +704,68 @@ private fun preview() {
         elements = initialElements,
         onElementsChange = {}
     )
+}
+
+// Функция для рекурсивного удаления элементов, подключенных к указанному элементу сверху
+fun ElementMatrix.removeConnectedElementsAbove(elementId: Int) {
+    // Находим все элементы, которые подключены к данному элементу (endElementId == elementId)
+    forEachElement { row, col, element ->
+        if (element?.fetchEndElementId() == elementId) {
+            // Если найденный элемент - сплиттер, рекурсивно удаляем его подключения
+            if (element is Splitter2 || element is Splitter3 || element is Splitter4) {
+                removeConnectedElementsAbove(element.id)
+            }
+            // Удаляем сам элемент
+            this[row, col] = null
+        }
+    }
+}
+
+// Функция для оптимизации пустого пространства в матрице
+fun ElementMatrix.optimizeSpace() {
+    // Находим пустые столбцы
+    val emptyColumns = mutableListOf<Int>()
+    for (col in 0 until colCount) {
+        var isEmpty = true
+        for (row in 0 until rowCount) {
+            if (this[row, col] != null) {
+                isEmpty = false
+                break
+            }
+        }
+        if (isEmpty) {
+            emptyColumns.add(col)
+        }
+    }
+
+    // Удаляем пустые столбцы справа налево
+    emptyColumns.sortedDescending().forEach { col ->
+        // Проверяем, не является ли этот столбец единственным
+        if (colCount > 1) {
+            removeCol(col)
+        }
+    }
+
+    // Находим пустые строки
+    val emptyRows = mutableListOf<Int>()
+    for (row in 0 until rowCount) {
+        var isEmpty = true
+        for (col in 0 until colCount) {
+            if (this[row, col] != null) {
+                isEmpty = false
+                break
+            }
+        }
+        if (isEmpty) {
+            emptyRows.add(row)
+        }
+    }
+
+    // Удаляем пустые строки снизу вверх
+    emptyRows.sortedDescending().forEach { row ->
+        // Проверяем, не является ли эта строка единственной
+        if (rowCount > 1) {
+            removeRow(row)
+        }
+    }
 }
