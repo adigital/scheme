@@ -3,8 +3,10 @@ package com.vegatel.scheme.ui
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -18,8 +20,10 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.vegatel.scheme.model.Cable
 import kotlinx.coroutines.delay
 import kotlin.math.abs
@@ -35,7 +39,7 @@ fun CableView(
     modifier: Modifier = Modifier,
     onClick: (IntOffset) -> Unit
 ) {
-    val strokeWidth = 4 * cable.thickness.toFloat()
+    val strokeWidthDp = (2 * cable.thickness).dp
     val density = LocalDensity.current
 
     // Функция для выбора цвета по толщине
@@ -50,7 +54,7 @@ fun CableView(
     var cableColor by remember { mutableStateOf(getCableColorByThickness(cable.thickness)) }
     var isRed by remember { mutableStateOf(false) }
 
-    // Вычисляем сегменты линии
+    // Вычисляем сегменты линии и центральные точки
     val segments = if (isTwoCorners) {
         val midY = (start.y + end.y) / 2
         listOf(
@@ -65,6 +69,12 @@ fun CableView(
         )
     }
 
+    // Находим центральную точку для текста
+    val midX = start.x
+    val midY = (start.y + end.y) / 2
+
+    val centerPoint = Offset(midX, midY)
+
     // Слой с Box для каждого сегмента
     segments.forEach { (segStart, segEnd) ->
         val centerX = (segStart.x + segEnd.x) / 2
@@ -73,11 +83,11 @@ fun CableView(
         val isVertical = segStart.x == segEnd.x
 
         with(density) {
-            val boxWidthPx = abs(segEnd.x - segStart.x).takeIf { it > 0f } ?: strokeWidth
-            val boxHeightPx = abs(segEnd.y - segStart.y).takeIf { it > 0f } ?: strokeWidth
+            val boxWidthPx = abs(segEnd.x - segStart.x).takeIf { it > 0f } ?: strokeWidthDp.toPx()
+            val boxHeightPx = abs(segEnd.y - segStart.y).takeIf { it > 0f } ?: strokeWidthDp.toPx()
 
-            val boxWidthDp = if (isHorizontal) boxWidthPx.toDp() else strokeWidth.toDp()
-            val boxHeightDp = if (isVertical) boxHeightPx.toDp() else strokeWidth.toDp()
+            val boxWidthDp = if (isHorizontal) boxWidthPx.toDp() else strokeWidthDp
+            val boxHeightDp = if (isVertical) boxHeightPx.toDp() else strokeWidthDp
 
             val minSize = 32.dp // Ширина зоны клика
             val finalWidth = max(boxWidthDp.value, minSize.value).dp
@@ -130,7 +140,23 @@ fun CableView(
         drawPath(
             path = path,
             color = cableColor,
-            style = Stroke(width = strokeWidth)
+            style = Stroke(width = strokeWidthDp.toPx())
+        )
+    }
+
+    // Отображаем длину кабеля
+    Box(
+        modifier = Modifier.absoluteOffset {
+            IntOffset(
+                centerPoint.x.toInt() + 4.dp.toPx().toInt(),
+                centerPoint.y.toInt() - 20.dp.toPx().toInt()
+            )
+        }
+    ) {
+        Text(
+            text = "${cable.length.toString().replace(Regex("\\.?0*$"), "")}м",
+            color = Color.Red,
+            style = TextStyle(fontSize = 12.sp)
         )
     }
 }
