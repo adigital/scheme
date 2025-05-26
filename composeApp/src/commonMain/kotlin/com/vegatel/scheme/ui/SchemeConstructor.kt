@@ -17,11 +17,11 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import com.vegatel.scheme.extensions.toPx
 import com.vegatel.scheme.initialElements
 import com.vegatel.scheme.log
 import com.vegatel.scheme.model.Cable
-import com.vegatel.scheme.model.Element
 import com.vegatel.scheme.model.Element.Antenna
 import com.vegatel.scheme.model.Element.Load
 import com.vegatel.scheme.model.Element.Repeater
@@ -30,7 +30,73 @@ import com.vegatel.scheme.model.Element.Splitter3
 import com.vegatel.scheme.model.Element.Splitter4
 import com.vegatel.scheme.model.ElementMatrix
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.zIndex
+
+// Добавляем функции для расчета сигнала перед @Composable SchemeConstructor
+
+// Рассчитывает потери в кабеле
+private fun calculateCableLoss(cable: Cable): Double {
+    return (cable.length * cable.lossPerMeter)
+}
+
+// Проверяет, находится ли элемент ниже репитера
+private fun ElementMatrix.isElementBelowRepeater(elementId: Int): Boolean {
+    // Сначала найдем репитер в матрице
+    var repeaterRow = -1
+    var elementRow = -1
+
+    forEachElement { row, col, element ->
+        if (element?.id == elementId) {
+            elementRow = row
+        }
+        if (element is Repeater) {
+            repeaterRow = row
+        }
+    }
+
+    // Если нашли и элемент, и репитер, сравниваем их позиции
+    if (repeaterRow != -1 && elementRow != -1) {
+        return elementRow > repeaterRow
+    }
+
+    return false
+}
+
+// Рассчитывает суммарную мощность сигнала для элемента
+private fun ElementMatrix.calculateSignalPower(elementId: Int): Double {
+    val element = findElementById(elementId)?.let { (row, col) -> this[row, col] } ?: return 0.0
+
+    // Определяем положение элемента относительно репитера
+    val isBelowRepeater = isElementBelowRepeater(elementId)
+
+    return when {
+        // Антенна или нагрузка выше репитера - берем их собственный сигнал
+        !isBelowRepeater && (element is Antenna || element is Load) -> {
+            element.signalPower
+        }
+
+        // Для всех остальных элементов считаем входящий сигнал
+        else -> {
+            // Находим все элементы, подключенные сверху
+            var inputSignal = 0.0
+            forEachElement { row, col, connectedElement ->
+                if (connectedElement?.fetchEndElementId() == elementId) {
+                    // Получаем сигнал от подключенного элемента
+                    val sourceSignal = calculateSignalPower(connectedElement.id)
+                    // Учитываем потери в кабеле
+                    val cableLoss = calculateCableLoss(connectedElement.fetchCable())
+                    inputSignal += sourceSignal + cableLoss
+                }
+            }
+
+            // Применяем характеристики текущего элемента
+            when (element) {
+                is Splitter2, is Splitter3, is Splitter4 -> inputSignal + element.signalPower
+                is Repeater -> inputSignal + element.signalPower
+                is Antenna, is Load -> inputSignal
+            }
+        }
+    }
+}
 
 @Composable
 fun SchemeConstructor(
@@ -56,9 +122,6 @@ fun SchemeConstructor(
 
     // Состояние смещения для перетаскивания
     var dragOffset by remember { mutableStateOf(Offset.Zero) }
-
-    // Расчет сигнала на репитере
-    val signalAtRepeater = 0.0 //calculateSignalAtRepeater(elements.first(), cable)
 
     // Состояние: для какого элемента открыто меню (row, col)
     var elementMenuOpenedForIndex by remember { mutableStateOf<Pair<Int, Int>?>(null) }
@@ -103,6 +166,10 @@ fun SchemeConstructor(
                         .toInt()
                 )
 
+                // Рассчитываем мощность сигнала для текущего элемента
+                val calculatedSignalPower =
+                    element?.let { elements.calculateSignalPower(it.id) } ?: 0.0
+
                 // Рисуем элементы
                 Box(
                     modifier = Modifier.offset { elementOffset }
@@ -110,7 +177,7 @@ fun SchemeConstructor(
                     when (element) {
                         is Antenna -> {
                             AntennaView(
-                                signalPower = element.signalPower,
+                                signalPower = calculatedSignalPower,
                                 onClick = {
                                     elementMenuOpenedForIndex = row to col
                                 }
@@ -119,7 +186,7 @@ fun SchemeConstructor(
 
                         is Load -> {
                             LoadView(
-                                signalPower = element.signalPower,
+                                signalPower = calculatedSignalPower,
                                 onClick = {
                                     elementMenuOpenedForIndex = row to col
                                 }
@@ -128,7 +195,7 @@ fun SchemeConstructor(
 
                         is Splitter2 -> {
                             SplitterView(
-                                signalPower = element.signalPower,
+                                signalPower = calculatedSignalPower,
                                 onClick = {
                                     elementMenuOpenedForIndex = row to col
                                 }
@@ -137,7 +204,7 @@ fun SchemeConstructor(
 
                         is Splitter3 -> {
                             SplitterView(
-                                signalPower = element.signalPower,
+                                signalPower = calculatedSignalPower,
                                 onClick = {
                                     elementMenuOpenedForIndex = row to col
                                 }
@@ -146,7 +213,7 @@ fun SchemeConstructor(
 
                         is Splitter4 -> {
                             SplitterView(
-                                signalPower = element.signalPower,
+                                signalPower = calculatedSignalPower,
                                 onClick = {
                                     elementMenuOpenedForIndex = row to col
                                 }
@@ -155,7 +222,7 @@ fun SchemeConstructor(
 
                         is Repeater -> {
                             RepeaterView(
-                                signalPower = element.signalPower,
+                                signalPower = calculatedSignalPower,
                                 onClick = {
                                 }
                             )
@@ -173,21 +240,21 @@ fun SchemeConstructor(
                             DropdownMenuItem(onClick = {
                                 val newElements = elements.copy()
                                 val oldElement = newElements[row, col]
-                                
+
                                 // Если заменяем сплиттер на не сплиттер, удаляем подключенные элементы
                                 if (oldElement != null && (oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4)) {
                                     newElements.removeConnectedElementsAbove(oldElement.id)
                                 }
-                                
+
                                 newElements[row, col] = Antenna(
                                     id = oldElement?.id ?: newElements.generateNewId(),
                                     endElementId = oldElement?.fetchEndElementId() ?: -1,
                                     cable = oldElement?.fetchCable() ?: Cable()
                                 )
-                                
+
                                 // Оптимизируем пространство после замены
                                 newElements.optimizeSpace()
-                                
+
                                 elementMenuOpenedForIndex = null
                                 onElementsChange(newElements)
                             }) { Text("Антенна (35 дБм)") }
@@ -195,21 +262,21 @@ fun SchemeConstructor(
                             DropdownMenuItem(onClick = {
                                 val newElements = elements.copy()
                                 val oldElement = newElements[row, col]
-                                
+
                                 // Если заменяем сплиттер на нагрузку, удаляем подключенные элементы
                                 if (oldElement != null && (oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4)) {
                                     newElements.removeConnectedElementsAbove(oldElement.id)
                                 }
-                                
+
                                 newElements[row, col] = Load(
                                     id = oldElement?.id ?: newElements.generateNewId(),
                                     endElementId = oldElement?.fetchEndElementId() ?: -1,
                                     cable = oldElement?.fetchCable() ?: Cable()
                                 )
-                                
+
                                 // Оптимизируем пространство после замены
                                 newElements.optimizeSpace()
-                                
+
                                 elementMenuOpenedForIndex = null
                                 onElementsChange(newElements)
                             }) { Text("Нагрузка") }
@@ -636,7 +703,8 @@ fun SchemeConstructor(
                                         val oldElement = newElements[row, col]
                                         if (oldElement != null) {
                                             val newCable =
-                                                oldElement.fetchCable().copy(thickness = 1)
+                                                oldElement.fetchCable()
+                                                    .copy(thickness = 1, lossPerMeter = -0.5)
                                             newElements[row, col] = when (oldElement) {
                                                 is Antenna -> oldElement.copy(cable = newCable)
                                                 is Load -> oldElement.copy(cable = newCable)
@@ -648,14 +716,15 @@ fun SchemeConstructor(
                                         }
                                         cableMenuOpenedForIndex = null
                                         onElementsChange(newElements)
-                                    }) { Text("Тип1 (тонкий)") }
+                                    }) { Text("Тип1 (тонкий, -0.5 дБм)") }
 
                                     DropdownMenuItem(onClick = {
                                         val newElements = elements.copy()
                                         val oldElement = newElements[row, col]
                                         if (oldElement != null) {
                                             val newCable =
-                                                oldElement.fetchCable().copy(thickness = 2)
+                                                oldElement.fetchCable()
+                                                    .copy(thickness = 2, lossPerMeter = -1.0)
                                             newElements[row, col] = when (oldElement) {
                                                 is Antenna -> oldElement.copy(cable = newCable)
                                                 is Load -> oldElement.copy(cable = newCable)
@@ -667,14 +736,15 @@ fun SchemeConstructor(
                                         }
                                         cableMenuOpenedForIndex = null
                                         onElementsChange(newElements)
-                                    }) { Text("Тип2 (толще)") }
+                                    }) { Text("Тип2 (толще, -1 дБм)") }
 
                                     DropdownMenuItem(onClick = {
                                         val newElements = elements.copy()
                                         val oldElement = newElements[row, col]
                                         if (oldElement != null) {
                                             val newCable =
-                                                oldElement.fetchCable().copy(thickness = 3)
+                                                oldElement.fetchCable()
+                                                    .copy(thickness = 3, lossPerMeter = -1.5)
                                             newElements[row, col] = when (oldElement) {
                                                 is Antenna -> oldElement.copy(cable = newCable)
                                                 is Load -> oldElement.copy(cable = newCable)
@@ -686,7 +756,7 @@ fun SchemeConstructor(
                                         }
                                         cableMenuOpenedForIndex = null
                                         onElementsChange(newElements)
-                                    }) { Text("Тип3 (самый толстый)") }
+                                    }) { Text("Тип3 (самый толстый, -1.5 дБм)") }
                                 }
                             }
                         }

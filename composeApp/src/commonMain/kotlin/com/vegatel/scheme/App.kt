@@ -12,8 +12,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.vegatel.scheme.model.Element.Antenna
 import com.vegatel.scheme.model.Element.Repeater
-import com.vegatel.scheme.model.Element.Splitter4
 import com.vegatel.scheme.model.ElementMatrix
+import com.vegatel.scheme.model.REPEATER_ID
 import com.vegatel.scheme.model.saveElementMatrixToFile
 import com.vegatel.scheme.ui.MainMenu
 import com.vegatel.scheme.ui.SchemeConstructor
@@ -31,48 +31,18 @@ fun buildElementMatrix(
     return ElementMatrix(initialRows = rows, initialCols = cols).apply(builder)
 }
 
-val initialElements = buildElementMatrix(rows = 5, cols = 5) {
-    this[1, 0] = Antenna(
+val initialElements = buildElementMatrix(rows = 3, cols = 1) {
+    this[0, 0] = Antenna(
         id = 1,
-        endElementId = 5
+        endElementId = REPEATER_ID
     )
 
-    this[1, 1] = Antenna(
-        id = 2,
-        endElementId = 5
+    this[1, 0] = Repeater(
+        endElementId = 2
     )
 
-    this[1, 2] = Antenna(
-        id = 3,
-        endElementId = 5
-    )
-
-    this[2, 1] = Splitter4(
-        id = 5,
-        endElementId = 0,
-    )
-
-    this[0, 3] = Antenna(
-        id = 6,
-        endElementId = 8
-    )
-
-    this[0, 4] = Antenna(
-        id = 7,
-        endElementId = 8
-    )
-
-    this[1, 3] = Splitter4(
-        id = 8,
-        endElementId = 5,
-    )
-
-    this[3, 1] = Repeater(
-        endElementId = 9
-    )
-
-    this[4, 1] = Antenna(
-        id = 9
+    this[2, 0] = Antenna(
+        id = 2
     )
 }
 //

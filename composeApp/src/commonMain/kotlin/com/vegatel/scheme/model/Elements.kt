@@ -5,12 +5,13 @@ const val REPEATER_ID = 0
 sealed class Element {
 
     abstract val id: Int
+    abstract val signalPower: Double
 
     abstract override fun toString(): String
 
     data class Antenna(
         override val id: Int,
-        val signalPower: Double = 35.0,
+        override val signalPower: Double = 35.0,
         val endElementId: Int = -1,
         val cable: Cable = Cable()
     ) : Element() {
@@ -20,7 +21,7 @@ sealed class Element {
 
     data class Load(
         override val id: Int,
-        val signalPower: Double = 0.0,
+        override val signalPower: Double = 0.0,
         val endElementId: Int,
         val cable: Cable = Cable()
     ) : Element() {
@@ -30,7 +31,7 @@ sealed class Element {
 
     data class Splitter2(
         override val id: Int,
-        val signalPower: Double = -2.0,
+        override val signalPower: Double = -2.0,
         val endElementId: Int,
         val cable: Cable = Cable()
     ) : Element() {
@@ -40,7 +41,7 @@ sealed class Element {
 
     data class Splitter3(
         override val id: Int,
-        val signalPower: Double = -3.0,
+        override val signalPower: Double = -3.0,
         val endElementId: Int,
         val cable: Cable = Cable()
     ) : Element() {
@@ -50,7 +51,7 @@ sealed class Element {
 
     data class Splitter4(
         override val id: Int,
-        val signalPower: Double = -4.0,
+        override val signalPower: Double = -4.0,
         val endElementId: Int,
         val cable: Cable = Cable()
     ) : Element() {
@@ -60,7 +61,7 @@ sealed class Element {
 
     data class Repeater(
         override val id: Int = REPEATER_ID,
-        val signalPower: Double = 50.0,
+        override val signalPower: Double = 50.0,
         val endElementId: Int,
         val cable: Cable = Cable()
     ) : Element() {
@@ -75,7 +76,6 @@ sealed class Element {
             is Splitter3 -> this.id
             is Splitter4 -> this.id
             is Repeater -> this.id
-            else -> -1
         }
     }
 
@@ -87,7 +87,6 @@ sealed class Element {
             is Splitter3 -> this.endElementId
             is Splitter4 -> this.endElementId
             is Repeater -> this.endElementId
-            else -> -1
         }
     }
 
@@ -112,5 +111,5 @@ sealed class Element {
 data class Cable(
     val length: Double = 5.0,
     val thickness: Int = 1,
-    val lossPerMeter: Double = 0.5
+    val lossPerMeter: Double = -0.5
 )
