@@ -26,10 +26,10 @@ import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import scheme.composeapp.generated.resources.Res
-import scheme.composeapp.generated.resources.splitter
+import scheme.composeapp.generated.resources.combiner
 
 @Composable
-fun SplitterView(
+fun CombinerView(
     signalPower: Double,
     onClick: (IntOffset) -> Unit,
     modifier: Modifier = Modifier
@@ -70,7 +70,7 @@ fun SplitterView(
 
             Icon(
                 modifier = Modifier.size(48.dp),
-                painter = painterResource(Res.drawable.splitter),
+                painter = painterResource(Res.drawable.combiner),
                 contentDescription = "Сплитер",
                 tint = elementColor
             )
@@ -86,7 +86,7 @@ fun SplitterView(
 @Composable
 @Preview
 private fun preview() {
-    SplitterView(
+    CombinerView(
         signalPower = 35.0,
         onClick = {}
     )

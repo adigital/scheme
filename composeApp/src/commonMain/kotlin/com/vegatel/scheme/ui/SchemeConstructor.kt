@@ -35,12 +35,13 @@ import com.vegatel.scheme.extensions.toPx
 import com.vegatel.scheme.initialElements
 import com.vegatel.scheme.log
 import com.vegatel.scheme.model.Cable
+import com.vegatel.scheme.model.Element
 import com.vegatel.scheme.model.Element.Antenna
-import com.vegatel.scheme.model.Element.Load
-import com.vegatel.scheme.model.Element.Repeater
 import com.vegatel.scheme.model.Element.Combiner2
 import com.vegatel.scheme.model.Element.Combiner3
 import com.vegatel.scheme.model.Element.Combiner4
+import com.vegatel.scheme.model.Element.Load
+import com.vegatel.scheme.model.Element.Repeater
 import com.vegatel.scheme.model.ElementMatrix
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import kotlin.math.log10
@@ -142,6 +143,10 @@ private fun ElementMatrix.calculateSignalPower(elementId: Int): Double {
                 is Antenna, is Load -> {
                     inputSignals.firstOrNull() ?: 0.0
                 }
+
+                is Element.Splitter2 -> TODO()
+                is Element.Splitter3 -> TODO()
+                is Element.Splitter4 -> TODO()
             }
         }
     }
@@ -291,6 +296,9 @@ fun SchemeConstructor(
                         }
 
                         null -> Unit
+                        is Element.Splitter2 -> TODO()
+                        is Element.Splitter3 -> TODO()
+                        is Element.Splitter4 -> TODO()
                     }
 
                     // Меню для текущего элемента
@@ -802,6 +810,9 @@ fun SchemeConstructor(
                                                 is Combiner3 -> oldElement.copy(cable = newCable)
                                                 is Combiner4 -> oldElement.copy(cable = newCable)
                                                 is Repeater -> oldElement.copy(cable = newCable)
+                                                is Element.Splitter2 -> TODO()
+                                                is Element.Splitter3 -> TODO()
+                                                is Element.Splitter4 -> TODO()
                                             }
                                         }
                                         cableMenuOpenedForIndex = null
@@ -822,6 +833,9 @@ fun SchemeConstructor(
                                                 is Combiner3 -> oldElement.copy(cable = newCable)
                                                 is Combiner4 -> oldElement.copy(cable = newCable)
                                                 is Repeater -> oldElement.copy(cable = newCable)
+                                                is Element.Splitter2 -> TODO()
+                                                is Element.Splitter3 -> TODO()
+                                                is Element.Splitter4 -> TODO()
                                             }
                                         }
                                         cableMenuOpenedForIndex = null
@@ -842,6 +856,9 @@ fun SchemeConstructor(
                                                 is Combiner3 -> oldElement.copy(cable = newCable)
                                                 is Combiner4 -> oldElement.copy(cable = newCable)
                                                 is Repeater -> oldElement.copy(cable = newCable)
+                                                is Element.Splitter2 -> TODO()
+                                                is Element.Splitter3 -> TODO()
+                                                is Element.Splitter4 -> TODO()
                                             }
                                         }
                                         cableMenuOpenedForIndex = null
@@ -1123,6 +1140,9 @@ private fun handleCableLengthUpdate(
                     is Combiner3 -> oldElement.copy(cable = newCable)
                     is Combiner4 -> oldElement.copy(cable = newCable)
                     is Repeater -> oldElement.copy(cable = newCable)
+                    is Element.Splitter2 -> TODO()
+                    is Element.Splitter3 -> TODO()
+                    is Element.Splitter4 -> TODO()
                 }
                 onElementsChange(newElements)
             }

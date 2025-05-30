@@ -59,6 +59,48 @@ sealed class Element {
             "Combiner4(id=$id, endElementId=$endElementId, cable=$cable)"
     }
 
+    data class Splitter2(
+        override val id: Int,
+        override val signalPower: Double = -3.0,
+        val endElementId1: Int,
+        val endElementId2: Int,
+        val cable1: Cable = Cable(),
+        val cable2: Cable = Cable()
+    ) : Element() {
+        override fun toString(): String =
+            "Splitter2(id=$id, endElementId1=$endElementId1, endElementId2=$endElementId2, cable1=$cable1, cable2=$cable2)"
+    }
+
+    data class Splitter3(
+        override val id: Int,
+        override val signalPower: Double = -4.8,
+        val endElementId1: Int,
+        val endElementId2: Int,
+        val endElementId3: Int,
+        val cable1: Cable = Cable(),
+        val cable2: Cable = Cable(),
+        val cable3: Cable = Cable()
+    ) : Element() {
+        override fun toString(): String =
+            "Splitter3(id=$id, endElementId1=$endElementId1, endElementId2=$endElementId2, endElementId3=$endElementId3, cable1=$cable1, cable2=$cable2, cable3=$cable3)"
+    }
+
+    data class Splitter4(
+        override val id: Int,
+        override val signalPower: Double = -6.0,
+        val endElementId1: Int,
+        val endElementId2: Int,
+        val endElementId3: Int,
+        val endElementId4: Int,
+        val cable1: Cable = Cable(),
+        val cable2: Cable = Cable(),
+        val cable3: Cable = Cable(),
+        val cable4: Cable = Cable(),
+    ) : Element() {
+        override fun toString(): String =
+            "Splitter4(id=$id, endElementId1=$endElementId1, endElementId2=$endElementId2, endElementId3=$endElementId3, endElementId4=$endElementId4, cable1=$cable1, cable2=$cable2, cable3=$cable3, cable4=$cable4)"
+    }
+
     data class Repeater(
         override val id: Int = REPEATER_ID,
         override val signalPower: Double = 50.0,
@@ -76,6 +118,9 @@ sealed class Element {
             is Combiner3 -> this.id
             is Combiner4 -> this.id
             is Repeater -> this.id
+            is Splitter2 -> TODO()
+            is Splitter3 -> TODO()
+            is Splitter4 -> TODO()
         }
     }
 
@@ -87,6 +132,9 @@ sealed class Element {
             is Combiner3 -> this.endElementId
             is Combiner4 -> this.endElementId
             is Repeater -> this.endElementId
+            is Splitter2 -> TODO()
+            is Splitter3 -> TODO()
+            is Splitter4 -> TODO()
         }
     }
 
@@ -98,6 +146,9 @@ sealed class Element {
             is Combiner3 -> this.cable
             is Combiner4 -> this.cable
             is Repeater -> this.cable
+            is Splitter2 -> TODO()
+            is Splitter3 -> TODO()
+            is Splitter4 -> TODO()
         }
     }
 
