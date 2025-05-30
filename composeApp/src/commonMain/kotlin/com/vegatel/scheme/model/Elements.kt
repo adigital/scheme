@@ -29,34 +29,34 @@ sealed class Element {
             "Load(id=$id, signalPower=$signalPower, endElementId=$endElementId, cable=$cable)"
     }
 
-    data class Splitter2(
+    data class Combiner2(
         override val id: Int,
         override val signalPower: Double = -3.0,
         val endElementId: Int,
         val cable: Cable = Cable()
     ) : Element() {
         override fun toString(): String =
-            "Splitter2(id=$id, endElementId=$endElementId, cable=$cable)"
+            "Combiner2(id=$id, endElementId=$endElementId, cable=$cable)"
     }
 
-    data class Splitter3(
+    data class Combiner3(
         override val id: Int,
         override val signalPower: Double = -4.8,
         val endElementId: Int,
         val cable: Cable = Cable()
     ) : Element() {
         override fun toString(): String =
-            "Splitter3(id=$id, endElementId=$endElementId, cable=$cable)"
+            "Combiner3(id=$id, endElementId=$endElementId, cable=$cable)"
     }
 
-    data class Splitter4(
+    data class Combiner4(
         override val id: Int,
         override val signalPower: Double = -6.0,
         val endElementId: Int,
         val cable: Cable = Cable()
     ) : Element() {
         override fun toString(): String =
-            "Splitter4(id=$id, endElementId=$endElementId, cable=$cable)"
+            "Combiner4(id=$id, endElementId=$endElementId, cable=$cable)"
     }
 
     data class Repeater(
@@ -72,9 +72,9 @@ sealed class Element {
         return when (this) {
             is Antenna -> this.id
             is Load -> this.id
-            is Splitter2 -> this.id
-            is Splitter3 -> this.id
-            is Splitter4 -> this.id
+            is Combiner2 -> this.id
+            is Combiner3 -> this.id
+            is Combiner4 -> this.id
             is Repeater -> this.id
         }
     }
@@ -83,9 +83,9 @@ sealed class Element {
         return when (this) {
             is Antenna -> this.endElementId
             is Load -> this.endElementId
-            is Splitter2 -> this.endElementId
-            is Splitter3 -> this.endElementId
-            is Splitter4 -> this.endElementId
+            is Combiner2 -> this.endElementId
+            is Combiner3 -> this.endElementId
+            is Combiner4 -> this.endElementId
             is Repeater -> this.endElementId
         }
     }
@@ -94,18 +94,18 @@ sealed class Element {
         return when (this) {
             is Antenna -> this.cable
             is Load -> this.cable
-            is Splitter2 -> this.cable
-            is Splitter3 -> this.cable
-            is Splitter4 -> this.cable
+            is Combiner2 -> this.cable
+            is Combiner3 -> this.cable
+            is Combiner4 -> this.cable
             is Repeater -> this.cable
         }
     }
 
-    fun isSplitter(): Boolean = this is Splitter2 || this is Splitter3 || this is Splitter4
+    fun isCombiner(): Boolean = this is Combiner2 || this is Combiner3 || this is Combiner4
 
     fun isRepeater(): Boolean = this is Repeater
 
-    fun isHalfShiftRender(): Boolean = this is Splitter2 || this is Splitter4
+    fun isHalfShiftRender(): Boolean = this is Combiner2 || this is Combiner4
 }
 
 data class Cable(

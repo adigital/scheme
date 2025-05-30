@@ -50,8 +50,8 @@ fun ElementMatrix.toSerializable(): SerializableElementMatrix {
                         )
                     )
 
-                    is Element.Splitter2 -> SerializableElement(
-                        "Splitter2", element.id, element.signalPower, element.endElementId,
+                    is Element.Combiner2 -> SerializableElement(
+                        "Combiner2", element.id, element.signalPower, element.endElementId,
                         SerializableCable(
                             element.cable.length,
                             element.cable.thickness,
@@ -59,8 +59,8 @@ fun ElementMatrix.toSerializable(): SerializableElementMatrix {
                         )
                     )
 
-                    is Element.Splitter3 -> SerializableElement(
-                        "Splitter3", element.id, element.signalPower, element.endElementId,
+                    is Element.Combiner3 -> SerializableElement(
+                        "Combiner3", element.id, element.signalPower, element.endElementId,
                         SerializableCable(
                             element.cable.length,
                             element.cable.thickness,
@@ -68,8 +68,8 @@ fun ElementMatrix.toSerializable(): SerializableElementMatrix {
                         )
                     )
 
-                    is Element.Splitter4 -> SerializableElement(
-                        "Splitter4", element.id, element.signalPower, element.endElementId,
+                    is Element.Combiner4 -> SerializableElement(
+                        "Combiner4", element.id, element.signalPower, element.endElementId,
                         SerializableCable(
                             element.cable.length,
                             element.cable.thickness,
@@ -121,21 +121,21 @@ fun SerializableElementMatrix.toElementMatrix(): ElementMatrix {
                     cable
                 )
 
-                "Splitter2" -> Element.Splitter2(
+                "Combiner2" -> Element.Combiner2(
                     e.id,
                     e.signalPower ?: -2.0,
                     e.endElementId ?: -1,
                     cable
                 )
 
-                "Splitter3" -> Element.Splitter3(
+                "Combiner3" -> Element.Combiner3(
                     e.id,
                     e.signalPower ?: -3.0,
                     e.endElementId ?: -1,
                     cable
                 )
 
-                "Splitter4" -> Element.Splitter4(
+                "Combiner4" -> Element.Combiner4(
                     e.id,
                     e.signalPower ?: -4.0,
                     e.endElementId ?: -1,

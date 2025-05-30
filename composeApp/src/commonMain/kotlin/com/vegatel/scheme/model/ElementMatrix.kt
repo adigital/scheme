@@ -112,8 +112,8 @@ class ElementMatrix(
 
         forEachElement { row, col, element ->
             if (element?.isHalfShiftRender() == true &&
-                ((element is Element.Splitter2 && element.endElementId == REPEATER_ID) ||
-                        element is Element.Splitter4 && element.endElementId == REPEATER_ID)
+                ((element is Element.Combiner2 && element.endElementId == REPEATER_ID) ||
+                        element is Element.Combiner4 && element.endElementId == REPEATER_ID)
             ) {
                 result = true
                 return@forEachElement
@@ -169,18 +169,18 @@ class ElementMatrix(
             row.add(null)
         }
 
-        // Собираем информацию о сплиттерах и их связанных элементах
-        val splitterConnections = mutableMapOf<Int, List<Triple<Int, Int, Element>>>()
+        // Собираем информацию о сумматорах и их связанных элементах
+        val combinerConnections = mutableMapOf<Int, List<Triple<Int, Int, Element>>>()
 
-        // Находим все сплиттеры в сдвигаемой области и их связанные элементы
+        // Находим все сумматоры в сдвигаемой области и их связанные элементы
         forEachElement { row, col, element ->
-            if (row in startRow..endRow && col >= fromCol && element is Element.Splitter2) {
-                splitterConnections[element.id] = findConnectedElements(element.id)
+            if (row in startRow..endRow && col >= fromCol && element is Element.Combiner2) {
+                combinerConnections[element.id] = findConnectedElements(element.id)
             }
         }
 
         // Сначала удаляем все связанные элементы
-        splitterConnections.values.flatten().forEach { (row, col, _) ->
+        combinerConnections.values.flatten().forEach { (row, col, _) ->
             matrix[row][col] = null
         }
 
@@ -193,17 +193,17 @@ class ElementMatrix(
         }
 
         // Восстанавливаем связанные элементы в новых позициях
-        splitterConnections.forEach { (splitterId, connectedElements) ->
-            // Находим новую позицию сплиттера
-            val splitterPos = findElementById(splitterId) ?: return@forEach
-            val (_, splitterCol) = splitterPos
+        combinerConnections.forEach { (combinerId, connectedElements) ->
+            // Находим новую позицию сумматора
+            val combinerPos = findElementById(combinerId) ?: return@forEach
+            val (_, combinerCol) = combinerPos
 
             // Для каждого связанного элемента вычисляем новую позицию
             connectedElements.forEach { (originalRow, originalCol, element) ->
-                // Определяем смещение относительно сплиттера
-                val colOffset = originalCol - (splitterCol - 1)
+                // Определяем смещение относительно сумматора
+                val colOffset = originalCol - (combinerCol - 1)
                 // Размещаем элемент в новой позиции
-                matrix[originalRow][splitterCol + colOffset - 1] = element
+                matrix[originalRow][combinerCol + colOffset - 1] = element
             }
         }
     }
