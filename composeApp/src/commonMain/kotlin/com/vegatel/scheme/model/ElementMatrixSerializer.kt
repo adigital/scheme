@@ -85,6 +85,33 @@ fun ElementMatrix.toSerializable(): SerializableElementMatrix {
                             element.cable.lossPerMeter
                         )
                     )
+
+                    is Element.Splitter2 -> SerializableElement(
+                        "Splitter2", element.id, element.signalPower, element.endElementId,
+                        SerializableCable(
+                            element.cable.length,
+                            element.cable.thickness,
+                            element.cable.lossPerMeter
+                        )
+                    )
+
+                    is Element.Splitter3 -> SerializableElement(
+                        "Splitter3", element.id, element.signalPower, element.endElementId,
+                        SerializableCable(
+                            element.cable.length,
+                            element.cable.thickness,
+                            element.cable.lossPerMeter
+                        )
+                    )
+
+                    is Element.Splitter4 -> SerializableElement(
+                        "Splitter4", element.id, element.signalPower, element.endElementId,
+                        SerializableCable(
+                            element.cable.length,
+                            element.cable.thickness,
+                            element.cable.lossPerMeter
+                        )
+                    )
                 }
             })
         }
@@ -123,21 +150,21 @@ fun SerializableElementMatrix.toElementMatrix(): ElementMatrix {
 
                 "Combiner2" -> Element.Combiner2(
                     e.id,
-                    e.signalPower ?: -2.0,
+                    e.signalPower ?: -3.0,
                     e.endElementId ?: -1,
                     cable
                 )
 
                 "Combiner3" -> Element.Combiner3(
                     e.id,
-                    e.signalPower ?: -3.0,
+                    e.signalPower ?: -4.8,
                     e.endElementId ?: -1,
                     cable
                 )
 
                 "Combiner4" -> Element.Combiner4(
                     e.id,
-                    e.signalPower ?: -4.0,
+                    e.signalPower ?: -6.0,
                     e.endElementId ?: -1,
                     cable
                 )
@@ -145,6 +172,27 @@ fun SerializableElementMatrix.toElementMatrix(): ElementMatrix {
                 "Repeater" -> Element.Repeater(
                     e.id,
                     e.signalPower ?: 50.0,
+                    e.endElementId ?: -1,
+                    cable
+                )
+
+                "Splitter2" -> Element.Splitter2(
+                    e.id,
+                    e.signalPower ?: -3.0,
+                    e.endElementId ?: -1,
+                    cable
+                )
+
+                "Splitter3" -> Element.Splitter3(
+                    e.id,
+                    e.signalPower ?: -4.8,
+                    e.endElementId ?: -1,
+                    cable
+                )
+
+                "Splitter4" -> Element.Splitter4(
+                    e.id,
+                    e.signalPower ?: -6.0,
                     e.endElementId ?: -1,
                     cable
                 )

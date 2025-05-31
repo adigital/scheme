@@ -64,10 +64,6 @@ class ElementMatrix(
         }
     }
 
-    fun clear() {
-        matrix.clear()
-    }
-
     fun forEachElement(action: (row: Int, col: Int, element: Element?) -> Unit) {
         for (rowIndex in matrix.indices) {
             for (colIndex in matrix[rowIndex].indices) {
@@ -113,7 +109,9 @@ class ElementMatrix(
         forEachElement { row, col, element ->
             if (element?.isHalfShiftRender() == true &&
                 ((element is Element.Combiner2 && element.endElementId == REPEATER_ID) ||
-                        element is Element.Combiner4 && element.endElementId == REPEATER_ID)
+                        (element is Element.Combiner4 && element.endElementId == REPEATER_ID) ||
+                        (element is Element.Splitter2 && element.id == getNextForRepeaterElementId()) ||
+                        (element is Element.Splitter4 && element.id == getNextForRepeaterElementId()))
             ) {
                 result = true
                 return@forEachElement
@@ -142,69 +140,6 @@ class ElementMatrix(
             false
         } else {
             matrix[row][col] != null
-        }
-    }
-
-    // Находит все элементы, подключенные к указанному элементу (с endElementId = elementId)
-    fun findConnectedElements(elementId: Int): List<Triple<Int, Int, Element>> {
-        val result = mutableListOf<Triple<Int, Int, Element>>()
-        forEachElement { row, col, element ->
-            if (element != null && element.fetchEndElementId() == elementId) {
-                result.add(Triple(row, col, element))
-            }
-        }
-        return result
-    }
-
-    // Сдвигает элементы вправо в указанном диапазоне строк с учетом связанных элементов
-    fun shiftElementsRightInRows(fromCol: Int, startRow: Int, endRow: Int = rowCount - 1) {
-        // Проверяем, нужно ли увеличить матрицу
-        if (colCount == 0) {
-            insertCol(0)
-            return
-        }
-
-        // Добавляем столбец в конец
-        for (row in matrix) {
-            row.add(null)
-        }
-
-        // Собираем информацию о сумматорах и их связанных элементах
-        val combinerConnections = mutableMapOf<Int, List<Triple<Int, Int, Element>>>()
-
-        // Находим все сумматоры в сдвигаемой области и их связанные элементы
-        forEachElement { row, col, element ->
-            if (row in startRow..endRow && col >= fromCol && element is Element.Combiner2) {
-                combinerConnections[element.id] = findConnectedElements(element.id)
-            }
-        }
-
-        // Сначала удаляем все связанные элементы
-        combinerConnections.values.flatten().forEach { (row, col, _) ->
-            matrix[row][col] = null
-        }
-
-        // Сдвигаем элементы вправо
-        for (row in startRow..endRow) {
-            for (col in (colCount - 2) downTo fromCol) {
-                matrix[row][col + 1] = matrix[row][col]
-                matrix[row][col] = null
-            }
-        }
-
-        // Восстанавливаем связанные элементы в новых позициях
-        combinerConnections.forEach { (combinerId, connectedElements) ->
-            // Находим новую позицию сумматора
-            val combinerPos = findElementById(combinerId) ?: return@forEach
-            val (_, combinerCol) = combinerPos
-
-            // Для каждого связанного элемента вычисляем новую позицию
-            connectedElements.forEach { (originalRow, originalCol, element) ->
-                // Определяем смещение относительно сумматора
-                val colOffset = originalCol - (combinerCol - 1)
-                // Размещаем элемент в новой позиции
-                matrix[originalRow][combinerCol + colOffset - 1] = element
-            }
         }
     }
 
