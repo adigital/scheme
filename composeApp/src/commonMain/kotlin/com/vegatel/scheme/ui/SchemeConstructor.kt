@@ -769,9 +769,13 @@ fun SchemeConstructor(
                 val cable = element?.fetchCable()
 
                 if (cable != null) {
+                    val isElementBelowRepeater = elements.isElementBelowRepeater(element.id)
+
                     // Получаем координаты первого и второго элемента по id
-                    val startElement = elements.findElementById(element.fetchTopElementId())
-                    val endElement = elements.findElementById(element.fetchEndElementId())
+                    val startElement =
+                        elements.findElementById(if (isElementBelowRepeater) element.fetchEndElementId() else element.fetchTopElementId())
+                    val endElement =
+                        elements.findElementById(if (isElementBelowRepeater) element.fetchTopElementId() else element.fetchEndElementId())
 
                     if (startElement != null && endElement != null) {
                         val (startRow, startCol) = startElement
@@ -781,15 +785,24 @@ fun SchemeConstructor(
                         val endElementInstance = elements[endElement.first, endElement.second]
 
                         val isShiftCableLeft =
-                            endElementInstance?.isHalfShiftRender() == true &&
+                            (endElementInstance?.isHalfShiftRender() == true &&
                                     (startElement.second == endElement.second) &&
                                     startElementInstance?.isHalfShiftRender() == false &&
-                                    endElementInstance.isSplitter() == false
+                                    endElementInstance.isSplitter() == false) ||
+
+                                    (startElementInstance?.isHalfShiftRender() == true &&
+                                            (startElement.second == endElement.second) &&
+                                            startElementInstance.isSplitter() == true)
+
                         val isShiftCableRight =
-                            endElementInstance?.isHalfShiftRender() == true &&
+                            (endElementInstance?.isHalfShiftRender() == true &&
                                     (startElement.second == endElement.second + 1)
                                     && startElementInstance?.isHalfShiftRender() == false &&
-                                    endElementInstance.isSplitter() == false
+                                    endElementInstance.isSplitter() == false) ||
+
+                                    (startElementInstance?.isHalfShiftRender() == true &&
+                                            (startElement.second + 1 == endElement.second) &&
+                                            startElementInstance.isSplitter() == true)
 
                         log("TEST", "$startElement, - $endElement")
                         log(
@@ -807,8 +820,20 @@ fun SchemeConstructor(
                         // Горизонтальный сдвиг верхней точки подключения кабеля
                         val startHorizontalOffsetDp =
                             when {
-                                (startElementInstance?.isHalfShiftRender() == true) or (startElementInstance?.isRepeater() == true && isRepeaterHalfShiftRender) -> {
-                                    48.dp.toPx()
+                                (startElementInstance?.isHalfShiftRender() == true) ||
+                                        (startElementInstance?.isRepeater() == true && isRepeaterHalfShiftRender) -> {
+                                    48.dp.toPx() +
+                                            when {
+                                                isShiftCableLeft -> {
+                                                    -4.dp.toPx()
+                                                }
+
+                                                isShiftCableRight -> {
+                                                    4.dp.toPx()
+                                                }
+
+                                                else -> 0.dp.toPx()
+                                            }
                                 }
 
                                 else -> 0.dp.toPx()
@@ -817,7 +842,7 @@ fun SchemeConstructor(
                         // Горизонтальный сдвиг нижней точки подключения кабеля
                         val endHorizontalOffsetDp =
                             when {
-                                endElementInstance?.isHalfShiftRender() == true ||
+                                (endElementInstance?.isHalfShiftRender() == true) ||
                                         (endElementInstance?.isRepeater() == true && isRepeaterHalfShiftRender) ||
                                         (endElementInstance?.id == nextForRepeaterElementId && isRepeaterHalfShiftRender) -> {
                                     48.dp.toPx() +
@@ -846,10 +871,7 @@ fun SchemeConstructor(
                         val startCenter = Offset(
                             x = paddingHorizontal + startCol * 2 * elementWidth + elementWidth / 2 + startHorizontalOffsetDp,
                             y = paddingVertical + startRow * 2 * elementHeight +
-                                    if (endElementInstance != null && elements.isElementBelowRepeater(
-                                            endElementInstance.id
-                                        )
-                                    ) 0.0f else elementHeight
+                                    elementHeight
                         )
 
                         val endCenter = Offset(
@@ -861,7 +883,8 @@ fun SchemeConstructor(
                             start = startCenter,
                             end = endCenter,
                             isTwoCorners = isShiftCableLeft || isShiftCableRight ||
-                                    (endElementInstance is Repeater && isRepeaterHalfShiftRender),
+                                    (endElementInstance is Repeater && isRepeaterHalfShiftRender) ||
+                                    (startElementInstance?.isHalfShiftRender() == true),
                             cable = cable,
                             onClick = {
                                 cableMenuOpenedForIndex = row to col
