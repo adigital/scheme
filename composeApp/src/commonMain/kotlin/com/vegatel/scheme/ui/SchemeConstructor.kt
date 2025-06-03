@@ -270,7 +270,7 @@ fun SchemeConstructor(
                         }
 
                         is Splitter2 -> {
-                            CombinerView(
+                            SplitterView(
                                 signalPower = calculatedSignalPower,
                                 onClick = {
                                     elementMenuOpenedForIndex = row to col
@@ -279,7 +279,7 @@ fun SchemeConstructor(
                         }
 
                         is Splitter3 -> {
-                            CombinerView(
+                            SplitterView(
                                 signalPower = calculatedSignalPower,
                                 onClick = {
                                     elementMenuOpenedForIndex = row to col
@@ -288,7 +288,7 @@ fun SchemeConstructor(
                         }
 
                         is Splitter4 -> {
-                            CombinerView(
+                            SplitterView(
                                 signalPower = calculatedSignalPower,
                                 onClick = {
                                     elementMenuOpenedForIndex = row to col

@@ -71,7 +71,7 @@ fun SplitterView(
             Icon(
                 modifier = Modifier.size(48.dp),
                 painter = painterResource(Res.drawable.splitter),
-                contentDescription = "Сплитер",
+                contentDescription = "Сплиттер",
                 tint = elementColor
             )
         }
