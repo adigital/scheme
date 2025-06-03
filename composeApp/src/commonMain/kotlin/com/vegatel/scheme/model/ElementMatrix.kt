@@ -175,4 +175,27 @@ class ElementMatrix(
         }
         return maxId + 1
     }
+
+    // Проверяет, находится ли элемент ниже репитера
+    fun isElementBelowRepeater(elementId: Int): Boolean {
+        // Сначала найдем репитер в матрице
+        var repeaterRow = -1
+        var elementRow = -1
+
+        forEachElement { row, col, element ->
+            if (element?.id == elementId) {
+                elementRow = row
+            }
+            if (element is Element.Repeater) {
+                repeaterRow = row
+            }
+        }
+
+        // Если нашли и элемент, и репитер, сравниваем их позиции
+        if (repeaterRow != -1 && elementRow != -1) {
+            return elementRow > repeaterRow
+        }
+
+        return false
+    }
 }

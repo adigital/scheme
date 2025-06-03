@@ -1,6 +1,7 @@
 package com.vegatel.scheme.ui
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.absoluteOffset
@@ -100,6 +101,7 @@ fun CableView(
                 modifier = Modifier
                     .offset { IntOffset(offsetX, offsetY) }
                     .size(finalWidth, finalHeight)
+                    .background(Color(0x88FF00FF)) // Фон кликабельной зоны
                     .pointerInput(Unit) {
                         detectTapGestures { offset ->
                             onClick(IntOffset(offset.x.toInt(), offset.y.toInt()))

@@ -56,29 +56,6 @@ private fun calculateCableLoss(cable: Cable): Double {
     return (cable.length * cable.lossPerMeter)
 }
 
-// Проверяет, находится ли элемент ниже репитера
-private fun ElementMatrix.isElementBelowRepeater(elementId: Int): Boolean {
-    // Сначала найдем репитер в матрице
-    var repeaterRow = -1
-    var elementRow = -1
-
-    forEachElement { row, col, element ->
-        if (element?.id == elementId) {
-            elementRow = row
-        }
-        if (element is Repeater) {
-            repeaterRow = row
-        }
-    }
-
-    // Если нашли и элемент, и репитер, сравниваем их позиции
-    if (repeaterRow != -1 && elementRow != -1) {
-        return elementRow > repeaterRow
-    }
-
-    return false
-}
-
 // Конвертация дБм в милливатты
 private fun dBmToMw(dBm: Double): Double {
     return 10.0.pow(dBm / 10.0)
@@ -793,11 +770,8 @@ fun SchemeConstructor(
 
                 if (cable != null) {
                     // Получаем координаты первого и второго элемента по id
-                    val topElementId = element.fetchTopElementId()
-                    val endElementId = element.fetchEndElementId()
-
-                    val startElement = elements.findElementById(topElementId)
-                    val endElement = elements.findElementById(endElementId)
+                    val startElement = elements.findElementById(element.fetchTopElementId())
+                    val endElement = elements.findElementById(element.fetchEndElementId())
 
                     if (startElement != null && endElement != null) {
                         val (startRow, startCol) = startElement
@@ -863,13 +837,19 @@ fun SchemeConstructor(
                                 else -> 0.dp.toPx()
                             }
 
-                        // Вертикальный сдвиг нижней точки подключения кабеля для сумматора
+                        // Вертикальный сдвиг конечной точки подключения кабеля для сумматора
                         val endVerticalOffsetDp =
-                            if (endElementInstance?.isCombiner() == true && !(isShiftCableLeft || isShiftCableRight)) 9.75.dp.toPx() else 0.0f
+                            if ((endElementInstance?.isCombiner() == true && !(isShiftCableLeft || isShiftCableRight)) ||
+                                endElementInstance?.isSplitter() == true
+                            ) 9.75.dp.toPx() else 0.0f
 
                         val startCenter = Offset(
                             x = paddingHorizontal + startCol * 2 * elementWidth + elementWidth / 2 + startHorizontalOffsetDp,
-                            y = paddingVertical + startRow * 2 * elementHeight + elementHeight
+                            y = paddingVertical + startRow * 2 * elementHeight +
+                                    if (endElementInstance != null && elements.isElementBelowRepeater(
+                                            endElementInstance.id
+                                        )
+                                    ) 0.0f else elementHeight
                         )
 
                         val endCenter = Offset(

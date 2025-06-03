@@ -10,26 +10,10 @@
         android:strokeColor="#000000"
         android:strokeLineJoin="round" />
 
-        <path
-            android:fillColor="#ffffff"
-            android:fillType="nonZero"
-            android:pathData="M41,4L23,36"
-            android:strokeWidth="1"
-            android:strokeColor="#000000"
-            android:strokeLineCap="round" />
-
     <path
         android:fillColor="#ffffff"
         android:fillType="nonZero"
-        android:pathData="M41,39L23,39"
-        android:strokeWidth="2"
-        android:strokeColor="#000000"
-        android:strokeLineCap="round" />
-
-    <path
-        android:fillColor="#ffffff"
-        android:fillType="nonZero"
-        android:pathData="M23,42L41,60"
+        android:pathData="M23,4L41,22"
         android:strokeWidth="1"
         android:strokeColor="#000000"
         android:strokeLineCap="round" />
@@ -37,7 +21,23 @@
     <path
         android:fillColor="#ffffff"
         android:fillType="nonZero"
-        android:pathData="M41,42L23,60"
+        android:pathData="M41,4L23,22"
+        android:strokeWidth="1"
+        android:strokeColor="#000000"
+        android:strokeLineCap="round" />
+
+    <path
+        android:fillColor="#ffffff"
+        android:fillType="nonZero"
+        android:pathData="M41,25L23,25"
+        android:strokeWidth="2"
+        android:strokeColor="#000000"
+        android:strokeLineCap="round" />
+
+    <path
+        android:fillColor="#ffffff"
+        android:fillType="nonZero"
+        android:pathData="M41,28L23,60"
         android:strokeWidth="1"
         android:strokeColor="#000000"
         android:strokeLineCap="round" />
