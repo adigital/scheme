@@ -865,7 +865,7 @@ fun SchemeConstructor(
                                     }
 
                                     // Обновляем позицию сплиттера после всех сдвигов
-                                    newElements[row, currentCol] = Combiner3(
+                                    newElements[row, currentCol] = Splitter3(
                                         id = splitterId,
                                         endElementId = element?.fetchEndElementId() ?: -1,
                                         cable = element?.fetchCable() ?: Cable()
@@ -1079,7 +1079,7 @@ fun SchemeConstructor(
                         val paddingHorizontal = 24.dp.toPx()
                         val paddingVertical = 24.dp.toPx()
 
-                        // Горизонтальный сдвиг верхней точки подключения кабеля
+                        // Горизонтальный сдвиг начальной точки подключения кабеля
                         val startHorizontalOffsetDp =
                             when {
                                 (startElementInstance?.isHalfShiftRender() == true) ||
@@ -1101,7 +1101,11 @@ fun SchemeConstructor(
                                 else -> 0.dp.toPx()
                             }
 
-                        // Горизонтальный сдвиг нижней точки подключения кабеля
+                        // Вертикальный сдвиг начальной точки подключения кабеля для сплиттера
+                        val startVerticalOffsetDp =
+                            if (startElementInstance is Splitter3 && startElement.second != endElement.second) (-64 + 9.75).dp.toPx() else 0.dp.toPx()
+
+                        // Горизонтальный сдвиг конечной точки подключения кабеля
                         val endHorizontalOffsetDp =
                             when {
                                 (endElementInstance?.isHalfShiftRender() == true) ||
@@ -1132,8 +1136,7 @@ fun SchemeConstructor(
 
                         val startCenter = Offset(
                             x = paddingHorizontal + startCol * 2 * elementWidth + elementWidth / 2 + startHorizontalOffsetDp,
-                            y = paddingVertical + startRow * 2 * elementHeight +
-                                    elementHeight
+                            y = paddingVertical + startRow * 2 * elementHeight + elementHeight + startVerticalOffsetDp
                         )
 
                         val endCenter = Offset(
@@ -1147,6 +1150,7 @@ fun SchemeConstructor(
                             isTwoCorners = isShiftCableLeft || isShiftCableRight ||
                                     (endElementInstance is Repeater && isRepeaterHalfShiftRender) ||
                                     (startElementInstance?.isHalfShiftRender() == true),
+                            isSideThenDown = startElementInstance?.isSplitter() == true,
                             cable = cable,
                             onClick = {
                                 cableMenuOpenedForIndex = row to col

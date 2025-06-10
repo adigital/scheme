@@ -36,6 +36,7 @@ fun CableView(
     start: Offset,
     end: Offset,
     isTwoCorners: Boolean = false,
+    isSideThenDown: Boolean = false,
     cable: Cable,
     modifier: Modifier = Modifier,
     onClick: (IntOffset) -> Unit
@@ -56,18 +57,29 @@ fun CableView(
     var isRed by remember { mutableStateOf(false) }
 
     // Вычисляем сегменты линии и центральные точки
-    val segments = if (isTwoCorners) {
-        val midY = (start.y + end.y) / 2
-        listOf(
-            Pair(start, Offset(start.x, midY)),
-            Pair(Offset(start.x, midY), Offset(end.x, midY)),
-            Pair(Offset(end.x, midY), end)
-        )
-    } else {
-        listOf(
-            Pair(start, Offset(start.x, end.y)),
-            Pair(Offset(start.x, end.y), end)
-        )
+    val segments = when {
+        isTwoCorners -> {
+            val midY = (start.y + end.y) / 2
+            listOf(
+                Pair(start, Offset(start.x, midY)),
+                Pair(Offset(start.x, midY), Offset(end.x, midY)),
+                Pair(Offset(end.x, midY), end)
+            )
+        }
+
+        isSideThenDown -> {
+            listOf(
+                Pair(start, Offset(end.x, start.y)),
+                Pair(Offset(end.x, start.y), end)
+            )
+        }
+
+        else -> {
+            listOf(
+                Pair(start, Offset(start.x, end.y)),
+                Pair(Offset(start.x, end.y), end)
+            )
+        }
     }
 
     // Находим центральную точку для текста
@@ -128,14 +140,23 @@ fun CableView(
     Canvas(modifier = modifier) {
         val path = Path().apply {
             moveTo(start.x, start.y)
-            if (isTwoCorners) {
-                val midY = (start.y + end.y) / 2
-                lineTo(start.x, midY)
-                lineTo(end.x, midY)
-                lineTo(end.x, end.y)
-            } else {
-                lineTo(start.x, end.y)
-                lineTo(end.x, end.y)
+            when {
+                isTwoCorners -> {
+                    val midY = (start.y + end.y) / 2
+                    lineTo(start.x, midY)
+                    lineTo(end.x, midY)
+                    lineTo(end.x, end.y)
+                }
+
+                isSideThenDown -> {
+                    lineTo(end.x, start.y)
+                    lineTo(end.x, end.y)
+                }
+
+                else -> {
+                    lineTo(start.x, end.y)
+                    lineTo(end.x, end.y)
+                }
             }
         }
 
