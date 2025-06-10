@@ -195,6 +195,7 @@ fun SchemeConstructor(
             Modifier.size(width.dp, height.dp)
         ) {
             elements.forEachElementComposable { row, col, element ->
+                // Рисуем элементы
                 val elementOffset = IntOffset(
                     paddingHorizontalDp.dp.toPx().toInt() + col * 2 * elementWidthDp.dp.toPx()
                         .toInt() +
@@ -210,9 +211,10 @@ fun SchemeConstructor(
                 val calculatedSignalPower =
                     element?.let { elements.calculateSignalPower(it.id) } ?: 0.0
 
-                // Рисуем элементы
                 Box(
-                    modifier = Modifier.offset { elementOffset }
+                    modifier = Modifier
+                        .zIndex(1f)
+                        .offset { elementOffset }
                 ) {
                     when (element) {
                         is Antenna -> {
