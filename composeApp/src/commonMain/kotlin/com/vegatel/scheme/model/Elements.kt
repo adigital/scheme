@@ -36,7 +36,7 @@ sealed class Element {
         val cable: Cable = Cable()
     ) : Element() {
         override fun toString(): String =
-            "Combiner2(id=$id, endElementId=$endElementId, cable=$cable)"
+            "Combiner2(id=$id, signalPower=$signalPower, endElementId=$endElementId, cable=$cable)"
     }
 
     data class Combiner3(
@@ -46,7 +46,7 @@ sealed class Element {
         val cable: Cable = Cable()
     ) : Element() {
         override fun toString(): String =
-            "Combiner3(id=$id, endElementId=$endElementId, cable=$cable)"
+            "Combiner3(id=$id, signalPower=$signalPower, endElementId=$endElementId, cable=$cable)"
     }
 
     data class Combiner4(
@@ -56,7 +56,7 @@ sealed class Element {
         val cable: Cable = Cable()
     ) : Element() {
         override fun toString(): String =
-            "Combiner4(id=$id, endElementId=$endElementId, cable=$cable)"
+            "Combiner4(id=$id, signalPower=$signalPower, endElementId=$endElementId, cable=$cable)"
     }
 
     data class Splitter2(
@@ -66,7 +66,7 @@ sealed class Element {
         val cable: Cable = Cable()
     ) : Element() {
         override fun toString(): String =
-            "Splitter2(id=$id, endElementId=$endElementId, cable=$cable)"
+            "Splitter2(id=$id, signalPower=$signalPower, endElementId=$endElementId, cable=$cable)"
     }
 
     data class Splitter3(
@@ -76,7 +76,7 @@ sealed class Element {
         val cable: Cable = Cable()
     ) : Element() {
         override fun toString(): String =
-            "Splitter3(id=$id, endElementId=$endElementId, cable=$cable)"
+            "Splitter3(id=$id, signalPower=$signalPower, endElementId=$endElementId, cable=$cable)"
     }
 
     data class Splitter4(
@@ -86,7 +86,7 @@ sealed class Element {
         val cable: Cable = Cable()
     ) : Element() {
         override fun toString(): String =
-            "Splitter4(id=$id, endElementId=$endElementId, cable=$cable)"
+            "Splitter4(id=$id, signalPower=$signalPower, endElementId=$endElementId, cable=$cable)"
     }
 
     data class Repeater(
@@ -95,7 +95,8 @@ sealed class Element {
         val endElementId: Int,
         val cable: Cable = Cable()
     ) : Element() {
-        override fun toString(): String = "Repeater(id=$id)"
+        override fun toString(): String =
+            "Repeater(id=$id, signalPower=$signalPower, endElementId=$endElementId, cable=$cable)"
     }
 
     fun fetchTopElementId(): Int {

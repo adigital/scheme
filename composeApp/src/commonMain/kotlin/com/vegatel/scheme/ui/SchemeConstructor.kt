@@ -326,13 +326,31 @@ fun SchemeConstructor(
                                                 oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4)
                                     ) {
                                         newElements.removeConnectedElementsAbove(oldElement.id)
+                                        // --- Новый блок: ищем элемент ниже (например, репитер) ---
+                                        var belowElementId: Int? = null
+                                        var belowCable: Cable? = null
+                                        // Ищем первый элемент ниже в том же столбце
+                                        for (r in (row + 1) until newElements.rowCount) {
+                                            val candidate = newElements[r, col]
+                                            if (candidate != null) {
+                                                belowElementId = candidate.id
+                                                belowCable = candidate.fetchCable()
+                                                break
+                                            }
+                                        }
+                                        newElements[row, col] = Antenna(
+                                            id = oldElement.id,
+                                            endElementId = belowElementId
+                                                ?: oldElement.fetchEndElementId(),
+                                            cable = oldElement.fetchCable()
+                                        )
+                                    } else {
+                                        newElements[row, col] = Antenna(
+                                            id = oldElement?.id ?: newElements.generateNewId(),
+                                            endElementId = oldElement?.fetchEndElementId() ?: -1,
+                                            cable = oldElement?.fetchCable() ?: Cable()
+                                        )
                                     }
-
-                                    newElements[row, col] = Antenna(
-                                        id = oldElement?.id ?: newElements.generateNewId(),
-                                        endElementId = oldElement?.fetchEndElementId() ?: -1,
-                                        cable = oldElement?.fetchCable() ?: Cable()
-                                    )
 
                                     // Оптимизируем пространство после замены
                                     newElements.optimizeSpace()
@@ -760,6 +778,127 @@ fun SchemeConstructor(
                                     elementMenuOpenedForIndex = null
                                     onElementsChange(newElements)
                                 }) { Text("Сплиттер 2") }
+
+                                DropdownMenuItem(onClick = {
+                                    val newElements = elements.copy()
+
+                                    // Если мы в нижней строке, добавляем новую строку снизу
+                                    if (row == elements.rowCount) {
+                                        newElements.insertRow(elements.rowCount)
+                                    }
+
+
+                                    // Удаляем старые подключенные элементы, если они есть
+                                    val oldElement = newElements[row, col]
+                                    if (oldElement != null &&
+                                        (oldElement is Combiner2 || oldElement is Combiner3 || oldElement is Combiner4 ||
+                                                oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4)
+                                    ) {
+                                        newElements.removeConnectedElementsAbove(oldElement.id)
+                                    }
+
+                                    // Сначала создаем сплиттер на месте кликнутого элемента
+                                    val splitterId = element?.id ?: newElements.generateNewId()
+                                    newElements[row, col] = Splitter3(
+                                        id = splitterId,
+                                        endElementId = element?.fetchEndElementId() ?: -1,
+                                        cable = element?.fetchCable() ?: Cable()
+                                    )
+
+                                    // Проверяем, нужно ли сдвинуть сплиттер и элементы правее
+                                    val targetRow = row + 1
+                                    var currentCol = col
+
+                                    // Если мы в крайней левой колонке, добавляем новую колонку слева
+                                    if (col == 0) {
+                                        newElements.insertCol(0)
+                                        currentCol = 1
+                                    }
+
+                                    // Функция для проверки наличия элементов в столбце
+                                    fun hasElementsInColumn(colIndex: Int): Boolean {
+                                        if (colIndex < 0) return false
+                                        return (0 until newElements.rowCount).any { r ->
+                                            newElements.hasElementAt(r, colIndex)
+                                        }
+                                    }
+
+                                    // Проверяем наличие элементов:
+                                    // 1. Над сплиттером
+                                    // 2. Слева от позиции центральной антенны (если такая позиция существует)
+                                    // 3. В столбце слева от сплиттера
+                                    if (newElements.hasElementAt(targetRow, currentCol) ||
+                                        (currentCol > 0 && newElements.hasElementAt(
+                                            targetRow,
+                                            currentCol - 1
+                                        )) ||
+                                        (currentCol > 0 && hasElementsInColumn(currentCol - 1))
+                                    ) {
+                                        newElements.shiftColumnAndRightElementsRight(currentCol)
+                                        currentCol += 1
+                                    }
+
+                                    // Теперь сдвигаем все элементы правее позиции сплиттера
+                                    newElements.shiftColumnAndRightElementsRight(currentCol + 1)
+
+                                    // Определяем позиции для трех антенн
+                                    val leftAntennaCol = currentCol - 1
+                                    val centerAntennaCol = currentCol
+                                    val rightAntennaCol = currentCol + 1
+
+                                    // Убеждаемся, что у нас достаточно места справа
+                                    if (rightAntennaCol >= newElements.colCount) {
+                                        newElements.insertCol(newElements.colCount)
+                                    }
+
+                                    // Проверяем, есть ли элементы на местах антенн после сдвига
+                                    if (newElements.hasElementAt(targetRow, leftAntennaCol)) {
+                                        newElements.shiftColumnAndRightElementsRight(leftAntennaCol)
+                                    }
+                                    if (newElements.hasElementAt(targetRow, centerAntennaCol)) {
+                                        newElements.shiftColumnAndRightElementsRight(
+                                            centerAntennaCol
+                                        )
+                                    }
+                                    if (newElements.hasElementAt(targetRow, rightAntennaCol)) {
+                                        newElements.shiftColumnAndRightElementsRight(rightAntennaCol)
+                                    }
+
+                                    // Обновляем позицию сплиттера после всех сдвигов
+                                    newElements[row, currentCol] = Combiner3(
+                                        id = splitterId,
+                                        endElementId = element?.fetchEndElementId() ?: -1,
+                                        cable = element?.fetchCable() ?: Cable()
+                                    )
+
+                                    // Создаем три антенны
+                                    val leftAntennaId = newElements.generateNewId()
+                                    newElements[targetRow, leftAntennaCol] = Antenna(
+                                        id = leftAntennaId,
+                                        endElementId = splitterId,
+                                        cable = Cable()
+                                    )
+
+                                    val centerAntennaId = newElements.generateNewId()
+                                    newElements[targetRow, centerAntennaCol] = Antenna(
+                                        id = centerAntennaId,
+                                        endElementId = splitterId,
+                                        cable = Cable()
+                                    )
+
+                                    val rightAntennaId = newElements.generateNewId()
+                                    newElements[targetRow, rightAntennaCol] = Antenna(
+                                        id = rightAntennaId,
+                                        endElementId = splitterId,
+                                        cable = Cable()
+                                    )
+
+                                    // Оптимизируем пространство после замены
+                                    newElements.optimizeSpace()
+
+                                    elementMenuOpenedForIndex = null
+                                    onElementsChange(newElements)
+                                }) { Text("Сплиттер 3") }
                             }
                         }
                     }
@@ -1187,8 +1326,10 @@ fun ElementMatrix.removeConnectedElementsAbove(elementId: Int) {
             ) {
                 removeConnectedElementsAbove(element.id)
             }
-            // Удаляем сам элемент
-            this[row, col] = null
+            // Не удаляем репитер!
+            if (element !is Repeater) {
+                this[row, col] = null
+            }
         }
     }
 }
