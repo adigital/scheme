@@ -394,9 +394,6 @@ fun SchemeConstructor(
                                             cable = element.fetchCable()
                                         )
 
-                                        // Теперь сдвигаем все элементы правее позиции сумматора
-                                        newElements.shiftColumnAndRightElementsRight(col + 1)
-
                                         val targetRow = currentRow - 1
                                         val leftAntennaCol = col
                                         val rightAntennaCol = col + 1
@@ -405,23 +402,16 @@ fun SchemeConstructor(
                                             newElements.insertCol(newElements.colCount)
                                         }
 
-                                        // Проверяем, есть ли элементы на местах антенн после сдвига
-                                        val leftBusy =
-                                            newElements.hasElementAt(targetRow, leftAntennaCol)
-                                        val rightBusy =
-                                            newElements.hasElementAt(targetRow, rightAntennaCol)
+                                        // Проверяем, есть ли элементы на местах антенн
+                                        val leftBusy = newElements.hasElementAt(targetRow, leftAntennaCol)
+                                        val rightBusy = newElements.hasElementAt(targetRow, rightAntennaCol)
+                                        
                                         if (leftBusy && rightBusy) {
-                                            newElements.shiftColumnAndRightElementsRight(
-                                                leftAntennaCol
-                                            )
+                                            newElements.shiftRowElementsRight(targetRow, leftAntennaCol)
                                         } else if (rightBusy) {
-                                            newElements.shiftColumnAndRightElementsRight(
-                                                rightAntennaCol
-                                            )
+                                            newElements.shiftRowElementsRight(targetRow, rightAntennaCol)
                                         } else if (leftBusy) {
-                                            newElements.shiftColumnAndRightElementsRight(
-                                                leftAntennaCol
-                                            )
+                                            newElements.shiftRowElementsRight(targetRow, leftAntennaCol)
                                         }
 
                                         // Создаем антенны
@@ -484,31 +474,14 @@ fun SchemeConstructor(
                                             currentCol = 1
                                         }
 
-                                        // Функция для проверки наличия элементов в столбце
-                                        fun hasElementsInColumn(colIndex: Int): Boolean {
-                                            if (colIndex < 0) return false
-                                            return (0 until newElements.rowCount).any { r ->
-                                                newElements.hasElementAt(r, colIndex)
-                                            }
-                                        }
-
-                                        // Проверяем наличие элементов:
-                                        // 1. Над сумматором
-                                        // 2. Слева от позиции центральной антенны (если такая позиция существует)
-                                        // 3. В столбце слева от сумматора
+                                        // Проверяем наличие элементов в целевой строке
                                         if (newElements.hasElementAt(targetRow, currentCol) ||
-                                            (currentCol > 0 && newElements.hasElementAt(
-                                                targetRow,
-                                                currentCol - 1
-                                            )) ||
-                                            (currentCol > 0 && hasElementsInColumn(currentCol - 1))
+                                            (currentCol > 0 && newElements.hasElementAt(targetRow, currentCol - 1)) ||
+                                            newElements.hasElementAt(targetRow, currentCol + 1)
                                         ) {
-                                            newElements.shiftColumnAndRightElementsRight(currentCol)
+                                            newElements.shiftRowElementsRight(targetRow, currentCol - 1)
                                             currentCol += 1
                                         }
-
-                                        // Теперь сдвигаем все элементы правее позиции сумматора
-                                        newElements.shiftColumnAndRightElementsRight(currentCol + 1)
 
                                         // Определяем позиции для трех антенн
                                         val leftAntennaCol = currentCol - 1
@@ -520,21 +493,15 @@ fun SchemeConstructor(
                                             newElements.insertCol(newElements.colCount)
                                         }
 
-                                        // Проверяем, есть ли элементы на местах антенн после сдвига
+                                        // Проверяем, есть ли элементы на местах антенн
                                         if (newElements.hasElementAt(targetRow, leftAntennaCol)) {
-                                            newElements.shiftColumnAndRightElementsRight(
-                                                leftAntennaCol
-                                            )
+                                            newElements.shiftRowElementsRight(targetRow, leftAntennaCol)
                                         }
                                         if (newElements.hasElementAt(targetRow, centerAntennaCol)) {
-                                            newElements.shiftColumnAndRightElementsRight(
-                                                centerAntennaCol
-                                            )
+                                            newElements.shiftRowElementsRight(targetRow, centerAntennaCol)
                                         }
                                         if (newElements.hasElementAt(targetRow, rightAntennaCol)) {
-                                            newElements.shiftColumnAndRightElementsRight(
-                                                rightAntennaCol
-                                            )
+                                            newElements.shiftRowElementsRight(targetRow, rightAntennaCol)
                                         }
 
                                         // Обновляем позицию сумматора после всех сдвигов
@@ -611,53 +578,47 @@ fun SchemeConstructor(
                                             currentCol += 1
                                         }
 
-                                        // Функция для проверки наличия элементов в столбце
-                                        fun hasElementsInColumn(colIndex: Int): Boolean {
-                                            if (colIndex < 0) return false
-                                            return (0 until newElements.rowCount).any { r ->
-                                                newElements.hasElementAt(r, colIndex)
-                                            }
-                                        }
-
-                                        // Проверяем наличие элементов:
-                                        // 1. Над сумматором
-                                        // 2. Слева от позиции центральной антенны
-                                        // 3. В столбце слева от сумматора
-                                        // 4. В позициях для всех антенн
-                                        if (!(!newElements.hasElementAt(
-                                                targetRow,
-                                                currentCol
-                                            ) && !newElements.hasElementAt(
-                                                targetRow,
-                                                currentCol - 1
-                                            ) && !hasElementsInColumn(currentCol - 1) && !newElements.hasElementAt(
-                                                targetRow,
-                                                currentCol + 1
-                                            ) && !newElements.hasElementAt(
-                                                targetRow,
-                                                currentCol + 2
-                                            ))
+                                        // Проверяем наличие элементов в целевой строке
+                                        if (newElements.hasElementAt(targetRow, currentCol) ||
+                                            (currentCol > 0 && newElements.hasElementAt(targetRow, currentCol - 1)) ||
+                                            newElements.hasElementAt(targetRow, currentCol + 1) ||
+                                            newElements.hasElementAt(targetRow, currentCol + 2)
                                         ) {
-                                            newElements.shiftColumnAndRightElementsRight(currentCol)
+                                            newElements.shiftRowElementsRight(targetRow, currentCol - 1)
                                             currentCol += 1
                                         }
 
-                                        // Теперь сдвигаем все элементы правее позиции сумматора для места под правые антенны
-                                        newElements.shiftColumnAndRightElementsRight(currentCol + 1)
-                                        newElements.shiftColumnAndRightElementsRight(currentCol + 2)
-
                                         // Определяем позиции для четырех антенн
                                         val leftAntennaCol = currentCol - 1    // Левая антенна
-                                        val centerAntennaCol =
-                                            currentCol      // Центральная антенна (над сумматором)
+                                        val centerAntennaCol = currentCol      // Центральная антенна (над сумматором)
                                         val rightAntennaCol = currentCol + 1   // Правая антенна
-                                        val farRightAntennaCol =
-                                            currentCol + 2 // Крайняя правая антенна
+                                        val farRightAntennaCol = currentCol + 2 // Крайняя правая антенна
 
                                         // Убеждаемся, что у нас достаточно места справа
                                         while (farRightAntennaCol >= newElements.colCount) {
                                             newElements.insertCol(newElements.colCount)
                                         }
+
+                                        // Проверяем, есть ли элементы на местах антенн
+                                        if (newElements.hasElementAt(targetRow, leftAntennaCol)) {
+                                            newElements.shiftRowElementsRight(targetRow, leftAntennaCol)
+                                        }
+                                        if (newElements.hasElementAt(targetRow, centerAntennaCol)) {
+                                            newElements.shiftRowElementsRight(targetRow, centerAntennaCol)
+                                        }
+                                        if (newElements.hasElementAt(targetRow, rightAntennaCol)) {
+                                            newElements.shiftRowElementsRight(targetRow, rightAntennaCol)
+                                        }
+                                        if (newElements.hasElementAt(targetRow, farRightAntennaCol)) {
+                                            newElements.shiftRowElementsRight(targetRow, farRightAntennaCol)
+                                        }
+
+                                        // Обновляем позицию сумматора после всех сдвигов
+                                        newElements[currentRow, currentCol] = Combiner4(
+                                            id = combinerId,
+                                            endElementId = element.fetchEndElementId(),
+                                            cable = element.fetchCable()
+                                        )
 
                                         // Создаем четыре антенны
                                         val leftAntennaId = newElements.generateNewId()
@@ -686,13 +647,6 @@ fun SchemeConstructor(
                                             id = farRightAntennaId,
                                             endElementId = combinerId,
                                             cable = Cable()
-                                        )
-
-                                        // Обновляем позицию сумматора после всех сдвигов
-                                        newElements[currentRow, currentCol] = Combiner4(
-                                            id = combinerId,
-                                            endElementId = element.fetchEndElementId(),
-                                            cable = element.fetchCable()
                                         )
 
                                         // Оптимизируем пространство после замены
@@ -731,9 +685,6 @@ fun SchemeConstructor(
                                             cable = element.fetchCable()
                                         )
 
-                                        // Теперь сдвигаем все элементы правее позиции сплиттера
-                                        newElements.shiftColumnAndRightElementsRight(col + 1)
-
                                         val targetRow = row + 1
                                         val leftAntennaCol = col
                                         val rightAntennaCol = col + 1
@@ -742,23 +693,16 @@ fun SchemeConstructor(
                                             newElements.insertCol(newElements.colCount)
                                         }
 
-                                        // Проверяем, есть ли элементы на местах антенн после сдвига
-                                        val leftBusy =
-                                            newElements.hasElementAt(targetRow, leftAntennaCol)
-                                        val rightBusy =
-                                            newElements.hasElementAt(targetRow, rightAntennaCol)
+                                        // Проверяем, есть ли элементы на местах антенн
+                                        val leftBusy = newElements.hasElementAt(targetRow, leftAntennaCol)
+                                        val rightBusy = newElements.hasElementAt(targetRow, rightAntennaCol)
+                                        
                                         if (leftBusy && rightBusy) {
-                                            newElements.shiftColumnAndRightElementsRight(
-                                                leftAntennaCol
-                                            )
+                                            newElements.shiftRowElementsRight(targetRow, leftAntennaCol)
                                         } else if (rightBusy) {
-                                            newElements.shiftColumnAndRightElementsRight(
-                                                rightAntennaCol
-                                            )
+                                            newElements.shiftRowElementsRight(targetRow, rightAntennaCol)
                                         } else if (leftBusy) {
-                                            newElements.shiftColumnAndRightElementsRight(
-                                                leftAntennaCol
-                                            )
+                                            newElements.shiftRowElementsRight(targetRow, leftAntennaCol)
                                         }
 
                                         // Создаем антенны
@@ -819,31 +763,14 @@ fun SchemeConstructor(
                                             currentCol = 1
                                         }
 
-                                        // Функция для проверки наличия элементов в столбце
-                                        fun hasElementsInColumn(colIndex: Int): Boolean {
-                                            if (colIndex < 0) return false
-                                            return (0 until newElements.rowCount).any { r ->
-                                                newElements.hasElementAt(r, colIndex)
-                                            }
-                                        }
-
-                                        // Проверяем наличие элементов:
-                                        // 1. Над сплиттером
-                                        // 2. Слева от позиции центральной антенны (если такая позиция существует)
-                                        // 3. В столбце слева от сплиттера
+                                        // Проверяем наличие элементов в целевой строке
                                         if (newElements.hasElementAt(targetRow, currentCol) ||
-                                            (currentCol > 0 && newElements.hasElementAt(
-                                                targetRow,
-                                                currentCol - 1
-                                            )) ||
-                                            (currentCol > 0 && hasElementsInColumn(currentCol - 1))
+                                            (currentCol > 0 && newElements.hasElementAt(targetRow, currentCol - 1)) ||
+                                            newElements.hasElementAt(targetRow, currentCol + 1)
                                         ) {
-                                            newElements.shiftColumnAndRightElementsRight(currentCol)
+                                            newElements.shiftRowElementsRight(targetRow, currentCol - 1)
                                             currentCol += 1
                                         }
-
-                                        // Теперь сдвигаем все элементы правее позиции сплиттера
-                                        newElements.shiftColumnAndRightElementsRight(currentCol + 1)
 
                                         // Определяем позиции для трех антенн
                                         val leftAntennaCol = currentCol - 1
@@ -855,21 +782,15 @@ fun SchemeConstructor(
                                             newElements.insertCol(newElements.colCount)
                                         }
 
-                                        // Проверяем, есть ли элементы на местах антенн после сдвига
+                                        // Проверяем, есть ли элементы на местах антенн
                                         if (newElements.hasElementAt(targetRow, leftAntennaCol)) {
-                                            newElements.shiftColumnAndRightElementsRight(
-                                                leftAntennaCol
-                                            )
+                                            newElements.shiftRowElementsRight(targetRow, leftAntennaCol)
                                         }
                                         if (newElements.hasElementAt(targetRow, centerAntennaCol)) {
-                                            newElements.shiftColumnAndRightElementsRight(
-                                                centerAntennaCol
-                                            )
+                                            newElements.shiftRowElementsRight(targetRow, centerAntennaCol)
                                         }
                                         if (newElements.hasElementAt(targetRow, rightAntennaCol)) {
-                                            newElements.shiftColumnAndRightElementsRight(
-                                                rightAntennaCol
-                                            )
+                                            newElements.shiftRowElementsRight(targetRow, rightAntennaCol)
                                         }
 
                                         // Обновляем позицию сплиттера после всех сдвигов
@@ -943,53 +864,47 @@ fun SchemeConstructor(
                                             currentCol += 1
                                         }
 
-                                        // Функция для проверки наличия элементов в столбце
-                                        fun hasElementsInColumn(colIndex: Int): Boolean {
-                                            if (colIndex < 0) return false
-                                            return (0 until newElements.rowCount).any { r ->
-                                                newElements.hasElementAt(r, colIndex)
-                                            }
-                                        }
-
-                                        // Проверяем наличие элементов:
-                                        // 1. Над сплиттером
-                                        // 2. Слева от позиции центральной антенны
-                                        // 3. В столбце слева от сплиттера
-                                        // 4. В позициях для всех антенн
-                                        if (!(!newElements.hasElementAt(
-                                                targetRow,
-                                                currentCol
-                                            ) && !newElements.hasElementAt(
-                                                targetRow,
-                                                currentCol - 1
-                                            ) && !hasElementsInColumn(currentCol - 1) && !newElements.hasElementAt(
-                                                targetRow,
-                                                currentCol + 1
-                                            ) && !newElements.hasElementAt(
-                                                targetRow,
-                                                currentCol + 2
-                                            ))
+                                        // Проверяем наличие элементов в целевой строке
+                                        if (newElements.hasElementAt(targetRow, currentCol) ||
+                                            (currentCol > 0 && newElements.hasElementAt(targetRow, currentCol - 1)) ||
+                                            newElements.hasElementAt(targetRow, currentCol + 1) ||
+                                            newElements.hasElementAt(targetRow, currentCol + 2)
                                         ) {
-                                            newElements.shiftColumnAndRightElementsRight(currentCol)
+                                            newElements.shiftRowElementsRight(targetRow, currentCol - 1)
                                             currentCol += 1
                                         }
 
-                                        // Теперь сдвигаем все элементы правее позиции сплиттера для места под правые антенны
-                                        newElements.shiftColumnAndRightElementsRight(currentCol + 1)
-                                        newElements.shiftColumnAndRightElementsRight(currentCol + 2)
-
                                         // Определяем позиции для четырех антенн
                                         val leftAntennaCol = currentCol - 1    // Левая антенна
-                                        val centerAntennaCol =
-                                            currentCol      // Центральная антенна (над сплиттером)
+                                        val centerAntennaCol = currentCol      // Центральная антенна (над сумматором)
                                         val rightAntennaCol = currentCol + 1   // Правая антенна
-                                        val farRightAntennaCol =
-                                            currentCol + 2 // Крайняя правая антенна
+                                        val farRightAntennaCol = currentCol + 2 // Крайняя правая антенна
 
                                         // Убеждаемся, что у нас достаточно места справа
                                         while (farRightAntennaCol >= newElements.colCount) {
                                             newElements.insertCol(newElements.colCount)
                                         }
+
+                                        // Проверяем, есть ли элементы на местах антенн
+                                        if (newElements.hasElementAt(targetRow, leftAntennaCol)) {
+                                            newElements.shiftRowElementsRight(targetRow, leftAntennaCol)
+                                        }
+                                        if (newElements.hasElementAt(targetRow, centerAntennaCol)) {
+                                            newElements.shiftRowElementsRight(targetRow, centerAntennaCol)
+                                        }
+                                        if (newElements.hasElementAt(targetRow, rightAntennaCol)) {
+                                            newElements.shiftRowElementsRight(targetRow, rightAntennaCol)
+                                        }
+                                        if (newElements.hasElementAt(targetRow, farRightAntennaCol)) {
+                                            newElements.shiftRowElementsRight(targetRow, farRightAntennaCol)
+                                        }
+
+                                        // Обновляем позицию сплиттера после всех сдвигов
+                                        newElements[row, currentCol] = Splitter4(
+                                            id = splitterId,
+                                            endElementId = element.fetchEndElementId(),
+                                            cable = element.fetchCable()
+                                        )
 
                                         // Создаем четыре антенны
                                         val leftAntennaId = newElements.generateNewId()
@@ -1018,13 +933,6 @@ fun SchemeConstructor(
                                             id = farRightAntennaId,
                                             endElementId = splitterId,
                                             cable = Cable()
-                                        )
-
-                                        // Обновляем позицию сплиттера после всех сдвигов
-                                        newElements[row, currentCol] = Splitter4(
-                                            id = splitterId,
-                                            endElementId = element.fetchEndElementId(),
-                                            cable = element.fetchCable()
                                         )
 
                                         // Оптимизируем пространство после замены

@@ -134,6 +134,26 @@ class ElementMatrix(
         }
     }
 
+    // Сдвигает элементы в указанной строке вправо
+    fun shiftRowElementsRight(row: Int, fromCol: Int) {
+        // Проверяем, нужно ли увеличить матрицу
+        if (colCount == 0) {
+            insertCol(0)
+            return
+        }
+
+        // Добавляем столбец в конец
+        for (r in matrix) {
+            r.add(null)
+        }
+
+        // Сдвигаем элементы вправо только в указанной строке
+        for (col in (colCount - 2) downTo fromCol) {
+            matrix[row][col + 1] = matrix[row][col]
+            matrix[row][col] = null
+        }
+    }
+
     // Генерирует новый уникальный id для элемента
     fun generateNewId(): Int {
         var maxId = 0
