@@ -1,15 +1,23 @@
 package com.vegatel.scheme
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
 import androidx.compose.material.Divider
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.IntOffset
 import com.vegatel.scheme.model.Element.Antenna
 import com.vegatel.scheme.model.Element.Repeater
 import com.vegatel.scheme.model.ElementMatrix
@@ -69,11 +77,31 @@ val schemeState: StateFlow<SchemeState> = _schemeState.asStateFlow()
 fun App() {
     MaterialTheme {
         val schemeState by schemeState.collectAsState()
+        var dragOffset by remember { mutableStateOf(Offset.Zero) }
 
         Column(
             Modifier
                 .fillMaxSize()
-                .background(Color.White)
+                .background(Color.LightGray)
+                .pointerInput(Unit) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            val event = awaitPointerEvent()
+                            // Обрабатываем только события левой кнопки мыши
+                            if (event.changes.first().pressed) {
+                                val position = event.changes.first().position
+                                val lastPosition = event.changes.first().previousPosition
+
+                                // Вычисляем смещение
+                                val delta = position - lastPosition
+                                dragOffset = dragOffset + delta
+
+                                // Потребляем событие
+                                event.changes.forEach { it.consume() }
+                            }
+                        }
+                    }
+                }
         ) {
             MainMenu(
                 fileName = schemeState.fileName,
@@ -99,13 +127,19 @@ fun App() {
 
             Divider()
 
-            SchemeConstructor(
-                elements = schemeState.elements,
-                onElementsChange = { newElements ->
-                    val isDirty = newElements != schemeState.elements || schemeState.isDirty.not()
-                    _schemeState.value = schemeState.copy(elements = newElements, isDirty = isDirty)
-                }
-            )
+            Box(
+                Modifier.offset { IntOffset(dragOffset.x.toInt(), dragOffset.y.toInt()) }
+            ) {
+                SchemeConstructor(
+                    elements = schemeState.elements,
+                    onElementsChange = { newElements ->
+                        val isDirty =
+                            newElements != schemeState.elements || schemeState.isDirty.not()
+                        _schemeState.value =
+                            schemeState.copy(elements = newElements, isDirty = isDirty)
+                    }
+                )
+            }
         }
     }
 }

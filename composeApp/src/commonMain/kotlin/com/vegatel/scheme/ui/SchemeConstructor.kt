@@ -1,5 +1,6 @@
 package com.vegatel.scheme.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.offset
@@ -23,7 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -166,27 +167,8 @@ fun SchemeConstructor(
 
     Box(
         Modifier
-            .pointerInput(Unit) {
-                awaitPointerEventScope {
-                    while (true) {
-                        val event = awaitPointerEvent()
-                        // Обрабатываем только события левой кнопки мыши
-                        if (event.changes.first().pressed) {
-                            val position = event.changes.first().position
-                            val lastPosition = event.changes.first().previousPosition
-
-                            // Вычисляем смещение
-                            val delta = position - lastPosition
-                            dragOffset = dragOffset + delta
-
-                            // Потребляем событие
-                            event.changes.forEach { it.consume() }
-                        }
-                    }
-                }
-            }
-            .offset { IntOffset(dragOffset.x.toInt(), dragOffset.y.toInt()) }
             .zIndex(0f)  // Схема будет находиться на нижнем слое
+            .background(Color.White)
     ) {
         Box(
             Modifier.size(width.dp, height.dp)
