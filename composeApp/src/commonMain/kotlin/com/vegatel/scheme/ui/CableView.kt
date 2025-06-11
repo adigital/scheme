@@ -1,7 +1,6 @@
 package com.vegatel.scheme.ui
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.absoluteOffset
@@ -83,8 +82,8 @@ fun CableView(
     }
 
     // Находим центральную точку для текста
-    val midX = start.x
-    val midY = (start.y + end.y) / 2
+    val midX = if (isSideThenDown) (start.x + end.x) / 2 else start.x
+    val midY = if (isSideThenDown) start.y else (start.y + end.y) / 2
 
     val centerPoint = Offset(midX, midY)
 
@@ -113,7 +112,7 @@ fun CableView(
                 modifier = Modifier
                     .offset { IntOffset(offsetX, offsetY) }
                     .size(finalWidth, finalHeight)
-                    .background(Color(0x88FF00FF)) // Фон кликабельной зоны
+//                    .background(Color(0x88FF00FF)) // Фон кликабельной зоны
                     .pointerInput(Unit) {
                         detectTapGestures { offset ->
                             onClick(IntOffset(offset.x.toInt(), offset.y.toInt()))
@@ -171,8 +170,14 @@ fun CableView(
     Box(
         modifier = Modifier.absoluteOffset {
             IntOffset(
-                centerPoint.x.toInt() + 4.dp.toPx().toInt(),
-                centerPoint.y.toInt() - 20.dp.toPx().toInt()
+                centerPoint.x.toInt() + when {
+                    isSideThenDown && isTwoCorners -> -12.dp.toPx().toInt()
+                    isSideThenDown -> -8.dp.toPx().toInt()
+                    else -> 4.dp.toPx().toInt()
+                },
+
+                centerPoint.y.toInt() + if (isSideThenDown && isTwoCorners) 12.dp.toPx().toInt()
+                else -20.dp.toPx().toInt(),
             )
         }
     ) {
