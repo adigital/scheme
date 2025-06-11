@@ -103,37 +103,6 @@ class ElementMatrix(
         return result
     }
 
-    fun isRepeaterHalfShiftRender(): Boolean {
-        var result = false
-
-        forEachElement { row, col, element ->
-            if (element?.isHalfShiftRender() == true &&
-                ((element is Element.Combiner2 && element.endElementId == REPEATER_ID) ||
-                        (element is Element.Combiner4 && element.endElementId == REPEATER_ID) ||
-                        (element is Element.Splitter2 && element.id == getNextForRepeaterElementId()) ||
-                        (element is Element.Splitter4 && element.id == getNextForRepeaterElementId()))
-            ) {
-                result = true
-                return@forEachElement
-            }
-        }
-
-        return result
-    }
-
-    fun getNextForRepeaterElementId(): Int {
-        var endElementId = -1
-
-        forEachElement { row, col, element ->
-            if (element is Element.Repeater) {
-                endElementId = element.endElementId
-                return@forEachElement
-            }
-        }
-
-        return endElementId
-    }
-
     // Проверяет, есть ли элемент в указанной позиции
     fun hasElementAt(row: Int, col: Int): Boolean {
         return if (row < 0 || row >= rowCount || col < 0 || col >= colCount) {

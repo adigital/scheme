@@ -145,9 +145,6 @@ fun SchemeConstructor(
         log("TEST", "init row = $row, col = $col, element = $element")
     }
 
-    val isRepeaterHalfShiftRender = elements.isRepeaterHalfShiftRender()
-    val nextForRepeaterElementId = elements.getNextForRepeaterElementId()
-
     // Геометрия схемы
     val elementWidthDp = 48
     val elementHeightDp = 64
@@ -199,10 +196,8 @@ fun SchemeConstructor(
                 val elementOffset = IntOffset(
                     paddingHorizontalDp.dp.toPx().toInt() + col * 2 * elementWidthDp.dp.toPx()
                         .toInt() +
-                            if (element?.isHalfShiftRender() == true ||
-                                (element?.isRepeater() == true && isRepeaterHalfShiftRender) ||
-                                (element?.id == nextForRepeaterElementId && isRepeaterHalfShiftRender)
-                            ) 48.dp.toPx().toInt() else 0.dp.toPx().toInt(),
+                            if (element?.isHalfShiftRender() == true) 48.dp.toPx()
+                                .toInt() else 0.dp.toPx().toInt(),
                     paddingVerticalDp.dp.toPx().toInt() + row * 2 * elementHeightDp.dp.toPx()
                         .toInt()
                 )
@@ -1068,7 +1063,12 @@ fun SchemeConstructor(
                                             (startElement.second + 1 == endElement.second) &&
                                             startElementInstance.isSplitter() == true)
 
-                        log("TEST", "$startElement, - $endElement")
+                        log("TEST", "startElement: $startElement - endElement: $endElement")
+                        log(
+                            "TEST",
+                            "startElementInstance: ${Class.forName(startElementInstance?.javaClass?.name).simpleName} (id=${startElementInstance?.id})" +
+                                    " - endElementInstance: ${Class.forName(endElementInstance?.javaClass?.name).simpleName} (id=${endElementInstance?.id})"
+                        )
                         log(
                             "TEST",
                             "isShiftCableLeft $isShiftCableLeft, - isShiftCableRight $isShiftCableRight"
@@ -1084,8 +1084,7 @@ fun SchemeConstructor(
                         // Горизонтальный сдвиг начальной точки подключения кабеля
                         val startHorizontalOffsetDp =
                             when {
-                                (startElementInstance?.isHalfShiftRender() == true) ||
-                                        (startElementInstance?.isRepeater() == true && isRepeaterHalfShiftRender) -> {
+                                (startElementInstance?.isHalfShiftRender() == true) -> {
                                     48.dp.toPx() +
                                             when {
                                                 isShiftCableLeft -> {
@@ -1105,14 +1104,18 @@ fun SchemeConstructor(
 
                         // Вертикальный сдвиг начальной точки подключения кабеля для сплиттера
                         val startVerticalOffsetDp =
-                            if (startElementInstance is Splitter3 && startElement.second != endElement.second) (-64 + 9.75).dp.toPx() else 0.dp.toPx()
+                            if ((startElementInstance is Splitter3 && startElement.second != endElement.second) ||
+                                startElementInstance is Splitter4
+                            ) {
+                                (-64 + 9.75).dp.toPx()
+                            } else {
+                                0.dp.toPx()
+                            }
 
                         // Горизонтальный сдвиг конечной точки подключения кабеля
                         val endHorizontalOffsetDp =
                             when {
-                                (endElementInstance?.isHalfShiftRender() == true) ||
-                                        (endElementInstance?.isRepeater() == true && isRepeaterHalfShiftRender) ||
-                                        (endElementInstance?.id == nextForRepeaterElementId && isRepeaterHalfShiftRender) -> {
+                                (endElementInstance?.isHalfShiftRender() == true) -> {
                                     48.dp.toPx() +
                                             when {
                                                 isShiftCableLeft -> {
@@ -1149,10 +1152,9 @@ fun SchemeConstructor(
                         CableView(
                             start = startCenter,
                             end = endCenter,
-                            isTwoCorners = isShiftCableLeft || isShiftCableRight ||
-                                    (endElementInstance is Repeater && isRepeaterHalfShiftRender) ||
-                                    (startElementInstance?.isHalfShiftRender() == true),
-                            isSideThenDown = startElementInstance?.isSplitter() == true,
+                            isTwoCorners = isShiftCableLeft || isShiftCableRight || (startElementInstance?.isHalfShiftRender() == true && !isElementBelowRepeater) ||
+                                    startElementInstance?.isRepeater() == true,
+                            isSideThenDown = startElementInstance?.isRepeater() == true || startElementInstance?.isSplitter() == true,
                             cable = cable,
                             onClick = {
                                 cableMenuOpenedForIndex = row to col
