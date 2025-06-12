@@ -53,7 +53,6 @@ val initialElements = buildElementMatrix(rows = 3, cols = 1) {
         id = 2
     )
 }
-//
 
 // SchemeState
 data class SchemeState(
@@ -67,16 +66,83 @@ val initialSchemeState = SchemeState(
     fileName = null,
     isDirty = false
 )
-//
 
-private val _schemeState = MutableStateFlow(initialSchemeState)
-val schemeState: StateFlow<SchemeState> = _schemeState.asStateFlow()
+class AppState {
+    private val _schemeState = MutableStateFlow(initialSchemeState)
+    val schemeState: StateFlow<SchemeState> = _schemeState.asStateFlow()
+
+    // History management
+    private val _history = mutableListOf<SchemeState>()
+    private var _historyIndex = -1
+
+    init {
+        addToHistory(initialSchemeState)
+    }
+
+    internal fun addToHistory(state: SchemeState) {
+        // Remove all states after current index
+        while (_history.size > _historyIndex + 1) {
+            _history.removeLast()
+        }
+        
+        // Add new state
+        _history.add(state)
+        
+        // Keep history size limited
+        if (_history.size > MAX_HISTORY_SIZE) {
+            _history.removeFirst()
+        } else {
+            _historyIndex++
+        }
+    }
+
+    fun canUndo(): Boolean = _historyIndex > 0
+    fun canRedo(): Boolean = _historyIndex < _history.size - 1
+
+    fun undo() {
+        if (canUndo()) {
+            _historyIndex--
+            _schemeState.value = _history[_historyIndex]
+        }
+    }
+
+    fun redo() {
+        if (canRedo()) {
+            _historyIndex++
+            _schemeState.value = _history[_historyIndex]
+        }
+    }
+
+    fun updateState(newState: SchemeState) {
+        _schemeState.value = newState
+        addToHistory(newState)
+    }
+
+    fun resetState() {
+        _schemeState.value = initialSchemeState
+        clearHistory()
+        addToHistory(initialSchemeState)
+    }
+
+    internal fun clearHistory() {
+        _history.clear()
+        _historyIndex = -1
+    }
+
+    // Добавляем геттер для _schemeState
+    val mutableSchemeState: MutableStateFlow<SchemeState>
+        get() = _schemeState
+}
+
+private const val MAX_HISTORY_SIZE = 10
+
+private val appState = AppState()
 
 @Composable
 @Preview
 fun App() {
     MaterialTheme {
-        val schemeState by schemeState.collectAsState()
+        val schemeState by appState.schemeState.collectAsState()
         var dragOffset by remember { mutableStateOf(Offset.Zero) }
 
         Column(
@@ -106,23 +172,30 @@ fun App() {
             MainMenu(
                 fileName = schemeState.fileName,
                 isDirty = schemeState.isDirty,
+                canUndo = appState.canUndo(),
+                canRedo = appState.canRedo(),
                 onNew = {
-                    _schemeState.value = initialSchemeState
+                    appState.resetState()
                 },
                 onOpen = {
-                    openElementMatrixFromDialog(_schemeState)
+                    openElementMatrixFromDialog(appState.mutableSchemeState)
+                    // Очищаем историю после открытия файла
+                    appState.clearHistory()
+                    appState.addToHistory(appState.schemeState.value)
                 },
                 onSave = {
                     if (schemeState.fileName == null) {
-                        saveElementMatrixFromDialog(_schemeState)
+                        saveElementMatrixFromDialog(appState.mutableSchemeState)
                     } else {
                         saveElementMatrixToFile(schemeState.elements, schemeState.fileName!!)
-                        _schemeState.value = schemeState.copy(isDirty = false)
+                        appState.updateState(schemeState.copy(isDirty = false))
                     }
                 },
                 onSaveAs = {
-                    saveElementMatrixFromDialog(_schemeState)
-                }
+                    saveElementMatrixFromDialog(appState.mutableSchemeState)
+                },
+                onUndo = { appState.undo() },
+                onRedo = { appState.redo() }
             )
 
             Divider()
@@ -135,8 +208,8 @@ fun App() {
                     onElementsChange = { newElements ->
                         val isDirty =
                             newElements != schemeState.elements || schemeState.isDirty.not()
-                        _schemeState.value =
-                            schemeState.copy(elements = newElements, isDirty = isDirty)
+                        val newState = schemeState.copy(elements = newElements, isDirty = isDirty)
+                        appState.updateState(newState)
                     }
                 )
             }

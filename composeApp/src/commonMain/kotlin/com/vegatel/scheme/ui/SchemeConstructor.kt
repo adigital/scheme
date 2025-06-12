@@ -1090,24 +1090,20 @@ fun SchemeConstructor(
 
                         // Горизонтальный сдвиг начальной точки подключения кабеля
                         val startHorizontalOffsetDp =
-                            when {
-                                (startElementInstance?.isHalfShiftRender() == true) -> {
-                                    48.dp.toPx() +
-                                            when {
-                                                isShiftCableLeft -> {
-                                                    -4.dp.toPx()
-                                                }
-
-                                                isShiftCableRight -> {
-                                                    4.dp.toPx()
-                                                }
-
-                                                else -> 0.dp.toPx()
+                            if ((startElementInstance?.isHalfShiftRender() == true)) {
+                                48.dp.toPx() +
+                                        when {
+                                            isElementBelowRepeater && isShiftCableLeft -> {
+                                                -4.dp.toPx()
                                             }
-                                }
 
-                                else -> 0.dp.toPx()
-                            }
+                                            isElementBelowRepeater && isShiftCableRight -> {
+                                                4.dp.toPx()
+                                            }
+
+                                            else -> 0.dp.toPx()
+                                        }
+                            } else 0.dp.toPx()
 
                         // Вертикальный сдвиг начальной точки подключения кабеля
                         val startVerticalOffsetDp =
@@ -1121,24 +1117,20 @@ fun SchemeConstructor(
 
                         // Горизонтальный сдвиг конечной точки подключения кабеля
                         val endHorizontalOffsetDp =
-                            when {
-                                (endElementInstance?.isHalfShiftRender() == true) -> {
-                                    48.dp.toPx() +
-                                            when {
-                                                isShiftCableLeft -> {
-                                                    -4.dp.toPx()
-                                                }
-
-                                                isShiftCableRight -> {
-                                                    4.dp.toPx()
-                                                }
-
-                                                else -> 0.dp.toPx()
+                            if ((endElementInstance?.isHalfShiftRender() == true)) {
+                                48.dp.toPx() +
+                                        when {
+                                            !isElementBelowRepeater && isShiftCableLeft -> {
+                                                -4.dp.toPx()
                                             }
-                                }
 
-                                else -> 0.dp.toPx()
-                            }
+                                            !isElementBelowRepeater && isShiftCableRight -> {
+                                                4.dp.toPx()
+                                            }
+
+                                            else -> 0.dp.toPx()
+                                        }
+                            } else 0.dp.toPx()
 
                         // Вертикальный сдвиг конечной точки подключения кабеля
                         val endVerticalOffsetDp =
