@@ -5,29 +5,20 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.AlertDialog
-import androidx.compose.material.Button
 import androidx.compose.material.Divider
 import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Text
-import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -1190,176 +1181,26 @@ fun SchemeConstructor(
         }
     }
 
-    // Диалоги выносим на верхний уровень
-    // Диалог изменения длины кабеля
-    cableLengthDialogState?.let { (row, col) ->
-        AlertDialog(
-            onDismissRequest = { cableLengthDialogState = null },
-            title = { Text("Укажите длину кабеля") },
-            text = {
-                TextField(
-                    value = cableLengthInput,
-                    onValueChange = { input ->
-                        // Заменяем запятую на точку и удаляем пробелы
-                        val withDot = input.text.replace(",", ".").replace(" ", "")
+    // Добавляем диалоги
+    CableLengthDialog(
+        elements = elements,
+        onElementsChange = onElementsChange,
+        cableLengthDialogState = cableLengthDialogState,
+        onCableLengthDialogStateChange = { cableLengthDialogState = it },
+        cableLengthInput = cableLengthInput,
+        onCableLengthInputChange = { cableLengthInput = it },
+        focusRequester = focusRequester
+    )
 
-                        // Разрешаем ввод только цифр и одной точки
-                        if (withDot.matches(Regex("^\\d*\\.?\\d*$"))) {
-                            when {
-                                // Пустая строка или одна точка - разрешаем
-                                withDot.isEmpty() || withDot == "." -> {
-                                    cableLengthInput = TextFieldValue(
-                                        text = withDot,
-                                        selection = input.selection
-                                    )
-                                }
-                                // Если есть число после точки или целое число
-                                else -> {
-                                    withDot.toDoubleOrNull()?.let { value ->
-                                        if (value in 0.0..100.0) {
-                                            cableLengthInput = TextFieldValue(
-                                                text = withDot,
-                                                selection = input.selection
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Number,
-                        imeAction = ImeAction.Done
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onDone = {
-                            handleCableLengthUpdate(
-                                cableLengthInput.text,
-                                elements,
-                                row,
-                                col,
-                                onElementsChange
-                            )
-                            cableLengthDialogState = null
-                        }
-                    ),
-                    placeholder = { Text("0.0 - 100.0") },
-                    singleLine = true,
-                    modifier = Modifier.focusRequester(focusRequester)
-                )
-
-                LaunchedEffect(Unit) {
-                    focusRequester.requestFocus()
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        handleCableLengthUpdate(
-                            cableLengthInput.text,
-                            elements,
-                            row,
-                            col,
-                            onElementsChange
-                        )
-                        cableLengthDialogState = null
-                    }
-                ) {
-                    Text("OK")
-                }
-            },
-            dismissButton = {
-                Button(onClick = { cableLengthDialogState = null }) {
-                    Text("Отмена")
-                }
-            }
-        )
-    }
-
-    // Диалог изменения усиления репитера
-    repeaterGainDialogState?.let { (row, col) ->
-        AlertDialog(
-            onDismissRequest = { repeaterGainDialogState = null },
-            title = { Text("Укажите усиление репитера") },
-            text = {
-                TextField(
-                    value = repeaterGainInput,
-                    onValueChange = { input ->
-                        // Заменяем запятую на точку и удаляем пробелы
-                        val withDot = input.text.replace(",", ".").replace(" ", "")
-
-                        // Разрешаем ввод только цифр и одной точки
-                        if (withDot.matches(Regex("^\\d*\\.?\\d*$"))) {
-                            when {
-                                // Пустая строка или одна точка - разрешаем
-                                withDot.isEmpty() || withDot == "." -> {
-                                    repeaterGainInput = TextFieldValue(
-                                        text = withDot,
-                                        selection = input.selection
-                                    )
-                                }
-                                // Если есть число после точки или целое число
-                                else -> {
-                                    withDot.toDoubleOrNull()?.let { value ->
-                                        if (value in 0.0..100.0) {
-                                            repeaterGainInput = TextFieldValue(
-                                                text = withDot,
-                                                selection = input.selection
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Number,
-                        imeAction = ImeAction.Done
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onDone = {
-                            handleRepeaterGainUpdate(
-                                repeaterGainInput.text,
-                                elements,
-                                row,
-                                col,
-                                onElementsChange
-                            )
-                            repeaterGainDialogState = null
-                        }
-                    ),
-                    placeholder = { Text("0.0 - 100.0") },
-                    singleLine = true,
-                    modifier = Modifier.focusRequester(focusRequester)
-                )
-
-                LaunchedEffect(Unit) {
-                    focusRequester.requestFocus()
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        handleRepeaterGainUpdate(
-                            repeaterGainInput.text,
-                            elements,
-                            row,
-                            col,
-                            onElementsChange
-                        )
-                        repeaterGainDialogState = null
-                    }
-                ) {
-                    Text("OK")
-                }
-            },
-            dismissButton = {
-                Button(onClick = { repeaterGainDialogState = null }) {
-                    Text("Отмена")
-                }
-            }
-        )
-    }
+    RepeaterGainDialog(
+        elements = elements,
+        onElementsChange = onElementsChange,
+        repeaterGainDialogState = repeaterGainDialogState,
+        onRepeaterGainDialogStateChange = { repeaterGainDialogState = it },
+        repeaterGainInput = repeaterGainInput,
+        onRepeaterGainInputChange = { repeaterGainInput = it },
+        focusRequester = focusRequester
+    )
 }
 
 @Composable
@@ -1369,125 +1210,4 @@ private fun preview() {
         elements = initialElements,
         onElementsChange = {}
     )
-}
-
-// Функция для рекурсивного удаления элементов, подключенных к указанному элементу
-fun ElementMatrix.removeConnectedElementsAbove(elementId: Int) {
-    // Находим все элементы, которые подключены к данному элементу (endElementId == elementId)
-    forEachElement { row, col, element ->
-        if (element?.fetchEndElementId() == elementId) {
-            // Если найденный элемент - сумматор или сплиттер, рекурсивно удаляем его подключения
-            if (element is Combiner2 || element is Combiner3 || element is Combiner4 ||
-                element is Splitter2 || element is Splitter3 || element is Splitter4
-            ) {
-                removeConnectedElementsAbove(element.id)
-            }
-            // Не удаляем репитер!
-            if (element !is Repeater) {
-                this[row, col] = null
-            }
-        }
-    }
-}
-
-// Функция для оптимизации пустого пространства в матрице
-fun ElementMatrix.optimizeSpace() {
-    // Находим пустые столбцы
-    val emptyColumns = mutableListOf<Int>()
-    for (col in 0 until colCount) {
-        var isEmpty = true
-        for (row in 0 until rowCount) {
-            if (this[row, col] != null) {
-                isEmpty = false
-                break
-            }
-        }
-        if (isEmpty) {
-            emptyColumns.add(col)
-        }
-    }
-
-    // Удаляем пустые столбцы справа налево
-    emptyColumns.sortedDescending().forEach { col ->
-        // Проверяем, не является ли этот столбец единственным
-        if (colCount > 1) {
-            removeCol(col)
-        }
-    }
-
-    // Находим пустые строки
-    val emptyRows = mutableListOf<Int>()
-    for (row in 0 until rowCount) {
-        var isEmpty = true
-        for (col in 0 until colCount) {
-            if (this[row, col] != null) {
-                isEmpty = false
-                break
-            }
-        }
-        if (isEmpty) {
-            emptyRows.add(row)
-        }
-    }
-
-    // Удаляем пустые строки снизу вверх
-    emptyRows.sortedDescending().forEach { row ->
-        // Проверяем, не является ли эта строка единственной
-        if (rowCount > 1) {
-            removeRow(row)
-        }
-    }
-}
-
-// Вынесем логику обновления длины кабеля в отдельную функцию
-private fun handleCableLengthUpdate(
-    input: String,
-    elements: ElementMatrix,
-    row: Int,
-    col: Int,
-    onElementsChange: (ElementMatrix) -> Unit
-) {
-    input.toDoubleOrNull()?.let { length ->
-        if (length in 0.0..100.0) {
-            val newElements = elements.copy()
-            val oldElement = newElements[row, col]
-            if (oldElement != null) {
-                val newCable = oldElement.fetchCable().copy(length = length)
-                log("TEST", "Updating cable length to $length")
-                newElements[row, col] = when (oldElement) {
-                    is Antenna -> oldElement.copy(cable = newCable)
-                    is Load -> oldElement.copy(cable = newCable)
-                    is Combiner2 -> oldElement.copy(cable = newCable)
-                    is Combiner3 -> oldElement.copy(cable = newCable)
-                    is Combiner4 -> oldElement.copy(cable = newCable)
-                    is Repeater -> oldElement.copy(cable = newCable)
-                    is Splitter2 -> oldElement.copy(cable = newCable)
-                    is Splitter3 -> oldElement.copy(cable = newCable)
-                    is Splitter4 -> oldElement.copy(cable = newCable)
-                }
-                onElementsChange(newElements)
-            }
-        }
-    }
-}
-
-// Вынесем логику обновления усиления репитера в отдельную функцию
-private fun handleRepeaterGainUpdate(
-    input: String,
-    elements: ElementMatrix,
-    row: Int,
-    col: Int,
-    onElementsChange: (ElementMatrix) -> Unit
-) {
-    input.toDoubleOrNull()?.let { gain ->
-        if (gain in 0.0..100.0) {
-            val newElements = elements.copy()
-            val oldElement = newElements[row, col]
-            if (oldElement is Repeater) {
-                log("TEST", "Updating repeater gain to $gain")
-                newElements[row, col] = oldElement.copy(signalPower = gain)
-                onElementsChange(newElements)
-            }
-        }
-    }
 }

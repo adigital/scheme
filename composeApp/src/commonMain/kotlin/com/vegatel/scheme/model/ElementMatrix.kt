@@ -187,4 +187,49 @@ class ElementMatrix(
 
         return false
     }
+
+    // Удаляет все элементы, подключенные к указанному элементу сверху
+    fun removeConnectedElementsAbove(elementId: Int) {
+        // Находим все элементы, которые подключены к данному элементу (endElementId == elementId)
+        forEachElement { row, col, element ->
+            if (element?.fetchEndElementId() == elementId) {
+                // Если найденный элемент - сумматор или сплиттер, рекурсивно удаляем его подключения
+                if (element is Element.Combiner2 || element is Element.Combiner3 || element is Element.Combiner4 ||
+                    element is Element.Splitter2 || element is Element.Splitter3 || element is Element.Splitter4
+                ) {
+                    removeConnectedElementsAbove(element.id)
+                }
+                // Не удаляем репитер!
+                if (element !is Element.Repeater) {
+                    this[row, col] = null
+                }
+            }
+        }
+    }
+
+    // Оптимизирует пустое пространство в матрице
+    fun optimizeSpace() {
+        // Находим пустые столбцы
+        val emptyColumns = mutableListOf<Int>()
+        for (col in 0 until colCount) {
+            var isEmpty = true
+            for (row in 0 until rowCount) {
+                if (this[row, col] != null) {
+                    isEmpty = false
+                    break
+                }
+            }
+            if (isEmpty) {
+                emptyColumns.add(col)
+            }
+        }
+
+        // Удаляем пустые столбцы справа налево
+        emptyColumns.sortedDescending().forEach { col ->
+            // Проверяем, не является ли этот столбец единственным
+            if (colCount > 1) {
+                removeCol(col)
+            }
+        }
+    }
 }
