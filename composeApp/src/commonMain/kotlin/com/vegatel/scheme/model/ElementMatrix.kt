@@ -231,5 +231,28 @@ class ElementMatrix(
                 removeCol(col)
             }
         }
+
+        // Находим пустые строки
+        val emptyRows = mutableListOf<Int>()
+        for (row in 0 until rowCount) {
+            var isEmpty = true
+            for (col in 0 until colCount) {
+                if (this[row, col] != null) {
+                    isEmpty = false
+                    break
+                }
+            }
+            if (isEmpty) {
+                emptyRows.add(row)
+            }
+        }
+
+        // Удаляем пустые строки снизу вверх
+        emptyRows.sortedDescending().forEach { row ->
+            // Проверяем, не является ли эта строка единственной
+            if (rowCount > 1) {
+                removeRow(row)
+            }
+        }
     }
 }
