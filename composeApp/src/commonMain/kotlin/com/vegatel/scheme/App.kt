@@ -23,8 +23,8 @@ import com.vegatel.scheme.model.Element.Repeater
 import com.vegatel.scheme.model.ElementMatrix
 import com.vegatel.scheme.model.REPEATER_ID
 import com.vegatel.scheme.model.saveElementMatrixToFile
-import com.vegatel.scheme.ui.views.MainMenu
 import com.vegatel.scheme.ui.components.SchemeConstructor
+import com.vegatel.scheme.ui.views.MainMenu
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -84,10 +84,10 @@ class AppState {
         while (_history.size > _historyIndex + 1) {
             _history.removeLast()
         }
-        
+
         // Add new state
         _history.add(state)
-        
+
         // Keep history size limited
         if (_history.size > MAX_HISTORY_SIZE) {
             _history.removeFirst()
