@@ -1,12 +1,9 @@
-package com.vegatel.scheme.ui
+package com.vegatel.scheme.ui.views
 
-import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -22,10 +19,13 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import scheme.composeapp.generated.resources.Res
+import scheme.composeapp.generated.resources.antenna
 
 @Composable
-fun RepeaterView(
+fun AntennaView(
     signalPower: Double,
     onClick: (IntOffset) -> Unit,
     modifier: Modifier = Modifier
@@ -52,16 +52,12 @@ fun RepeaterView(
             },
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .border(4.dp, elementColor, RoundedCornerShape(4.dp))
-                .padding(8.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text("Rep", color = elementColor)
-        }
+        Icon(
+            modifier = Modifier.size(48.dp),
+            painter = painterResource(Res.drawable.antenna),
+            contentDescription = "Антенна",
+            tint = elementColor
+        )
 
         Text(
             String.format("%.1f", signalPower),
@@ -73,7 +69,8 @@ fun RepeaterView(
 @Composable
 @Preview
 private fun preview() {
-    RepeaterView(
-        signalPower = 30.0,
-        onClick = {})
+    AntennaView(
+        signalPower = 35.0,
+        onClick = {}
+    )
 }

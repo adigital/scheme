@@ -23,8 +23,8 @@ import com.vegatel.scheme.model.Element.Repeater
 import com.vegatel.scheme.model.ElementMatrix
 import com.vegatel.scheme.model.REPEATER_ID
 import com.vegatel.scheme.model.saveElementMatrixToFile
-import com.vegatel.scheme.ui.MainMenu
-import com.vegatel.scheme.ui.SchemeConstructor
+import com.vegatel.scheme.ui.views.MainMenu
+import com.vegatel.scheme.ui.components.SchemeConstructor
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

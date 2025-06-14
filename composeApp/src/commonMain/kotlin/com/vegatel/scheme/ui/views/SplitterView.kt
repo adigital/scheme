@@ -1,4 +1,4 @@
-package com.vegatel.scheme.ui
+package com.vegatel.scheme.ui.views
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures

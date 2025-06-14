@@ -1,4 +1,4 @@
-package com.vegatel.scheme.ui
+package com.vegatel.scheme.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -32,6 +32,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import com.vegatel.scheme.domain.usecase.calculateSignalPower
 import com.vegatel.scheme.extensions.toPx
 import com.vegatel.scheme.initialElements
 import com.vegatel.scheme.log
@@ -46,88 +47,13 @@ import com.vegatel.scheme.model.Element.Splitter2
 import com.vegatel.scheme.model.Element.Splitter3
 import com.vegatel.scheme.model.Element.Splitter4
 import com.vegatel.scheme.model.ElementMatrix
+import com.vegatel.scheme.ui.views.AntennaView
+import com.vegatel.scheme.ui.views.CableView
+import com.vegatel.scheme.ui.views.CombinerView
+import com.vegatel.scheme.ui.views.LoadView
+import com.vegatel.scheme.ui.views.RepeaterView
+import com.vegatel.scheme.ui.views.SplitterView
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import kotlin.math.log10
-import kotlin.math.pow
-
-// Добавляем функции для расчета сигнала перед @Composable SchemeConstructor
-
-// Рассчитывает потери в кабеле
-private fun calculateCableLoss(cable: Cable): Double {
-    return (cable.length * cable.lossPerMeter)
-}
-
-// Конвертация дБм в милливатты
-private fun dBmToMw(dBm: Double): Double {
-    return 10.0.pow(dBm / 10.0)
-}
-
-// Конвертация милливатт в дБм
-private fun mwToDBm(mw: Double): Double {
-    return 10.0 * log10(mw)
-}
-
-// Рассчитывает суммарную мощность сигнала для элемента
-private fun ElementMatrix.calculateSignalPower(elementId: Int): Double {
-    val element = findElementById(elementId)?.let { (row, col) -> this[row, col] } ?: return 0.0
-
-    // Определяем положение элемента относительно репитера
-    val isBelowRepeater = isElementBelowRepeater(elementId)
-
-    return when {
-        // Антенна или нагрузка выше репитера - берем их собственный сигнал
-        !isBelowRepeater && (element is Antenna || element is Load) -> {
-            element.signalPower
-        }
-
-        // Для всех остальных элементов считаем входящий сигнал
-        else -> {
-            // Находим все элементы, подключенные сверху
-            val inputSignals = mutableListOf<Double>()
-            forEachElement { row, col, connectedElement ->
-                if (connectedElement?.fetchEndElementId() == elementId) {
-                    // Получаем сигнал от подключенного элемента
-                    val sourceSignal = calculateSignalPower(connectedElement.id)
-                    // Учитываем потери в кабеле
-                    val cableLoss = calculateCableLoss(connectedElement.fetchCable())
-                    inputSignals.add(sourceSignal + cableLoss)
-                }
-            }
-
-            // Применяем характеристики текущего элемента
-            when (element) {
-                is Combiner2, is Combiner3, is Combiner4,
-                is Splitter2, is Splitter3, is Splitter4 -> {
-                    if (inputSignals.isEmpty()) {
-                        0.0
-                    } else {
-                        // Преобразуем все входящие сигналы из дБм в мВт
-                        val inputPowersMw = inputSignals.map { dBmToMw(it) }
-
-                        // Суммируем мощности в мВт
-                        val totalInputPowerMw = inputPowersMw.sum()
-
-                        // Преобразуем обратно в дБм
-                        val totalInputPowerDBm = mwToDBm(totalInputPowerMw)
-
-                        // Добавляем потери сумматора из его характеристики signalPower
-                        totalInputPowerDBm + element.signalPower
-                    }
-                }
-
-                is Repeater -> {
-                    // Для репитера берем максимальный входящий сигнал
-                    val maxInputSignal = inputSignals.maxOrNull() ?: 0.0
-                    maxInputSignal + element.signalPower
-                }
-
-                is Antenna, is Load -> {
-                    inputSignals.firstOrNull() ?: 0.0
-                }
-            }
-        }
-    }
-}
 
 @Composable
 fun SchemeConstructor(
