@@ -97,21 +97,33 @@ fun ElementMatrix.calculateSignalPower(elementId: Int, baseStationSignal: Double
                 maxIn + element.signalPower
             }
 
-            // Сплиттер: ищем все элементы, подключённые к этому сплиттеру (fetchEndElementId() == elementId), берём максимум
+            // Сплиттер: сигнал на входе берётся от всех элементов, подключенных сверху (rowChild < row), включая родительский через fetchEndElementId()
             element is Splitter2 || element is Splitter3 || element is Splitter4 -> {
-                var maxParentSignal: Double? = null
-                forEachElement { row, col, child ->
-                    println("Splitter $elementId: check child id=${child?.id}, endElementId=${child?.fetchEndElementId()}")
-                    if (child?.fetchEndElementId() == elementId) {
+                // Находим координаты текущего элемента
+                val currentCoords = findElementById(elementId) ?: return@calculate 0.0
+                val elementRow = currentCoords.first
+                val inputs = mutableListOf<Double>()
+                // Входы от upstream элементов (те, кто подключен через endElementId и находятся выше)
+                forEachElement { rowChild, colChild, child ->
+                    if (child?.fetchEndElementId() == elementId && rowChild < elementRow) {
                         val src = calculate(child.id)
                         val loss = calculateCableLoss(child.fetchCable())
-                        val total = src + loss
-                        if (maxParentSignal == null || total > maxParentSignal!!) {
-                            maxParentSignal = total
+                        inputs.add(src + loss)
+                    }
+                }
+                // Вход от элемента, к которому подключен этот сплиттер (если он выше)
+                val parentId = element.fetchEndElementId()
+                if (parentId != null && parentId >= 0) {
+                    findElementById(parentId)?.let { parentCoords ->
+                        if (parentCoords.first < elementRow) {
+                            val src = calculate(parentId)
+                            val loss = calculateCableLoss(element.fetchCable())
+                            inputs.add(src + loss)
                         }
                     }
                 }
-                (maxParentSignal ?: 0.0) + element.signalPower
+                val inputSignal = inputs.maxOrNull() ?: 0.0
+                inputSignal + element.signalPower
             }
 
             // Антенна или нагрузка ниже репитера (линия принятия): используем endElementId для связи с родителем
@@ -142,7 +154,6 @@ fun ElementMatrix.calculateSignalPower(elementId: Int, baseStationSignal: Double
         calculating.remove(elementId)
         // Сохраняем результат в кэше
         cache[elementId] = result
-        println("Signal for element id=$elementId (${element::class.simpleName}): $result")
         return result
     }
 
@@ -159,4 +170,4 @@ fun calculateSplitterLoss(element: Element): Double {
         is Splitter4 -> -6.0 // -6 дБ для сплиттера на 4
         else -> 0.0
     }
-} 
+}
