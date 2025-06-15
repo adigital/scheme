@@ -49,7 +49,8 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 @Composable
 fun SchemeConstructor(
     elements: ElementMatrix,
-    onElementsChange: (ElementMatrix) -> Unit
+    onElementsChange: (ElementMatrix) -> Unit,
+    baseStationSignal: Double = 30.0
 ) {
     // Состояние для диалога длины кабеля
     var cableLengthDialogState: Pair<Int, Int>? by remember { mutableStateOf<Pair<Int, Int>?>(null) }
@@ -100,7 +101,7 @@ fun SchemeConstructor(
 
                 // Рассчитываем мощность сигнала для текущего элемента
                 val calculatedSignalPower =
-                    element?.let { elements.calculateSignalPower(it.id) } ?: 0.0
+                    element?.let { elements.calculateSignalPower(it.id, baseStationSignal) } ?: 0.0
 
                 Box(
                     modifier = Modifier

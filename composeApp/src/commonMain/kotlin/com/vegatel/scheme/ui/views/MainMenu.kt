@@ -86,12 +86,13 @@ fun MainMenu(
                 append(displayFileName(fileName))
                 if (isDirty) append(" *")
             },
-            modifier = Modifier.padding(start = 8.dp)
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 8.dp)
         )
 
         Row(
             modifier = Modifier
-                .weight(1f)
                 .padding(end = 16.dp),
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically

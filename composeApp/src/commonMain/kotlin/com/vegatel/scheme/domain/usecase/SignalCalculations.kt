@@ -1,6 +1,7 @@
 package com.vegatel.scheme.domain.usecase
 
 import com.vegatel.scheme.model.Cable
+import com.vegatel.scheme.model.Element
 import com.vegatel.scheme.model.Element.Antenna
 import com.vegatel.scheme.model.Element.Combiner2
 import com.vegatel.scheme.model.Element.Combiner3
@@ -31,92 +32,131 @@ fun dBmToMw(dBm: Double): Double {
 /**
  * Конвертация милливатт в дБм
  */
-fun mwToDBm(mw: Double): Double {
-    return 10.0 * log10(mw)
+fun mwToDBm(mW: Double): Double {
+    return 10.0 * log10(mW)
 }
 
 /**
  * Расчитывает суммарную мощность сигнала для элемента в матрице
  */
-fun ElementMatrix.calculateSignalPower(elementId: Int): Double {
-    // Получаем элемент по идентификатору
-    val coords = findElementById(elementId) ?: return 0.0
-    val element = this[coords.first, coords.second] ?: return 0.0
+fun ElementMatrix.calculateSignalPower(elementId: Int, baseStationSignal: Double): Double {
+    // Кэш для хранения результатов расчета
+    val cache = mutableMapOf<Int, Double>()
+    // Множество для отслеживания элементов в процессе расчета
+    val calculating = mutableSetOf<Int>()
 
-    // Источники: антенны и нагрузки выше репитера
-    if (!isElementBelowRepeater(elementId) && (element is Antenna || element is Load)) {
-        return element.signalPower
-    }
+    fun calculate(elementId: Int): Double {
+        // Если результат уже в кэше, возвращаем его
+        cache[elementId]?.let { return it }
 
-    // Комбайнеры: суммируем сигналы от всех подключенных сверху элементов
-    if (element is Combiner2 || element is Combiner3 || element is Combiner4) {
-        val inputs = mutableListOf<Double>()
-        forEachElement { row, col, child ->
-            if (child?.fetchEndElementId() == elementId) {
-                val src = calculateSignalPower(child.id)
-                val loss = calculateCableLoss(child.fetchCable())
-                inputs.add(src + loss)
-            }
+        // Если элемент уже в процессе расчета, значит обнаружен цикл
+        if (elementId in calculating) {
+            return 0.0
         }
-        if (inputs.isEmpty()) return 0.0
-        val totalMw = inputs.sumOf { dBmToMw(it) }
-        return mwToDBm(totalMw) + element.signalPower
-    }
 
-    // Репитер: берём максимальный входящий сигнал
-    if (element is Repeater) {
-        val inputs = mutableListOf<Double>()
-        forEachElement { row, col, child ->
-            if (child?.fetchEndElementId() == elementId) {
-                val src = calculateSignalPower(child.id)
-                val loss = calculateCableLoss(child.fetchCable())
-                inputs.add(src + loss)
+        // Получаем элемент по идентификатору
+        val coords = findElementById(elementId) ?: return 0.0
+        val element = this[coords.first, coords.second] ?: return 0.0
+
+        // Добавляем элемент в множество обрабатываемых
+        calculating.add(elementId)
+
+        val result = when {
+            // Источники: антенны и нагрузки выше репитера
+            !isElementBelowRepeater(elementId) && (element is Antenna || element is Load) -> {
+                element.signalPower + baseStationSignal
             }
-        }
-        val maxIn = inputs.maxOrNull() ?: 0.0
-        return maxIn + element.signalPower
-    }
 
-    // Сплиттер: сигнал идёт из родительского элемента
-    if (element is Splitter2 || element is Splitter3 || element is Splitter4) {
-        var parentSignal = 0.0
-        outer@ for (r in 0 until rowCount) {
-            for (c in 0 until colCount) {
-                val parent = this[r, c]
-                if (parent != null && parent.fetchEndElementId() == elementId &&
-                    (parent is Repeater || parent is Combiner2 || parent is Combiner3 || parent is Combiner4 ||
-                            parent is Splitter2 || parent is Splitter3 || parent is Splitter4)
-                ) {
-                    val src = calculateSignalPower(parent.id)
-                    val loss = calculateCableLoss(parent.fetchCable())
-                    parentSignal = src + loss
-                    break@outer
+            // Комбайнеры: суммируем сигналы от всех подключенных сверху элементов
+            element is Combiner2 || element is Combiner3 || element is Combiner4 -> {
+                val inputs = mutableListOf<Double>()
+                forEachElement { row, col, child ->
+                    if (child?.fetchEndElementId() == elementId) {
+                        val src = calculate(child.id)
+                        val loss = calculateCableLoss(child.fetchCable())
+                        inputs.add(src + loss)
+                    }
+                }
+                if (inputs.isEmpty()) 0.0 else {
+                    val totalMw = inputs.sumOf { dBmToMw(it) }
+                    mwToDBm(totalMw) + element.signalPower
                 }
             }
-        }
-        return parentSignal + element.signalPower
-    }
 
-    // Антенна или нагрузка ниже репитера (линия принятия): используем endElementId для связи с родителем
-    if (element is Antenna || element is Load) {
-        val parentId = element.fetchEndElementId()
-        if (parentId >= 0) {
-            val parentPow = calculateSignalPower(parentId)
-            val loss = calculateCableLoss(element.fetchCable())
-            return parentPow + loss
-        }
-        // fallback: находим элемент, подключённый сверху
-        outer@ for (r in 0 until rowCount) {
-            for (c in 0 until colCount) {
-                val child = this[r, c]
-                if (child?.fetchEndElementId() == elementId) {
-                    return calculateSignalPower(child.id) + calculateCableLoss(child.fetchCable())
+            // Репитер: берём максимальный входящий сигнал
+            element is Repeater -> {
+                val inputs = mutableListOf<Double>()
+                forEachElement { row, col, child ->
+                    if (child?.fetchEndElementId() == elementId) {
+                        val src = calculate(child.id)
+                        val loss = calculateCableLoss(child.fetchCable())
+                        inputs.add(src + loss)
+                    }
+                }
+                val maxIn = inputs.maxOrNull() ?: 0.0
+                maxIn + element.signalPower
+            }
+
+            // Сплиттер: ищем все элементы, подключённые к этому сплиттеру (fetchEndElementId() == elementId), берём максимум
+            element is Splitter2 || element is Splitter3 || element is Splitter4 -> {
+                var maxParentSignal: Double? = null
+                forEachElement { row, col, child ->
+                    println("Splitter $elementId: check child id=${child?.id}, endElementId=${child?.fetchEndElementId()}")
+                    if (child?.fetchEndElementId() == elementId) {
+                        val src = calculate(child.id)
+                        val loss = calculateCableLoss(child.fetchCable())
+                        val total = src + loss
+                        if (maxParentSignal == null || total > maxParentSignal!!) {
+                            maxParentSignal = total
+                        }
+                    }
+                }
+                (maxParentSignal ?: 0.0) + element.signalPower
+            }
+
+            // Антенна или нагрузка ниже репитера (линия принятия): используем endElementId для связи с родителем
+            element is Antenna || element is Load -> {
+                val parentId = element.fetchEndElementId()
+                if (parentId >= 0) {
+                    val parentPow = calculate(parentId)
+                    val loss = calculateCableLoss(element.fetchCable())
+                    parentPow + loss
+                } else {
+                    // fallback: находим элемент, подключённый сверху
+                    var signal = 0.0
+                    forEachElement { row, col, child ->
+                        if (child?.fetchEndElementId() == elementId) {
+                            val src = calculate(child.id)
+                            val loss = calculateCableLoss(child.fetchCable())
+                            signal = src + loss
+                        }
+                    }
+                    signal
                 }
             }
+
+            else -> 0.0
         }
-        return 0.0
+
+        // Удаляем элемент из множества обрабатываемых
+        calculating.remove(elementId)
+        // Сохраняем результат в кэше
+        cache[elementId] = result
+        println("Signal for element id=$elementId (${element::class.simpleName}): $result")
+        return result
     }
 
-    // Все остальные случаи
-    return 0.0
+    return calculate(elementId)
+}
+
+/**
+ * Расчет потерь в сплиттере
+ */
+fun calculateSplitterLoss(element: Element): Double {
+    return when (element) {
+        is Splitter2 -> -3.0 // -3 дБ для сплиттера на 2
+        is Splitter3 -> -4.77 // -4.77 дБ для сплиттера на 3
+        is Splitter4 -> -6.0 // -6 дБ для сплиттера на 4
+        else -> 0.0
+    }
 } 

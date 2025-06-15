@@ -216,7 +216,8 @@ fun App() {
                             newElements != schemeState.elements || schemeState.isDirty.not()
                         val newState = schemeState.copy(elements = newElements, isDirty = isDirty)
                         appState.updateState(newState)
-                    }
+                    },
+                    baseStationSignal = schemeState.baseStationSignal
                 )
             }
         }
