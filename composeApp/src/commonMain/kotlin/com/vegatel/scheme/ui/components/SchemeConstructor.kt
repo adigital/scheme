@@ -250,7 +250,7 @@ fun SchemeConstructor(
 
                                     elementMenuOpenedForIndex = null
                                     onElementsChange(newElements)
-                                }) { Text("Антенна (35 дБм)") }
+                                }) { Text("Антенна (3 дБм)") }
 
                                 DropdownMenuItem(onClick = {
                                     val newElements = elements.copy()

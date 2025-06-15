@@ -1,13 +1,16 @@
 package com.vegatel.scheme.ui.views
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.Button
 import androidx.compose.material.Divider
 import androidx.compose.material.DropdownMenu
@@ -26,18 +29,26 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.vegatel.scheme.extensions.displayFileName
 import com.vegatel.scheme.getPlatform
+import com.vegatel.scheme.ui.components.BaseStationSignalDialog
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
+@Preview
 @Composable
 fun MainMenu(
     fileName: String?,
     isDirty: Boolean,
     canUndo: Boolean = false,
     canRedo: Boolean = false,
+    baseStationSignal: Double = 30.0,
+    onBaseStationSignalChange: (Double) -> Unit = {},
     onNew: () -> Unit = {},
     onOpen: () -> Unit = {},
     onSave: () -> Unit = {},
@@ -51,6 +62,9 @@ fun MainMenu(
     var expanded by remember { mutableStateOf(false) }
     var openSubmenu1Expanded by remember { mutableStateOf(false) }
     var openSubmenu2Expanded by remember { mutableStateOf(false) }
+    var showBaseStationSignalDialog by remember { mutableStateOf(false) }
+    var baseStationSignalInput by remember { mutableStateOf(TextFieldValue(baseStationSignal.toString())) }
+    val focusRequester = remember { FocusRequester() }
 
     Row(
         modifier = Modifier
@@ -79,8 +93,24 @@ fun MainMenu(
             modifier = Modifier
                 .weight(1f)
                 .padding(end = 16.dp),
-            horizontalArrangement = Arrangement.End
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            Text(
+                text = "БС: " + String.format("%.1f дБм", baseStationSignal),
+                modifier = Modifier
+                    .clickable {
+                        showBaseStationSignalDialog = true
+                        val text = baseStationSignal.toString()
+                        baseStationSignalInput = TextFieldValue(
+                            text = text,
+                            selection = TextRange(0, text.length)
+                        )
+                    }
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
             IconButton(
                 onClick = onUndo,
                 enabled = canUndo
@@ -198,7 +228,19 @@ fun MainMenu(
                     }
                 }
             }
-
         }
+    }
+
+    if (showBaseStationSignalDialog) {
+        BaseStationSignalDialog(
+            baseStationSignalInput = baseStationSignalInput,
+            onBaseStationSignalInputChange = { baseStationSignalInput = it },
+            onBaseStationSignalChange = { value ->
+                onBaseStationSignalChange(value)
+                showBaseStationSignalDialog = false
+            },
+            onDismiss = { showBaseStationSignalDialog = false },
+            focusRequester = focusRequester
+        )
     }
 }

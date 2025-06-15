@@ -11,7 +11,7 @@ sealed class Element {
 
     data class Antenna(
         override val id: Int,
-        override val signalPower: Double = 35.0,
+        override val signalPower: Double = 3.0,
         val endElementId: Int = -1,
         val cable: Cable = Cable()
     ) : Element() {

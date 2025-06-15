@@ -58,13 +58,15 @@ val initialElements = buildElementMatrix(rows = 3, cols = 1) {
 data class SchemeState(
     val elements: ElementMatrix,
     val fileName: String? = null,
-    val isDirty: Boolean = false
+    val isDirty: Boolean = false,
+    val baseStationSignal: Double = 30.0
 )
 
 val initialSchemeState = SchemeState(
     elements = initialElements,
     fileName = null,
-    isDirty = false
+    isDirty = false,
+    baseStationSignal = 30.0
 )
 
 class AppState {
@@ -174,6 +176,10 @@ fun App() {
                 isDirty = schemeState.isDirty,
                 canUndo = appState.canUndo(),
                 canRedo = appState.canRedo(),
+                baseStationSignal = schemeState.baseStationSignal,
+                onBaseStationSignalChange = { newSignal ->
+                    appState.updateState(schemeState.copy(baseStationSignal = newSignal))
+                },
                 onNew = {
                     appState.resetState()
                 },
