@@ -57,14 +57,18 @@ fun SchemeConstructor(
     // Состояние для диалога длины кабеля
     var cableLengthDialogState: Pair<Int, Int>? by remember { mutableStateOf<Pair<Int, Int>?>(null) }
     var cableLengthInput: TextFieldValue by remember { mutableStateOf(TextFieldValue()) }
+
     // Состояние для диалога усиления репитера
     var repeaterGainDialogState: Pair<Int, Int>? by remember { mutableStateOf<Pair<Int, Int>?>(null) }
     var repeaterGainInput: TextFieldValue by remember { mutableStateOf(TextFieldValue()) }
+
     val focusRequester = remember { FocusRequester() }
 
     elements.forEachElement { row, col, element ->
         log("TEST", "Element: ($row, $col) $element")
     }
+
+    val isRepeaterHalfShiftRender = elements.isRepeaterHalfShiftRender()
 
     // Геометрия схемы
     val elementWidthDp = 48
@@ -95,7 +99,9 @@ fun SchemeConstructor(
                 val elementOffset = IntOffset(
                     paddingHorizontalDp.dp.toPx().toInt() + col * 2 * elementWidthDp.dp.toPx()
                         .toInt() +
-                            if (element?.isHalfShiftRender() == true) 48.dp.toPx()
+                            if (element?.isHalfShiftRender() == true ||
+                                (element?.isRepeater() == true && isRepeaterHalfShiftRender)
+                            ) 48.dp.toPx()
                                 .toInt() else 0.dp.toPx().toInt(),
                     paddingVerticalDp.dp.toPx().toInt() + row * 2 * elementHeightDp.dp.toPx()
                         .toInt()
@@ -1016,7 +1022,9 @@ fun SchemeConstructor(
 
                         // Горизонтальный сдвиг начальной точки подключения кабеля
                         val startHorizontalOffsetDp =
-                            if ((startElementInstance?.isHalfShiftRender() == true)) {
+                            if (startElementInstance?.isHalfShiftRender() == true ||
+                                (startElementInstance?.isRepeater() == true && isRepeaterHalfShiftRender)
+                            ) {
                                 48.dp.toPx() +
                                         when {
                                             isElementBelowRepeater && isShiftCableLeft -> {
@@ -1043,7 +1051,9 @@ fun SchemeConstructor(
 
                         // Горизонтальный сдвиг конечной точки подключения кабеля
                         val endHorizontalOffsetDp =
-                            if ((endElementInstance?.isHalfShiftRender() == true)) {
+                            if (endElementInstance?.isHalfShiftRender() == true ||
+                                (endElementInstance?.isRepeater() == true && isRepeaterHalfShiftRender)
+                            ) {
                                 48.dp.toPx() +
                                         when {
                                             !isElementBelowRepeater && isShiftCableLeft -> {
@@ -1076,8 +1086,8 @@ fun SchemeConstructor(
                             start = startCenter,
                             end = endCenter,
                             isTwoCorners = isShiftCableLeft || isShiftCableRight ||
-                                    (endElementInstance?.isRepeater() == true && startElementInstance?.isHalfShiftRender() == true) ||
-                                    (startElementInstance?.isRepeater() == true && endElementInstance?.isHalfShiftRender() == true),
+                                    (endElementInstance?.isRepeater() == true && isRepeaterHalfShiftRender) ||
+                                    (startElementInstance?.isRepeater() == true && isRepeaterHalfShiftRender),
                             isSideThenDown = startElementInstance?.isSplitter() == true &&
                                     (startElement.second != endElement.second || startElementInstance.isHalfShiftRender() == true),
                             cable = cable,
