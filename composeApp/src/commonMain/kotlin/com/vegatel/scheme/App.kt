@@ -59,14 +59,16 @@ data class SchemeState(
     val elements: ElementMatrix,
     val fileName: String? = null,
     val isDirty: Boolean = false,
-    val baseStationSignal: Double = 30.0
+    val baseStationSignal: Double = 30.0,
+    val frequency: Int = 800
 )
 
 val initialSchemeState = SchemeState(
     elements = initialElements,
     fileName = null,
     isDirty = false,
-    baseStationSignal = 30.0
+    baseStationSignal = 30.0,
+    frequency = 800
 )
 
 class AppState {
@@ -151,25 +153,6 @@ fun App() {
             Modifier
                 .fillMaxSize()
                 .background(Color.LightGray)
-                .pointerInput(Unit) {
-                    awaitPointerEventScope {
-                        while (true) {
-                            val event = awaitPointerEvent()
-                            // Обрабатываем только события левой кнопки мыши
-                            if (event.changes.first().pressed) {
-                                val position = event.changes.first().position
-                                val lastPosition = event.changes.first().previousPosition
-
-                                // Вычисляем смещение
-                                val delta = position - lastPosition
-                                dragOffset = dragOffset + delta
-
-                                // Потребляем событие
-                                event.changes.forEach { it.consume() }
-                            }
-                        }
-                    }
-                }
         ) {
             MainMenu(
                 fileName = schemeState.fileName,
@@ -177,6 +160,10 @@ fun App() {
                 canUndo = appState.canUndo(),
                 canRedo = appState.canRedo(),
                 baseStationSignal = schemeState.baseStationSignal,
+                frequency = schemeState.frequency,
+                onFrequencyChange = { newFreq ->
+                    appState.updateState(schemeState.copy(frequency = newFreq))
+                },
                 onBaseStationSignalChange = { newSignal ->
                     appState.updateState(schemeState.copy(baseStationSignal = newSignal))
                 },
@@ -207,7 +194,23 @@ fun App() {
             Divider()
 
             Box(
-                Modifier.offset { IntOffset(dragOffset.x.toInt(), dragOffset.y.toInt()) }
+                Modifier
+                    .offset { IntOffset(dragOffset.x.toInt(), dragOffset.y.toInt()) }
+                    .pointerInput(Unit) {
+                        awaitPointerEventScope {
+                            while (true) {
+                                val event = awaitPointerEvent()
+                                // Перетаскиваем только из области схемы
+                                if (event.changes.first().pressed) {
+                                    val position = event.changes.first().position
+                                    val lastPosition = event.changes.first().previousPosition
+                                    val delta = position - lastPosition
+                                    dragOffset = dragOffset + delta
+                                    event.changes.forEach { it.consume() }
+                                }
+                            }
+                        }
+                    }
             ) {
                 SchemeConstructor(
                     elements = schemeState.elements,
@@ -217,7 +220,8 @@ fun App() {
                         val newState = schemeState.copy(elements = newElements, isDirty = isDirty)
                         appState.updateState(newState)
                     },
-                    baseStationSignal = schemeState.baseStationSignal
+                    baseStationSignal = schemeState.baseStationSignal,
+                    frequency = schemeState.frequency
                 )
             }
         }

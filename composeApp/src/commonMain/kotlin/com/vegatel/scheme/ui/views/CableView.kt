@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vegatel.scheme.model.Cable
+import com.vegatel.scheme.model.CableType
 import kotlinx.coroutines.delay
 import kotlin.math.abs
 import kotlin.math.max
@@ -40,19 +41,21 @@ fun CableView(
     modifier: Modifier = Modifier,
     onClick: (IntOffset) -> Unit
 ) {
-    val strokeWidthDp = (2 * cable.thickness).dp
+    // Фиксированная толщина кабеля
+    val strokeWidthDp = 2.dp
     val density = LocalDensity.current
 
-    // Функция для выбора цвета по толщине
-    fun getCableColorByThickness(thickness: Int): Color = when (thickness) {
-        1 -> Color.Black
-        2 -> Color.Blue
-        3 -> Color.Green
-        else -> Color.Black
+    // Функция для выбора цвета по типу кабеля
+    fun getCableColorByType(type: CableType): Color = when (type) {
+        CableType.CF_HALF -> Color.Blue
+        CableType.TEN_D_FB -> Color.Magenta
+        CableType.EIGHT_D_FB -> Color.Black
+        CableType.FIVE_D_FB -> Color.Red
+        CableType.OPTICAL -> Color(0xFF99FF99)
     }
 
     // Состояние для цвета линии
-    var cableColor by remember { mutableStateOf(getCableColorByThickness(cable.thickness)) }
+    var cableColor by remember { mutableStateOf(getCableColorByType(cable.type)) }
     var isRed by remember { mutableStateOf(false) }
 
     // Вычисляем сегменты линии и центральные точки
@@ -124,14 +127,14 @@ fun CableView(
     }
 
     // Эффект для смены цвета на 1 секунду
-    LaunchedEffect(isRed, cable.thickness) {
+    LaunchedEffect(isRed, cable.type) {
         if (isRed) {
             cableColor = Color.Red
             delay(1000)
-            cableColor = getCableColorByThickness(cable.thickness)
+            cableColor = getCableColorByType(cable.type)
             isRed = false
         } else {
-            cableColor = getCableColorByThickness(cable.thickness)
+            cableColor = getCableColorByType(cable.type)
         }
     }
 

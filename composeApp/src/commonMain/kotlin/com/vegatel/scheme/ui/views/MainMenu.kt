@@ -2,7 +2,7 @@ package com.vegatel.scheme.ui.views
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -48,7 +48,9 @@ fun MainMenu(
     canUndo: Boolean = false,
     canRedo: Boolean = false,
     baseStationSignal: Double = 30.0,
+    frequency: Int = 800,
     onBaseStationSignalChange: (Double) -> Unit = {},
+    onFrequencyChange: (Int) -> Unit = {},
     onNew: () -> Unit = {},
     onOpen: () -> Unit = {},
     onSave: () -> Unit = {},
@@ -64,6 +66,7 @@ fun MainMenu(
     var openSubmenu2Expanded by remember { mutableStateOf(false) }
     var showBaseStationSignalDialog by remember { mutableStateOf(false) }
     var baseStationSignalInput by remember { mutableStateOf(TextFieldValue(baseStationSignal.toString())) }
+    var showFrequencyDropdown by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
 
     Row(
@@ -74,63 +77,86 @@ fun MainMenu(
                 top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
             )
             .zIndex(1f)
-            .padding(start = 16.dp),
+            .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Button(onClick = { expanded = true }) {
             Icon(Icons.Default.Menu, contentDescription = null)
         }
 
-        Text(
-            text = buildString {
-                append(displayFileName(fileName))
-                if (isDirty) append(" *")
-            },
+        Column(
             modifier = Modifier
+                .fillMaxWidth()
                 .weight(1f)
-                .padding(start = 8.dp)
-        )
-
-        Row(
-            modifier = Modifier
-                .padding(end = 16.dp),
-            horizontalArrangement = Arrangement.End,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(start = 8.dp, top = 4.dp, bottom = 4.dp)
         ) {
             Text(
-                text = "БС: " + String.format("%.1f дБм", baseStationSignal),
-                modifier = Modifier
-                    .clickable {
-                        showBaseStationSignalDialog = true
-                        val text = baseStationSignal.toString()
-                        baseStationSignalInput = TextFieldValue(
-                            text = text,
-                            selection = TextRange(0, text.length)
-                        )
-                    }
+                text = buildString {
+                    append(displayFileName(fileName))
+                    if (isDirty) append(" *")
+                }
             )
 
-            Spacer(modifier = Modifier.width(8.dp))
-
-            IconButton(
-                onClick = onUndo,
-                enabled = canUndo
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                    contentDescription = "Отменить",
+                Text(
+                    modifier = Modifier.clickable {
+                        showFrequencyDropdown = true
+                    },
+                    text = "$frequency МГц"
+                )
+
+                DropdownMenu(
+                    expanded = showFrequencyDropdown,
+                    onDismissRequest = { showFrequencyDropdown = false }
+                ) {
+                    listOf(800, 900, 1800, 2100, 2600).forEach { freq ->
+                        DropdownMenuItem(onClick = {
+                            onFrequencyChange(freq)
+                            showFrequencyDropdown = false
+                        }) {
+                            Text("$freq МГц")
+                        }
+                    }
+
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Text(
+                    modifier = Modifier
+                        .clickable {
+                            showBaseStationSignalDialog = true
+                            val text = baseStationSignal.toString()
+                            baseStationSignalInput = TextFieldValue(
+                                text = text,
+                                selection = TextRange(0, text.length)
+                            )
+                        },
+                    text = String.format("%.1f дБм", baseStationSignal)
                 )
             }
+        }
 
-            IconButton(
-                onClick = onRedo,
-                enabled = canRedo
-            ) {
-                Icon(
-                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = "Повторить",
-                )
-            }
+        IconButton(
+            onClick = onUndo,
+            enabled = canUndo
+        ) {
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                contentDescription = "Отменить",
+            )
+        }
+
+        IconButton(
+            onClick = onRedo,
+            enabled = canRedo
+        ) {
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = "Повторить",
+            )
         }
 
         DropdownMenu(

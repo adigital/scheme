@@ -21,8 +21,7 @@ data class SerializableElement(
 @Serializable
 data class SerializableCable(
     val length: Double,
-    val thickness: Int,
-    val lossPerMeter: Double
+    val type: String
 )
 
 fun ElementMatrix.toSerializable(): SerializableElementMatrix {
@@ -35,81 +34,72 @@ fun ElementMatrix.toSerializable(): SerializableElementMatrix {
                     is Element.Antenna -> SerializableElement(
                         "Antenna", element.id, element.signalPower, element.endElementId,
                         SerializableCable(
-                            element.cable.length,
-                            element.cable.thickness,
-                            element.cable.lossPerMeter
+                            length = element.cable.length,
+                            type = element.cable.type.name
                         )
                     )
 
                     is Element.Load -> SerializableElement(
                         "Load", element.id, element.signalPower, element.endElementId,
                         SerializableCable(
-                            element.cable.length,
-                            element.cable.thickness,
-                            element.cable.lossPerMeter
+                            length = element.cable.length,
+                            type = element.cable.type.name
                         )
                     )
 
                     is Element.Combiner2 -> SerializableElement(
                         "Combiner2", element.id, element.signalPower, element.endElementId,
                         SerializableCable(
-                            element.cable.length,
-                            element.cable.thickness,
-                            element.cable.lossPerMeter
+                            length = element.cable.length,
+                            type = element.cable.type.name
                         )
                     )
 
                     is Element.Combiner3 -> SerializableElement(
                         "Combiner3", element.id, element.signalPower, element.endElementId,
                         SerializableCable(
-                            element.cable.length,
-                            element.cable.thickness,
-                            element.cable.lossPerMeter
+                            length = element.cable.length,
+                            type = element.cable.type.name
                         )
                     )
 
                     is Element.Combiner4 -> SerializableElement(
                         "Combiner4", element.id, element.signalPower, element.endElementId,
                         SerializableCable(
-                            element.cable.length,
-                            element.cable.thickness,
-                            element.cable.lossPerMeter
+                            length = element.cable.length,
+                            type = element.cable.type.name
                         )
                     )
 
                     is Element.Repeater -> SerializableElement(
                         "Repeater", element.id, element.signalPower, element.endElementId,
                         SerializableCable(
-                            element.cable.length,
-                            element.cable.thickness,
-                            element.cable.lossPerMeter
+                            length = element.cable.length,
+                            type = element.cable.type.name
                         )
                     )
 
                     is Element.Splitter2 -> SerializableElement(
                         "Splitter2", element.id, element.signalPower, element.endElementId,
                         SerializableCable(
-                            element.cable.length,
-                            element.cable.thickness,
-                            element.cable.lossPerMeter
+                            length = element.cable.length,
+                            type = element.cable.type.name
                         )
                     )
 
                     is Element.Splitter3 -> SerializableElement(
                         "Splitter3", element.id, element.signalPower, element.endElementId,
                         SerializableCable(
-                            element.cable.length,
-                            element.cable.thickness,
-                            element.cable.lossPerMeter
+                            length = element.cable.length,
+                            type = element.cable.type.name
                         )
                     )
 
                     is Element.Splitter4 -> SerializableElement(
                         "Splitter4", element.id, element.signalPower, element.endElementId,
                         SerializableCable(
-                            element.cable.length,
-                            element.cable.thickness,
-                            element.cable.lossPerMeter
+                            length = element.cable.length,
+                            type = element.cable.type.name
                         )
                     )
                 }
@@ -126,13 +116,12 @@ fun SerializableElementMatrix.toElementMatrix(): ElementMatrix {
         val col = index % cols
         if (e != null) {
             val cable = e.cable?.let {
+                val cableType = CableType.valueOf(it.type)
                 Cable(
-                    it.length,
-                    it.thickness,
-                    it.lossPerMeter
+                    length = it.length,
+                    type = cableType
                 )
-            }
-                ?: Cable()
+            } ?: Cable()
             val element = when (e.type) {
                 "Antenna" -> Element.Antenna(
                     e.id,

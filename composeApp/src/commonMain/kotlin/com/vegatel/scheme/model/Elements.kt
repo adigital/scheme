@@ -153,6 +153,5 @@ sealed class Element {
 
 data class Cable(
     val length: Double = 0.0,
-    val thickness: Int = 1,
-    val lossPerMeter: Double = -0.5
+    val type: CableType = CableType.CF_HALF
 )

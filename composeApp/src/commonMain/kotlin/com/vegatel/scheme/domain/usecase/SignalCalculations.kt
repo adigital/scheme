@@ -15,10 +15,14 @@ import kotlin.math.log10
 import kotlin.math.pow
 
 /**
- * Рассчитывает потери в кабеле
+ * Рассчитывает потери в кабеле для заданной частоты (МГц)
+ * attenuationMap хранит затухание в дБ на 100 метров, поэтому приводим к дБ/метр.
  */
-fun calculateCableLoss(cable: Cable): Double {
-    return cable.length * cable.lossPerMeter
+fun calculateCableLoss(cable: Cable, frequency: Int): Double {
+    // Приводим значения затухания из дБ/100м к дБ/м и умножаем на длину кабеля
+    val lossPer100m = cable.type.attenuationMap[frequency] ?: 0.0
+    val lossPerMeter = lossPer100m / 100.0
+    return cable.length * lossPerMeter
 }
 
 /**
@@ -36,9 +40,13 @@ fun mwToDBm(mW: Double): Double {
 }
 
 /**
- * Расчитывает суммарную мощность сигнала для элемента в матрице
+ * Рассчитывает суммарную мощность сигнала для элемента в матрице с учётом частоты
  */
-fun ElementMatrix.calculateSignalPower(elementId: Int, baseStationSignal: Double): Double {
+fun ElementMatrix.calculateSignalPower(
+    elementId: Int,
+    baseStationSignal: Double,
+    frequency: Int
+): Double {
     // Кэш для хранения результатов расчета
     val cache = mutableMapOf<Int, Double>()
     // Множество для отслеживания элементов в процессе расчета
@@ -72,7 +80,7 @@ fun ElementMatrix.calculateSignalPower(elementId: Int, baseStationSignal: Double
                 forEachElement { row, col, child ->
                     if (child?.fetchEndElementId() == elementId) {
                         val src = calculate(child.id)
-                        val loss = calculateCableLoss(child.fetchCable())
+                        val loss = calculateCableLoss(child.fetchCable(), frequency)
                         inputs.add(src + loss)
                     }
                 }
@@ -88,7 +96,7 @@ fun ElementMatrix.calculateSignalPower(elementId: Int, baseStationSignal: Double
                 forEachElement { row, col, child ->
                     if (child?.fetchEndElementId() == elementId) {
                         val src = calculate(child.id)
-                        val loss = calculateCableLoss(child.fetchCable())
+                        val loss = calculateCableLoss(child.fetchCable(), frequency)
                         inputs.add(src + loss)
                     }
                 }
@@ -106,7 +114,7 @@ fun ElementMatrix.calculateSignalPower(elementId: Int, baseStationSignal: Double
                 forEachElement { rowChild, colChild, child ->
                     if (child?.fetchEndElementId() == elementId && rowChild < elementRow) {
                         val src = calculate(child.id)
-                        val loss = calculateCableLoss(child.fetchCable())
+                        val loss = calculateCableLoss(child.fetchCable(), frequency)
                         inputs.add(src + loss)
                     }
                 }
@@ -116,7 +124,7 @@ fun ElementMatrix.calculateSignalPower(elementId: Int, baseStationSignal: Double
                     findElementById(parentId)?.let { parentCoords ->
                         if (parentCoords.first < elementRow) {
                             val src = calculate(parentId)
-                            val loss = calculateCableLoss(element.fetchCable())
+                            val loss = calculateCableLoss(element.fetchCable(), frequency)
                             inputs.add(src + loss)
                         }
                     }
@@ -130,7 +138,7 @@ fun ElementMatrix.calculateSignalPower(elementId: Int, baseStationSignal: Double
                 val parentId = element.fetchEndElementId()
                 if (parentId >= 0) {
                     val parentPow = calculate(parentId)
-                    val loss = calculateCableLoss(element.fetchCable())
+                    val loss = calculateCableLoss(element.fetchCable(), frequency)
                     parentPow + loss
                 } else {
                     // fallback: находим элемент, подключённый сверху
@@ -138,7 +146,7 @@ fun ElementMatrix.calculateSignalPower(elementId: Int, baseStationSignal: Double
                     forEachElement { row, col, child ->
                         if (child?.fetchEndElementId() == elementId) {
                             val src = calculate(child.id)
-                            val loss = calculateCableLoss(child.fetchCable())
+                            val loss = calculateCableLoss(child.fetchCable(), frequency)
                             signal = src + loss
                         }
                     }

@@ -28,6 +28,7 @@ import com.vegatel.scheme.extensions.toPx
 import com.vegatel.scheme.initialElements
 import com.vegatel.scheme.log
 import com.vegatel.scheme.model.Cable
+import com.vegatel.scheme.model.CableType
 import com.vegatel.scheme.model.Element.Antenna
 import com.vegatel.scheme.model.Element.Combiner2
 import com.vegatel.scheme.model.Element.Combiner3
@@ -50,7 +51,8 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 fun SchemeConstructor(
     elements: ElementMatrix,
     onElementsChange: (ElementMatrix) -> Unit,
-    baseStationSignal: Double = 30.0
+    baseStationSignal: Double = 30.0,
+    frequency: Int = 800
 ) {
     // Состояние для диалога длины кабеля
     var cableLengthDialogState: Pair<Int, Int>? by remember { mutableStateOf<Pair<Int, Int>?>(null) }
@@ -101,7 +103,13 @@ fun SchemeConstructor(
 
                 // Рассчитываем мощность сигнала для текущего элемента
                 val calculatedSignalPower =
-                    element?.let { elements.calculateSignalPower(it.id, baseStationSignal) } ?: 0.0
+                    element?.let {
+                        elements.calculateSignalPower(
+                            it.id,
+                            baseStationSignal,
+                            frequency
+                        )
+                    } ?: 0.0
 
                 Box(
                     modifier = Modifier
@@ -1105,74 +1113,38 @@ fun SchemeConstructor(
 
                                     Divider()
 
-                                    DropdownMenuItem(onClick = {
-                                        val newElements = elements.copy()
-                                        val oldElement = newElements[row, col]
-                                        if (oldElement != null) {
-                                            val newCable =
-                                                oldElement.fetchCable()
-                                                    .copy(thickness = 1, lossPerMeter = -0.5)
-                                            newElements[row, col] = when (oldElement) {
-                                                is Antenna -> oldElement.copy(cable = newCable)
-                                                is Load -> oldElement.copy(cable = newCable)
-                                                is Combiner2 -> oldElement.copy(cable = newCable)
-                                                is Combiner3 -> oldElement.copy(cable = newCable)
-                                                is Combiner4 -> oldElement.copy(cable = newCable)
-                                                is Repeater -> oldElement.copy(cable = newCable)
-                                                is Splitter2 -> oldElement.copy(cable = newCable)
-                                                is Splitter3 -> oldElement.copy(cable = newCable)
-                                                is Splitter4 -> oldElement.copy(cable = newCable)
+                                    // Выбор нового типа кабеля
+                                    listOf(
+                                        CableType.CF_HALF,
+                                        CableType.TEN_D_FB,
+                                        CableType.EIGHT_D_FB,
+                                        CableType.FIVE_D_FB,
+                                        CableType.OPTICAL
+                                    ).forEach { type ->
+                                        DropdownMenuItem(onClick = {
+                                            val newElements = elements.copy()
+                                            val oldElement = newElements[row, col]
+                                            if (oldElement != null) {
+                                                val newCable =
+                                                    oldElement.fetchCable().copy(type = type)
+                                                newElements[row, col] = when (oldElement) {
+                                                    is Antenna -> oldElement.copy(cable = newCable)
+                                                    is Load -> oldElement.copy(cable = newCable)
+                                                    is Combiner2 -> oldElement.copy(cable = newCable)
+                                                    is Combiner3 -> oldElement.copy(cable = newCable)
+                                                    is Combiner4 -> oldElement.copy(cable = newCable)
+                                                    is Repeater -> oldElement.copy(cable = newCable)
+                                                    is Splitter2 -> oldElement.copy(cable = newCable)
+                                                    is Splitter3 -> oldElement.copy(cable = newCable)
+                                                    is Splitter4 -> oldElement.copy(cable = newCable)
+                                                }
                                             }
+                                            cableMenuOpenedForIndex = null
+                                            onElementsChange(newElements)
+                                        }) {
+                                            Text(type.displayName)
                                         }
-                                        cableMenuOpenedForIndex = null
-                                        onElementsChange(newElements)
-                                    }) { Text("Тип1 (тонкий, -0.5 дБм)") }
-
-                                    DropdownMenuItem(onClick = {
-                                        val newElements = elements.copy()
-                                        val oldElement = newElements[row, col]
-                                        if (oldElement != null) {
-                                            val newCable =
-                                                oldElement.fetchCable()
-                                                    .copy(thickness = 2, lossPerMeter = -1.0)
-                                            newElements[row, col] = when (oldElement) {
-                                                is Antenna -> oldElement.copy(cable = newCable)
-                                                is Load -> oldElement.copy(cable = newCable)
-                                                is Combiner2 -> oldElement.copy(cable = newCable)
-                                                is Combiner3 -> oldElement.copy(cable = newCable)
-                                                is Combiner4 -> oldElement.copy(cable = newCable)
-                                                is Repeater -> oldElement.copy(cable = newCable)
-                                                is Splitter2 -> oldElement.copy(cable = newCable)
-                                                is Splitter3 -> oldElement.copy(cable = newCable)
-                                                is Splitter4 -> oldElement.copy(cable = newCable)
-                                            }
-                                        }
-                                        cableMenuOpenedForIndex = null
-                                        onElementsChange(newElements)
-                                    }) { Text("Тип2 (толще, -1 дБм)") }
-
-                                    DropdownMenuItem(onClick = {
-                                        val newElements = elements.copy()
-                                        val oldElement = newElements[row, col]
-                                        if (oldElement != null) {
-                                            val newCable =
-                                                oldElement.fetchCable()
-                                                    .copy(thickness = 3, lossPerMeter = -1.5)
-                                            newElements[row, col] = when (oldElement) {
-                                                is Antenna -> oldElement.copy(cable = newCable)
-                                                is Load -> oldElement.copy(cable = newCable)
-                                                is Combiner2 -> oldElement.copy(cable = newCable)
-                                                is Combiner3 -> oldElement.copy(cable = newCable)
-                                                is Combiner4 -> oldElement.copy(cable = newCable)
-                                                is Repeater -> oldElement.copy(cable = newCable)
-                                                is Splitter2 -> oldElement.copy(cable = newCable)
-                                                is Splitter3 -> oldElement.copy(cable = newCable)
-                                                is Splitter4 -> oldElement.copy(cable = newCable)
-                                            }
-                                        }
-                                        cableMenuOpenedForIndex = null
-                                        onElementsChange(newElements)
-                                    }) { Text("Тип3 (самый толстый, -1.5 дБм)") }
+                                    }
                                 }
                             }
                         }
