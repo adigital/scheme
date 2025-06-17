@@ -1,7 +1,6 @@
 package com.vegatel.scheme.domain.usecase
 
 import com.vegatel.scheme.model.Cable
-import com.vegatel.scheme.model.Element
 import com.vegatel.scheme.model.Element.Antenna
 import com.vegatel.scheme.model.Element.Combiner2
 import com.vegatel.scheme.model.Element.Combiner3
@@ -100,7 +99,7 @@ fun ElementMatrix.calculateSignalPower(elementId: Int, baseStationSignal: Double
             // Сплиттер: сигнал на входе берётся от всех элементов, подключенных сверху (rowChild < row), включая родительский через fetchEndElementId()
             element is Splitter2 || element is Splitter3 || element is Splitter4 -> {
                 // Находим координаты текущего элемента
-                val currentCoords = findElementById(elementId) ?: return@calculate 0.0
+                val currentCoords = findElementById(elementId) ?: return 0.0
                 val elementRow = currentCoords.first
                 val inputs = mutableListOf<Double>()
                 // Входы от upstream элементов (те, кто подключен через endElementId и находятся выше)
@@ -113,7 +112,7 @@ fun ElementMatrix.calculateSignalPower(elementId: Int, baseStationSignal: Double
                 }
                 // Вход от элемента, к которому подключен этот сплиттер (если он выше)
                 val parentId = element.fetchEndElementId()
-                if (parentId != null && parentId >= 0) {
+                if (parentId >= 0) {
                     findElementById(parentId)?.let { parentCoords ->
                         if (parentCoords.first < elementRow) {
                             val src = calculate(parentId)
@@ -158,16 +157,4 @@ fun ElementMatrix.calculateSignalPower(elementId: Int, baseStationSignal: Double
     }
 
     return calculate(elementId)
-}
-
-/**
- * Расчет потерь в сплиттере
- */
-fun calculateSplitterLoss(element: Element): Double {
-    return when (element) {
-        is Splitter2 -> -3.0 // -3 дБ для сплиттера на 2
-        is Splitter3 -> -4.77 // -4.77 дБ для сплиттера на 3
-        is Splitter4 -> -6.0 // -6 дБ для сплиттера на 4
-        else -> 0.0
-    }
 }
