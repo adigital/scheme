@@ -125,6 +125,7 @@ fun SchemeConstructor(
                     when (element) {
                         is Antenna -> {
                             AntennaView(
+                                antenna = element,
                                 signalPower = calculatedSignalPower,
                                 onClick = {
                                     elementMenuOpenedForIndex = row to col
@@ -265,13 +266,213 @@ fun SchemeConstructor(
 
                                     elementMenuOpenedForIndex = null
                                     onElementsChange(newElements)
-                                }) { Text("Антенна (3 дБм)") }
+                                }) { Text("Антенна FI (6 дБм)") }
+
+                                // Дополнительные типы антенн
+                                DropdownMenuItem(onClick = {
+                                    val newElements = elements.copy()
+                                    val oldElement = newElements[row, col]
+
+                                    if (oldElement != null &&
+                                        (oldElement is Combiner2 || oldElement is Combiner3 || oldElement is Combiner4 ||
+                                                oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4)
+                                    ) {
+                                        newElements.removeConnectedElementsAbove(oldElement.id)
+                                        var belowElementId: Int? = null
+                                        var belowCable: Cable? = null
+                                        for (r in (row + 1) until newElements.rowCount) {
+                                            val candidate = newElements[r, col]
+                                            if (candidate != null) {
+                                                belowElementId = candidate.id
+                                                belowCable = candidate.fetchCable()
+                                                break
+                                            }
+                                        }
+                                        newElements[row, col] = Antenna(
+                                            id = oldElement.id,
+                                            signalPower = 9.0,
+                                            endElementId = belowElementId
+                                                ?: oldElement.fetchEndElementId(),
+                                            cable = oldElement.fetchCable()
+                                        )
+                                    } else {
+                                        newElements[row, col] = Antenna(
+                                            id = oldElement?.id ?: newElements.generateNewId(),
+                                            signalPower = 9.0,
+                                            endElementId = oldElement?.fetchEndElementId() ?: -1,
+                                            cable = oldElement?.fetchCable() ?: Cable()
+                                        )
+                                    }
+                                    newElements.optimizeSpace()
+
+                                    elementMenuOpenedForIndex = null
+                                    onElementsChange(newElements)
+                                }) { Text("Антенна PI (9 дБм)") }
 
                                 DropdownMenuItem(onClick = {
                                     val newElements = elements.copy()
                                     val oldElement = newElements[row, col]
 
-                                    // Если заменяем сумматор или сплиттер на нагрузку, удаляем подключенные элементы
+                                    if (oldElement != null &&
+                                        (oldElement is Combiner2 || oldElement is Combiner3 || oldElement is Combiner4 ||
+                                                oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4)
+                                    ) {
+                                        newElements.removeConnectedElementsAbove(oldElement.id)
+                                        var belowElementId: Int? = null
+                                        var belowCable: Cable? = null
+                                        for (r in (row + 1) until newElements.rowCount) {
+                                            val candidate = newElements[r, col]
+                                            if (candidate != null) {
+                                                belowElementId = candidate.id
+                                                belowCable = candidate.fetchCable()
+                                                break
+                                            }
+                                        }
+                                        newElements[row, col] = Antenna(
+                                            id = oldElement.id,
+                                            signalPower = 15.0,
+                                            endElementId = belowElementId
+                                                ?: oldElement.fetchEndElementId(),
+                                            cable = oldElement.fetchCable()
+                                        )
+                                    } else {
+                                        newElements[row, col] = Antenna(
+                                            id = oldElement?.id ?: newElements.generateNewId(),
+                                            signalPower = 15.0,
+                                            endElementId = oldElement?.fetchEndElementId() ?: -1,
+                                            cable = oldElement?.fetchCable() ?: Cable()
+                                        )
+                                    }
+                                    newElements.optimizeSpace()
+
+                                    elementMenuOpenedForIndex = null
+                                    onElementsChange(newElements)
+                                }) { Text("Антенна 15PO (15 дБм)") }
+
+                                DropdownMenuItem(onClick = {
+                                    val newElements = elements.copy()
+                                    val oldElement = newElements[row, col]
+
+                                    if (oldElement != null &&
+                                        (oldElement is Combiner2 || oldElement is Combiner3 || oldElement is Combiner4 ||
+                                                oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4)
+                                    ) {
+                                        newElements.removeConnectedElementsAbove(oldElement.id)
+                                        var belowElementId: Int? = null
+                                        var belowCable: Cable? = null
+                                        for (r in (row + 1) until newElements.rowCount) {
+                                            val candidate = newElements[r, col]
+                                            if (candidate != null) {
+                                                belowElementId = candidate.id
+                                                belowCable = candidate.fetchCable()
+                                                break
+                                            }
+                                        }
+                                        newElements[row, col] = Antenna(
+                                            id = oldElement.id,
+                                            signalPower = 16.0,
+                                            endElementId = belowElementId
+                                                ?: oldElement.fetchEndElementId(),
+                                            cable = oldElement.fetchCable()
+                                        )
+                                    } else {
+                                        newElements[row, col] = Antenna(
+                                            id = oldElement?.id ?: newElements.generateNewId(),
+                                            signalPower = 16.0,
+                                            endElementId = oldElement?.fetchEndElementId() ?: -1,
+                                            cable = oldElement?.fetchCable() ?: Cable()
+                                        )
+                                    }
+                                    newElements.optimizeSpace()
+
+                                    elementMenuOpenedForIndex = null
+                                    onElementsChange(newElements)
+                                }) { Text("Антенна 16S (16 дБм)") }
+
+                                DropdownMenuItem(onClick = {
+                                    val newElements = elements.copy()
+                                    val oldElement = newElements[row, col]
+
+                                    if (oldElement != null &&
+                                        (oldElement is Combiner2 || oldElement is Combiner3 || oldElement is Combiner4 ||
+                                                oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4)
+                                    ) {
+                                        newElements.removeConnectedElementsAbove(oldElement.id)
+                                        var belowElementId: Int? = null
+                                        var belowCable: Cable? = null
+                                        for (r in (row + 1) until newElements.rowCount) {
+                                            val candidate = newElements[r, col]
+                                            if (candidate != null) {
+                                                belowElementId = candidate.id
+                                                belowCable = candidate.fetchCable()
+                                                break
+                                            }
+                                        }
+                                        newElements[row, col] = Antenna(
+                                            id = oldElement.id,
+                                            signalPower = 11.0,
+                                            endElementId = belowElementId
+                                                ?: oldElement.fetchEndElementId(),
+                                            cable = oldElement.fetchCable()
+                                        )
+                                    } else {
+                                        newElements[row, col] = Antenna(
+                                            id = oldElement?.id ?: newElements.generateNewId(),
+                                            signalPower = 11.0,
+                                            endElementId = oldElement?.fetchEndElementId() ?: -1,
+                                            cable = oldElement?.fetchCable() ?: Cable()
+                                        )
+                                    }
+                                    newElements.optimizeSpace()
+
+                                    elementMenuOpenedForIndex = null
+                                    onElementsChange(newElements)
+                                }) { Text("Антенна 11Y (11 дБм)") }
+
+                                DropdownMenuItem(onClick = {
+                                    val newElements = elements.copy()
+                                    val oldElement = newElements[row, col]
+
+                                    if (oldElement != null &&
+                                        (oldElement is Combiner2 || oldElement is Combiner3 || oldElement is Combiner4 ||
+                                                oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4)
+                                    ) {
+                                        newElements.removeConnectedElementsAbove(oldElement.id)
+                                        var belowElementId: Int? = null
+                                        var belowCable: Cable? = null
+                                        for (r in (row + 1) until newElements.rowCount) {
+                                            val candidate = newElements[r, col]
+                                            if (candidate != null) {
+                                                belowElementId = candidate.id
+                                                belowCable = candidate.fetchCable()
+                                                break
+                                            }
+                                        }
+                                        newElements[row, col] = Antenna(
+                                            id = oldElement.id,
+                                            signalPower = 3.0,
+                                            endElementId = belowElementId
+                                                ?: oldElement.fetchEndElementId(),
+                                            cable = oldElement.fetchCable()
+                                        )
+                                    } else {
+                                        newElements[row, col] = Antenna(
+                                            id = oldElement?.id ?: newElements.generateNewId(),
+                                            signalPower = 3.0,
+                                            endElementId = oldElement?.fetchEndElementId() ?: -1,
+                                            cable = oldElement?.fetchCable() ?: Cable()
+                                        )
+                                    }
+                                    newElements.optimizeSpace()
+
+                                    elementMenuOpenedForIndex = null
+                                    onElementsChange(newElements)
+                                }) { Text("Антенна Wi (3 дБм)") }
+
+                                DropdownMenuItem(onClick = {
+                                    val newElements = elements.copy()
+                                    val oldElement = newElements[row, col]
+
                                     if (oldElement != null &&
                                         (oldElement is Combiner2 || oldElement is Combiner3 || oldElement is Combiner4 ||
                                                 oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4)

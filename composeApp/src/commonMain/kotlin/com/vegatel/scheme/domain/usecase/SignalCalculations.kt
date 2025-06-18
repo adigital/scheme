@@ -1,5 +1,6 @@
 package com.vegatel.scheme.domain.usecase
 
+import com.vegatel.scheme.log
 import com.vegatel.scheme.model.Cable
 import com.vegatel.scheme.model.Element.Antenna
 import com.vegatel.scheme.model.Element.Combiner2
@@ -133,13 +134,13 @@ fun ElementMatrix.calculateSignalPower(
                 inputSignal + element.signalPower
             }
 
-            // Антенна или нагрузка ниже репитера (линия принятия): используем endElementId для связи с родителем
+            // Антенна или нагрузка ниже репитера (линия принятия): используем endElementId для связи с родителем и учитываем signalPower
             element is Antenna || element is Load -> {
                 val parentId = element.fetchEndElementId()
                 if (parentId >= 0) {
                     val parentPow = calculate(parentId)
                     val loss = calculateCableLoss(element.fetchCable(), frequency)
-                    parentPow + loss
+                    parentPow + loss + element.signalPower
                 } else {
                     // fallback: находим элемент, подключённый сверху
                     var signal = 0.0
@@ -147,7 +148,7 @@ fun ElementMatrix.calculateSignalPower(
                         if (child?.fetchEndElementId() == elementId) {
                             val src = calculate(child.id)
                             val loss = calculateCableLoss(child.fetchCable(), frequency)
-                            signal = src + loss
+                            signal = src + loss + (child.signalPower)
                         }
                     }
                     signal
@@ -161,6 +162,9 @@ fun ElementMatrix.calculateSignalPower(
         calculating.remove(elementId)
         // Сохраняем результат в кэше
         cache[elementId] = result
+
+        log("TEST", "Signal for element id=$elementId (${element::class.simpleName}): $result")
+
         return result
     }
 

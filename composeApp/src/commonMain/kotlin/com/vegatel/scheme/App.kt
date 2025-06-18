@@ -50,7 +50,8 @@ val initialElements = buildElementMatrix(rows = 3, cols = 1) {
     )
 
     this[2, 0] = Antenna(
-        id = 2
+        id = 2,
+        endElementId = REPEATER_ID
     )
 }
 
