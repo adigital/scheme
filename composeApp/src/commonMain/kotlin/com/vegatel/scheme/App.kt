@@ -42,6 +42,7 @@ fun buildElementMatrix(
 val initialElements = buildElementMatrix(rows = 3, cols = 1) {
     this[0, 0] = Antenna(
         id = 1,
+        signalPower = 11.0,
         endElementId = REPEATER_ID
     )
 
@@ -51,6 +52,7 @@ val initialElements = buildElementMatrix(rows = 3, cols = 1) {
 
     this[2, 0] = Antenna(
         id = 2,
+        signalPower = 9.0,
         endElementId = REPEATER_ID
     )
 }
