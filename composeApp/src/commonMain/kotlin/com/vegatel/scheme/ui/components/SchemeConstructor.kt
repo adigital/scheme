@@ -236,6 +236,7 @@ fun SchemeConstructor(
                                         selection = TextRange(0, text.length)
                                     )
                                 }) { Text("Усиление") }
+                                return@DropdownMenu
                             } else {
                                 // Nested Antennas submenu
                                 DropdownMenuItem(onClick = { antennasMenuExpanded = true }) {
@@ -390,6 +391,7 @@ fun SchemeConstructor(
                                     val leftAntennaId = newElements.generateNewId()
                                     newElements[targetRow, leftAntennaCol] = Antenna(
                                         id = leftAntennaId,
+                                        signalPower = 11.0,
                                         endElementId = combinerId,
                                         cable = Cable()
                                     )
@@ -397,6 +399,7 @@ fun SchemeConstructor(
                                     val rightAntennaId = newElements.generateNewId()
                                     newElements[targetRow, rightAntennaCol] = Antenna(
                                         id = rightAntennaId,
+                                        signalPower = 11.0,
                                         endElementId = combinerId,
                                         cable = Cable()
                                     )
@@ -502,6 +505,7 @@ fun SchemeConstructor(
                                     val leftAntennaId = newElements.generateNewId()
                                     newElements[targetRow, leftAntennaCol] = Antenna(
                                         id = leftAntennaId,
+                                        signalPower = 11.0,
                                         endElementId = combinerId,
                                         cable = Cable()
                                     )
@@ -509,6 +513,7 @@ fun SchemeConstructor(
                                     val centerAntennaId = newElements.generateNewId()
                                     newElements[targetRow, centerAntennaCol] = Antenna(
                                         id = centerAntennaId,
+                                        signalPower = 11.0,
                                         endElementId = combinerId,
                                         cable = Cable()
                                     )
@@ -516,6 +521,7 @@ fun SchemeConstructor(
                                     val rightAntennaId = newElements.generateNewId()
                                     newElements[targetRow, rightAntennaCol] = Antenna(
                                         id = rightAntennaId,
+                                        signalPower = 11.0,
                                         endElementId = combinerId,
                                         cable = Cable()
                                     )
@@ -632,6 +638,7 @@ fun SchemeConstructor(
                                     val leftAntennaId = newElements.generateNewId()
                                     newElements[targetRow, leftAntennaCol] = Antenna(
                                         id = leftAntennaId,
+                                        signalPower = 11.0,
                                         endElementId = combinerId,
                                         cable = Cable()
                                     )
@@ -639,6 +646,7 @@ fun SchemeConstructor(
                                     val centerAntennaId = newElements.generateNewId()
                                     newElements[targetRow, centerAntennaCol] = Antenna(
                                         id = centerAntennaId,
+                                        signalPower = 11.0,
                                         endElementId = combinerId,
                                         cable = Cable()
                                     )
@@ -646,6 +654,7 @@ fun SchemeConstructor(
                                     val rightAntennaId = newElements.generateNewId()
                                     newElements[targetRow, rightAntennaCol] = Antenna(
                                         id = rightAntennaId,
+                                        signalPower = 11.0,
                                         endElementId = combinerId,
                                         cable = Cable()
                                     )
@@ -653,6 +662,7 @@ fun SchemeConstructor(
                                     val farRightAntennaId = newElements.generateNewId()
                                     newElements[targetRow, farRightAntennaCol] = Antenna(
                                         id = farRightAntennaId,
+                                        signalPower = 11.0,
                                         endElementId = combinerId,
                                         cable = Cable()
                                     )
@@ -728,6 +738,7 @@ fun SchemeConstructor(
                                     val leftAntennaId = newElements.generateNewId()
                                     newElements[targetRow, leftAntennaCol] = Antenna(
                                         id = leftAntennaId,
+                                        signalPower = 9.0,
                                         endElementId = splitterId,
                                         cable = Cable()
                                     )
@@ -735,6 +746,7 @@ fun SchemeConstructor(
                                     val rightAntennaId = newElements.generateNewId()
                                     newElements[targetRow, rightAntennaCol] = Antenna(
                                         id = rightAntennaId,
+                                        signalPower = 9.0,
                                         endElementId = splitterId,
                                         cable = Cable()
                                     )
@@ -744,7 +756,7 @@ fun SchemeConstructor(
 
                                     elementMenuOpenedForIndex = null
                                     onElementsChange(newElements)
-                                }) { Text("Сплиттер 2") }
+                                }) { Text("Сплиттер SW2") }
 
                                 DropdownMenuItem(onClick = {
                                     val newElements = elements.copy()
@@ -838,6 +850,7 @@ fun SchemeConstructor(
                                     val leftAntennaId = newElements.generateNewId()
                                     newElements[targetRow, leftAntennaCol] = Antenna(
                                         id = leftAntennaId,
+                                        signalPower = 9.0,
                                         endElementId = splitterId,
                                         cable = Cable()
                                     )
@@ -845,6 +858,7 @@ fun SchemeConstructor(
                                     val centerAntennaId = newElements.generateNewId()
                                     newElements[targetRow, centerAntennaCol] = Antenna(
                                         id = centerAntennaId,
+                                        signalPower = 9.0,
                                         endElementId = splitterId,
                                         cable = Cable()
                                     )
@@ -852,6 +866,7 @@ fun SchemeConstructor(
                                     val rightAntennaId = newElements.generateNewId()
                                     newElements[targetRow, rightAntennaCol] = Antenna(
                                         id = rightAntennaId,
+                                        signalPower = 9.0,
                                         endElementId = splitterId,
                                         cable = Cable()
                                     )
@@ -861,7 +876,7 @@ fun SchemeConstructor(
 
                                     elementMenuOpenedForIndex = null
                                     onElementsChange(newElements)
-                                }) { Text("Сплиттер 3") }
+                                }) { Text("Сплиттер SW3") }
 
                                 DropdownMenuItem(onClick = {
                                     val newElements = elements.copy()
@@ -965,6 +980,7 @@ fun SchemeConstructor(
                                     val leftAntennaId = newElements.generateNewId()
                                     newElements[targetRow, leftAntennaCol] = Antenna(
                                         id = leftAntennaId,
+                                        signalPower = 9.0,
                                         endElementId = splitterId,
                                         cable = Cable()
                                     )
@@ -972,6 +988,7 @@ fun SchemeConstructor(
                                     val centerAntennaId = newElements.generateNewId()
                                     newElements[targetRow, centerAntennaCol] = Antenna(
                                         id = centerAntennaId,
+                                        signalPower = 9.0,
                                         endElementId = splitterId,
                                         cable = Cable()
                                     )
@@ -979,6 +996,7 @@ fun SchemeConstructor(
                                     val rightAntennaId = newElements.generateNewId()
                                     newElements[targetRow, rightAntennaCol] = Antenna(
                                         id = rightAntennaId,
+                                        signalPower = 9.0,
                                         endElementId = splitterId,
                                         cable = Cable()
                                     )
@@ -986,6 +1004,7 @@ fun SchemeConstructor(
                                     val farRightAntennaId = newElements.generateNewId()
                                     newElements[targetRow, farRightAntennaCol] = Antenna(
                                         id = farRightAntennaId,
+                                        signalPower = 9.0,
                                         endElementId = splitterId,
                                         cable = Cable()
                                     )
@@ -995,7 +1014,7 @@ fun SchemeConstructor(
 
                                     elementMenuOpenedForIndex = null
                                     onElementsChange(newElements)
-                                }) { Text("Сплиттер 4") }
+                                }) { Text("Сплиттер SW4") }
                             }
                         }
                     }
