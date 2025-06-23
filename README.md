@@ -1,11 +1,45 @@
 This is a Kotlin Multiplatform project targeting Android, Desktop.
 
-* `/composeApp` is for code that will be shared across your Compose Multiplatform applications.
-  It contains several subfolders:
-  - `commonMain` is for code that’s common for all targets.
-  - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
-    For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
-    `iosMain` would be the right folder for such calls.
+## Описание приложения
 
+**Scheme** - это кроссплатформенное приложение для проектирования и расчета схем радиосистем,
+разработанное на Kotlin Multiplatform с использованием Jetpack Compose.
 
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
+### Основные возможности
+
+- **Конструктор схем**: Интуитивно понятный интерфейс для создания схем радиосистем
+- **Расчет сигналов**: Автоматический расчет уровней сигналов в различных точках схемы
+- **Элементы схемы**: Поддержка различных компонентов:
+  - Антенны (различных типов)
+  - Кабели (с учетом затухания)
+  - Разветвители (сплиттеры)
+  - Комбайнеры
+  - Повторители (репитеры)
+  - Нагрузки
+
+### Технические характеристики
+
+- **Платформы**: Android, Desktop (Windows, macOS, Linux)
+- **Архитектура**: Kotlin Multiplatform
+- **UI Framework**: Jetpack Compose Multiplatform
+- **Язык**: Kotlin
+
+### Структура проекта
+
+- `composeApp/commonMain` - общий код для всех платформ
+- `composeApp/androidMain` - специфичный код для Android
+- `composeApp/desktopMain` - специфичный код для Desktop
+
+## Скриншоты приложения
+
+### Desktop
+
+![Desktop](2025-06-23_16-37-45.png)
+
+### Конструктор схем
+
+![Конструктор схем](2025-06-23_16-39-19.png)
+
+### Android
+
+![Android](2025-06-23_16-49-00.png)
