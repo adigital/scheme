@@ -1110,10 +1110,10 @@ fun SchemeConstructor(
                     }
                 }
 
-                // Рисуем кабель
-                val cable = element?.fetchCable()
+                // Рисуем кабель (кроме репитера)
+                if (element != null && element !is Repeater) {
+                    val cable = element.fetchCable()
 
-                if (cable != null) {
                     val isElementBelowRepeater = elements.isElementBelowRepeater(element.id)
 
                     // Получаем координаты первого и второго элемента по id
