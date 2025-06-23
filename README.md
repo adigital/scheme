@@ -1,5 +1,3 @@
-This is a Kotlin Multiplatform project targeting Android, Desktop.
-
 ## Описание приложения
 
 **Scheme** - это кроссплатформенное приложение для проектирования и расчета схем радиосистем,
