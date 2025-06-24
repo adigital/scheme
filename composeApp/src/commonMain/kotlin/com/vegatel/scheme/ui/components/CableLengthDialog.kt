@@ -14,6 +14,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
+import com.vegatel.scheme.model.Element
 import com.vegatel.scheme.model.ElementMatrix
 
 @Composable
@@ -79,36 +80,40 @@ fun CableLengthDialog(
                                     length = cableLengthInput.text.toDoubleOrNull() ?: 0.0
                                 )
                                 newElements[row, col] = when (element) {
-                                    is com.vegatel.scheme.model.Element.Antenna -> element.copy(
+                                    is Element.Antenna -> element.copy(
                                         cable = newCable
                                     )
 
-                                    is com.vegatel.scheme.model.Element.Load -> element.copy(cable = newCable)
-                                    is com.vegatel.scheme.model.Element.Combiner2 -> element.copy(
+                                    is Element.Load -> element.copy(cable = newCable)
+                                    is Element.Combiner2 -> element.copy(
                                         cable = newCable
                                     )
 
-                                    is com.vegatel.scheme.model.Element.Combiner3 -> element.copy(
+                                    is Element.Combiner3 -> element.copy(
                                         cable = newCable
                                     )
 
-                                    is com.vegatel.scheme.model.Element.Combiner4 -> element.copy(
+                                    is Element.Combiner4 -> element.copy(
                                         cable = newCable
                                     )
 
-                                    is com.vegatel.scheme.model.Element.Repeater -> element.copy(
+                                    is Element.Repeater -> element.copy(
                                         cable = newCable
                                     )
 
-                                    is com.vegatel.scheme.model.Element.Splitter2 -> element.copy(
+                                    is Element.Splitter2 -> element.copy(
                                         cable = newCable
                                     )
 
-                                    is com.vegatel.scheme.model.Element.Splitter3 -> element.copy(
+                                    is Element.Splitter3 -> element.copy(
                                         cable = newCable
                                     )
 
-                                    is com.vegatel.scheme.model.Element.Splitter4 -> element.copy(
+                                    is Element.Splitter4 -> element.copy(
+                                        cable = newCable
+                                    )
+
+                                    is Element.Coupler -> element.copy(
                                         cable = newCable
                                     )
                                 }
@@ -136,15 +141,16 @@ fun CableLengthDialog(
                             length = cableLengthInput.text.toDoubleOrNull() ?: 0.0
                         )
                         newElements[row, col] = when (element) {
-                            is com.vegatel.scheme.model.Element.Antenna -> element.copy(cable = newCable)
-                            is com.vegatel.scheme.model.Element.Load -> element.copy(cable = newCable)
-                            is com.vegatel.scheme.model.Element.Combiner2 -> element.copy(cable = newCable)
-                            is com.vegatel.scheme.model.Element.Combiner3 -> element.copy(cable = newCable)
-                            is com.vegatel.scheme.model.Element.Combiner4 -> element.copy(cable = newCable)
-                            is com.vegatel.scheme.model.Element.Repeater -> element.copy(cable = newCable)
-                            is com.vegatel.scheme.model.Element.Splitter2 -> element.copy(cable = newCable)
-                            is com.vegatel.scheme.model.Element.Splitter3 -> element.copy(cable = newCable)
-                            is com.vegatel.scheme.model.Element.Splitter4 -> element.copy(cable = newCable)
+                            is Element.Antenna -> element.copy(cable = newCable)
+                            is Element.Load -> element.copy(cable = newCable)
+                            is Element.Combiner2 -> element.copy(cable = newCable)
+                            is Element.Combiner3 -> element.copy(cable = newCable)
+                            is Element.Combiner4 -> element.copy(cable = newCable)
+                            is Element.Repeater -> element.copy(cable = newCable)
+                            is Element.Splitter2 -> element.copy(cable = newCable)
+                            is Element.Splitter3 -> element.copy(cable = newCable)
+                            is Element.Splitter4 -> element.copy(cable = newCable)
+                            is Element.Coupler -> element.copy(cable = newCable)
                         }
                         onElementsChange(newElements)
                     }

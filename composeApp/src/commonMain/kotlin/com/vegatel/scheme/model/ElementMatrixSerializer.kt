@@ -15,7 +15,9 @@ data class SerializableElement(
     val id: Int,
     val signalPower: Double? = null,
     val endElementId: Int? = null,
-    val cable: SerializableCable? = null
+    val cable: SerializableCable? = null,
+    val attenuation1: Double? = null,
+    val attenuation2: Double? = null
 )
 
 @Serializable
@@ -102,6 +104,16 @@ fun ElementMatrix.toSerializable(): SerializableElementMatrix {
                             type = element.cable.type.name
                         )
                     )
+
+                    is Element.Coupler -> SerializableElement(
+                        "Coupler", element.id, element.signalPower, element.endElementId,
+                        SerializableCable(
+                            length = element.cable.length,
+                            type = element.cable.type.name
+                        ),
+                        attenuation1 = element.attenuation1,
+                        attenuation2 = element.attenuation2
+                    )
                 }
             })
         }
@@ -184,6 +196,15 @@ fun SerializableElementMatrix.toElementMatrix(): ElementMatrix {
                     e.signalPower ?: -6.0,
                     e.endElementId ?: -1,
                     cable
+                )
+
+                "Coupler" -> Element.Coupler(
+                    id = e.id,
+                    attenuation1 = e.attenuation1 ?: 0.0,
+                    attenuation2 = e.attenuation2 ?: 0.0,
+                    signalPower = e.signalPower ?: 0.0,
+                    endElementId = e.endElementId ?: -1,
+                    cable = cable
                 )
 
                 else -> null

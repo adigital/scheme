@@ -6,6 +6,7 @@ import com.vegatel.scheme.model.Element.Antenna
 import com.vegatel.scheme.model.Element.Combiner2
 import com.vegatel.scheme.model.Element.Combiner3
 import com.vegatel.scheme.model.Element.Combiner4
+import com.vegatel.scheme.model.Element.Coupler
 import com.vegatel.scheme.model.Element.Load
 import com.vegatel.scheme.model.Element.Repeater
 import com.vegatel.scheme.model.Element.Splitter2
@@ -134,17 +135,57 @@ fun ElementMatrix.calculateSignalPower(
                 inputSignal + element.signalPower
             }
 
+            // Ответвитель: собираем входной сигнал аналогично сплиттеру
+            element is Coupler -> {
+                val currentCoords = findElementById(elementId) ?: return 0.0
+                val elementRow = currentCoords.first
+                val inputs = mutableListOf<Double>()
+                forEachElement { rowChild, colChild, child ->
+                    if (child?.fetchEndElementId() == elementId && rowChild < elementRow) {
+                        val src = calculate(child.id)
+                        val loss = calculateCableLoss(child.fetchCable(), frequency)
+                        inputs.add(src + loss)
+                    }
+                }
+                val parentIdC = element.fetchEndElementId()
+                if (parentIdC >= 0) {
+                    findElementById(parentIdC)?.let { parentCoordsC ->
+                        if (parentCoordsC.first < elementRow) {
+                            val src = calculate(parentIdC)
+                            val loss = calculateCableLoss(element.fetchCable(), frequency)
+                            inputs.add(src + loss)
+                        }
+                    }
+                }
+                val inputSignalC = inputs.maxOrNull() ?: 0.0
+                // Общее signalPower у Coupler всегда 0.0
+                inputSignalC + element.signalPower
+            }
+
             // Антенна или нагрузка ниже репитера (линия принятия): используем endElementId для связи с родителем и учитываем signalPower
             element is Antenna || element is Load -> {
                 val parentId = element.fetchEndElementId()
                 if (parentId >= 0) {
                     val parentPow = calculate(parentId)
                     val loss = calculateCableLoss(element.fetchCable(), frequency)
-                    parentPow + loss + element.signalPower
+                    // учёт затухания ответвителя
+                    val parentCoords = findElementById(parentId)
+                    val attenuation = if (parentCoords != null) {
+                        val parentElem = this[parentCoords.first, parentCoords.second]
+                        if (parentElem is Coupler) {
+                            val childCoords = findElementById(element.id)
+                            if (childCoords != null) {
+                                if (childCoords.second == parentCoords.second) parentElem.attenuation1
+                                else if (childCoords.second == parentCoords.second + 1) parentElem.attenuation2
+                                else 0.0
+                            } else 0.0
+                        } else 0.0
+                    } else 0.0
+                    parentPow + loss + element.signalPower - attenuation
                 } else {
                     // fallback: находим элемент, подключённый сверху
                     var signal = 0.0
-                    forEachElement { row, col, child ->
+                    forEachElement { rowChild, colChild, child ->
                         if (child?.fetchEndElementId() == elementId) {
                             val src = calculate(child.id)
                             val loss = calculateCableLoss(child.fetchCable(), frequency)

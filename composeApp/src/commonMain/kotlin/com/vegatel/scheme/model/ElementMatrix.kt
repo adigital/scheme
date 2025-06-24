@@ -196,7 +196,8 @@ class ElementMatrix(
                 ((element is Element.Combiner2 && element.endElementId == REPEATER_ID) ||
                         (element is Element.Combiner4 && element.endElementId == REPEATER_ID) ||
                         (element is Element.Splitter2 && element.id == getNextForRepeaterElementId()) ||
-                        (element is Element.Splitter4 && element.id == getNextForRepeaterElementId()))
+                        (element is Element.Splitter4 && element.id == getNextForRepeaterElementId())) ||
+                (element is Element.Coupler && element.id == getNextForRepeaterElementId())
             ) {
                 result = true
                 return@forEachElement

@@ -99,6 +99,18 @@ sealed class Element {
             "Repeater(id=$id, signalPower=$signalPower, endElementId=$endElementId, cable=$cable)"
     }
 
+    data class Coupler(
+        override val id: Int,
+        val attenuation1: Double,
+        val attenuation2: Double,
+        override val signalPower: Double = 0.0,
+        val endElementId: Int,
+        val cable: Cable = Cable()
+    ) : Element() {
+        override fun toString(): String =
+            "Coupler(id=$id, attenuation1=$attenuation1, attenuation2=$attenuation2, endElementId=$endElementId, cable=$cable)"
+    }
+
     fun fetchTopElementId(): Int {
         return when (this) {
             is Antenna -> this.id
@@ -110,6 +122,7 @@ sealed class Element {
             is Splitter2 -> this.id
             is Splitter3 -> this.id
             is Splitter4 -> this.id
+            is Coupler -> this.id
         }
     }
 
@@ -124,6 +137,7 @@ sealed class Element {
             is Splitter2 -> this.endElementId
             is Splitter3 -> this.endElementId
             is Splitter4 -> this.endElementId
+            is Coupler -> this.endElementId
         }
     }
 
@@ -138,17 +152,19 @@ sealed class Element {
             is Splitter2 -> this.cable
             is Splitter3 -> this.cable
             is Splitter4 -> this.cable
+            is Coupler -> this.cable
         }
     }
 
     fun isCombiner(): Boolean = this is Combiner2 || this is Combiner3 || this is Combiner4
 
-    fun isSplitter(): Boolean = this is Splitter2 || this is Splitter3 || this is Splitter4
+    fun isSplitterOrCoupler(): Boolean =
+        this is Splitter2 || this is Splitter3 || this is Splitter4 || this is Coupler
 
     fun isRepeater(): Boolean = this is Repeater
 
     fun isHalfShiftRender(): Boolean =
-        this is Combiner2 || this is Combiner4 || this is Splitter2 || this is Splitter4
+        this is Combiner2 || this is Combiner4 || this is Splitter2 || this is Splitter4 || this is Coupler
 }
 
 data class Cable(
