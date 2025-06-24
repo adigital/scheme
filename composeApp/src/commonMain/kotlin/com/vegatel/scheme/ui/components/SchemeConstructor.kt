@@ -1420,7 +1420,7 @@ fun SchemeConstructor(
         }
     }
 
-// Добавляем диалоги
+    // Добавляем диалоги
     CableLengthDialog(
         elements = elements,
         onElementsChange = onElementsChange,
