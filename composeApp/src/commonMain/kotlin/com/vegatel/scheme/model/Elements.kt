@@ -175,8 +175,6 @@ sealed class Element {
     fun isSplitterOrCoupler(): Boolean =
         this is Splitter2 || this is Splitter3 || this is Splitter4 || this is Coupler
 
-    fun isRepeater(): Boolean = this is Repeater
-
     fun isHalfShiftRender(): Boolean =
         this is Combiner2 || this is Combiner4 || this is Splitter2 || this is Splitter4 || this is Coupler
 }

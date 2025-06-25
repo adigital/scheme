@@ -76,8 +76,6 @@ fun SchemeConstructor(
         log("TEST", "Element: ($row, $col) $element")
     }
 
-    val isRepeaterHalfShiftRender = elements.isRepeaterHalfShiftRender()
-
     // Геометрия схемы
     val elementWidthDp = 48
     val elementHeightDp = 64
@@ -100,7 +98,7 @@ fun SchemeConstructor(
     var boostersMenuExpanded by remember { mutableStateOf(false) }
 
     // Добавляю состояние смещений перетаскивания для элементов; сбрасывается при resetKey
-    val dragOffsets = remember(resetKey) { mutableStateMapOf<Pair<Int, Int>, Offset>() }
+    val dragOffsets = remember(resetKey) { mutableStateMapOf<Int, Offset>() }
 
     Box(
         Modifier
@@ -114,11 +112,8 @@ fun SchemeConstructor(
                 // Рисуем элементы
                 val elementOffset = IntOffset(
                     paddingHorizontalDp.dp.toPx().toInt() + col * 2 * elementWidthDp.dp.toPx()
-                        .toInt() +
-                            if (element?.isHalfShiftRender() == true ||
-                                (element?.isRepeater() == true && isRepeaterHalfShiftRender)
-                            ) 48.dp.toPx()
-                                .toInt() else 0.dp.toPx().toInt(),
+                        .toInt(),
+
                     paddingVerticalDp.dp.toPx().toInt() + row * 2 * elementHeightDp.dp.toPx()
                         .toInt()
                 )
@@ -134,7 +129,7 @@ fun SchemeConstructor(
                     } ?: 0.0
 
                 // Добавляю перетаскивание: корректирую pixel-координаты
-                val currentDrag = dragOffsets[row to col] ?: Offset.Zero
+                val currentDrag = element?.let { dragOffsets[it.id] ?: Offset.Zero } ?: Offset.Zero
                 val combinedOffset = IntOffset(
                     elementOffset.x + currentDrag.x.toInt(),
                     elementOffset.y + currentDrag.y.toInt()
@@ -143,12 +138,13 @@ fun SchemeConstructor(
                     modifier = Modifier
                         .zIndex(1f)
                         .offset { combinedOffset }
-                        // Перезапускаем drag-обработчик при сбросе или для каждого элемента
-                        .pointerInput(resetKey, row, col) {
+                        .pointerInput(resetKey, element?.id) {
                             detectDragGestures { change, dragAmount ->
                                 change.consume()
-                                val oldOffset = dragOffsets[row to col] ?: Offset.Zero
-                                dragOffsets[row to col] = oldOffset + dragAmount
+                                element?.let {
+                                    val oldOffset = dragOffsets[it.id] ?: Offset.Zero
+                                    dragOffsets[it.id] = oldOffset + dragAmount
+                                }
                             }
                         }
                 ) {
@@ -782,6 +778,7 @@ fun SchemeConstructor(
                                 }
                             }
 
+                            // Контекстное меню для элементов ниже репитера
                             if (element != null && elements.isElementBelowRepeater(element.id)) {
                                 Divider()
 
@@ -1361,21 +1358,18 @@ fun SchemeConstructor(
 
                         // Горизонтальный сдвиг начальной точки подключения кабеля
                         val startHorizontalOffsetDp =
-                            if (startElementInstance?.isHalfShiftRender() == true ||
-                                (startElementInstance?.isRepeater() == true && isRepeaterHalfShiftRender)
-                            ) {
-                                48.dp.toPx() +
-                                        when {
-                                            isElementBelowRepeater && isShiftCableLeft -> {
-                                                -4.dp.toPx()
-                                            }
+                            if (startElementInstance?.isHalfShiftRender() == true) {
+                                when {
+                                    isElementBelowRepeater && isShiftCableLeft -> {
+                                        -4.dp.toPx()
+                                    }
 
-                                            isElementBelowRepeater && isShiftCableRight -> {
-                                                4.dp.toPx()
-                                            }
+                                    isElementBelowRepeater && isShiftCableRight -> {
+                                        4.dp.toPx()
+                                    }
 
-                                            else -> 0.dp.toPx()
-                                        }
+                                    else -> 0.dp.toPx()
+                                }
                             } else 0.dp.toPx()
 
                         // Вертикальный сдвиг начальной точки подключения кабеля
@@ -1390,21 +1384,18 @@ fun SchemeConstructor(
 
                         // Горизонтальный сдвиг конечной точки подключения кабеля
                         val endHorizontalOffsetDp =
-                            if (endElementInstance?.isHalfShiftRender() == true ||
-                                (endElementInstance?.isRepeater() == true && isRepeaterHalfShiftRender)
-                            ) {
-                                48.dp.toPx() +
-                                        when {
-                                            !isElementBelowRepeater && isShiftCableLeft -> {
-                                                -4.dp.toPx()
-                                            }
+                            if (endElementInstance?.isHalfShiftRender() == true) {
+                                when {
+                                    !isElementBelowRepeater && isShiftCableLeft -> {
+                                        -4.dp.toPx()
+                                    }
 
-                                            !isElementBelowRepeater && isShiftCableRight -> {
-                                                4.dp.toPx()
-                                            }
+                                    !isElementBelowRepeater && isShiftCableRight -> {
+                                        4.dp.toPx()
+                                    }
 
-                                            else -> 0.dp.toPx()
-                                        }
+                                    else -> 0.dp.toPx()
+                                }
                             } else 0.dp.toPx()
 
                         // Вертикальный сдвиг конечной точки подключения кабеля
@@ -1421,8 +1412,12 @@ fun SchemeConstructor(
                             y = paddingVertical + endRow * 2 * elementHeight + endVerticalOffsetDp
                         )
                         // apply element drag offsets
-                        val startDragOffset = dragOffsets[startRow to startCol] ?: Offset.Zero
-                        val endDragOffset = dragOffsets[endRow to endCol] ?: Offset.Zero
+                        val startDragOffset =
+                            startElementInstance?.let { dragOffsets[it.id] ?: Offset.Zero }
+                                ?: Offset.Zero
+                        val endDragOffset =
+                            endElementInstance?.let { dragOffsets[it.id] ?: Offset.Zero }
+                                ?: Offset.Zero
                         val startCenter = startCenterRaw + startDragOffset
                         val endCenter = endCenterRaw + endDragOffset
 
@@ -1430,11 +1425,6 @@ fun SchemeConstructor(
                             start = startCenter,
                             end = endCenter,
                             isTwoCorners = true,
-//                            isTwoCorners = isShiftCableLeft || isShiftCableRight ||
-//                                    (endElementInstance?.isRepeater() == true && isRepeaterHalfShiftRender) ||
-//                                    (startElementInstance?.isRepeater() == true && isRepeaterHalfShiftRender) ||
-//                                    (startElementInstance?.isHalfShiftRender() == true) ||
-//                                    (endElementInstance?.isHalfShiftRender() == true),
                             isSideThenDown = startElementInstance?.isSplitterOrCoupler() == true &&
                                     (startElement.second != endElement.second || startElementInstance.isHalfShiftRender() == true),
                             cable = cable,
