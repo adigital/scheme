@@ -1,6 +1,7 @@
 package com.vegatel.scheme.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.offset
@@ -11,6 +12,7 @@ import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -18,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.IntOffset
@@ -56,7 +59,8 @@ fun SchemeConstructor(
     elements: ElementMatrix,
     onElementsChange: (ElementMatrix) -> Unit,
     baseStationSignal: Double = 30.0,
-    frequency: Int = 800
+    frequency: Int = 800,
+    resetKey: Int = 0
 ) {
     // Состояние для диалога длины кабеля
     var cableLengthDialogState: Pair<Int, Int>? by remember { mutableStateOf<Pair<Int, Int>?>(null) }
@@ -95,6 +99,9 @@ fun SchemeConstructor(
     var couplersMenuExpanded by remember { mutableStateOf(false) }
     var boostersMenuExpanded by remember { mutableStateOf(false) }
 
+    // Добавляю состояние смещений перетаскивания для элементов; сбрасывается при resetKey
+    val dragOffsets = remember(resetKey) { mutableStateMapOf<Pair<Int, Int>, Offset>() }
+
     Box(
         Modifier
             .zIndex(0f)  // Схема будет находиться на нижнем слое
@@ -126,10 +133,24 @@ fun SchemeConstructor(
                         )
                     } ?: 0.0
 
+                // Добавляю перетаскивание: корректирую pixel-координаты
+                val currentDrag = dragOffsets[row to col] ?: Offset.Zero
+                val combinedOffset = IntOffset(
+                    elementOffset.x + currentDrag.x.toInt(),
+                    elementOffset.y + currentDrag.y.toInt()
+                )
                 Box(
                     modifier = Modifier
                         .zIndex(1f)
-                        .offset { elementOffset }
+                        .offset { combinedOffset }
+                        // Перезапускаем drag-обработчик при сбросе или для каждого элемента
+                        .pointerInput(resetKey, row, col) {
+                            detectDragGestures { change, dragAmount ->
+                                change.consume()
+                                val oldOffset = dragOffsets[row to col] ?: Offset.Zero
+                                dragOffsets[row to col] = oldOffset + dragAmount
+                            }
+                        }
                 ) {
                     when (element) {
                         is Antenna -> {
@@ -339,7 +360,6 @@ fun SchemeConstructor(
                                                         cable = oldElement?.fetchCable() ?: Cable()
                                                     )
                                                 }
-                                                newElements.optimizeSpace()
                                                 elementMenuOpenedForIndex = null
                                                 onElementsChange(newElements)
                                             }) {
@@ -368,9 +388,6 @@ fun SchemeConstructor(
                                     endElementId = oldElement?.fetchEndElementId() ?: -1,
                                     cable = oldElement?.fetchCable() ?: Cable()
                                 )
-
-                                // Оптимизируем пространство после замены
-                                newElements.optimizeSpace()
 
                                 elementMenuOpenedForIndex = null
                                 onElementsChange(newElements)
@@ -463,9 +480,6 @@ fun SchemeConstructor(
                                                 endElementId = combinerId,
                                                 cable = Cable()
                                             )
-
-                                            // Оптимизируем пространство после замены
-                                            newElements.optimizeSpace()
 
                                             elementMenuOpenedForIndex = null
                                             combinersMenuExpanded = false
@@ -600,9 +614,6 @@ fun SchemeConstructor(
                                                 endElementId = combinerId,
                                                 cable = Cable()
                                             )
-
-                                            // Оптимизируем пространство после замены
-                                            newElements.optimizeSpace()
 
                                             elementMenuOpenedForIndex = null
                                             combinersMenuExpanded = false
@@ -763,9 +774,6 @@ fun SchemeConstructor(
                                                 cable = Cable()
                                             )
 
-                                            // Оптимизируем пространство после замены
-                                            newElements.optimizeSpace()
-
                                             elementMenuOpenedForIndex = null
                                             combinersMenuExpanded = false
                                             onElementsChange(newElements)
@@ -824,7 +832,6 @@ fun SchemeConstructor(
                                                     cable = Cable()
                                                 )
 
-                                                newElements.optimizeSpace()
                                                 elementMenuOpenedForIndex = null
                                                 onElementsChange(newElements)
                                             }) {
@@ -908,7 +915,6 @@ fun SchemeConstructor(
                                                     endElementId = couplerId,
                                                     cable = Cable()
                                                 )
-                                                newElements.optimizeSpace()
                                                 elementMenuOpenedForIndex = null
                                                 couplersMenuExpanded = false
                                                 onElementsChange(newElements)
@@ -998,9 +1004,6 @@ fun SchemeConstructor(
                                                 endElementId = splitterId,
                                                 cable = Cable()
                                             )
-
-                                            // Оптимизируем пространство после замены
-                                            newElements.optimizeSpace()
 
                                             elementMenuOpenedForIndex = null
                                             splittersMenuExpanded = false
@@ -1133,9 +1136,6 @@ fun SchemeConstructor(
                                                 endElementId = splitterId,
                                                 cable = Cable()
                                             )
-
-                                            // Оптимизируем пространство после замены
-                                            newElements.optimizeSpace()
 
                                             elementMenuOpenedForIndex = null
                                             splittersMenuExpanded = false
@@ -1293,9 +1293,6 @@ fun SchemeConstructor(
                                                 cable = Cable()
                                             )
 
-                                            // Оптимизируем пространство после замены
-                                            newElements.optimizeSpace()
-
                                             elementMenuOpenedForIndex = null
                                             splittersMenuExpanded = false
                                             onElementsChange(newElements)
@@ -1414,24 +1411,30 @@ fun SchemeConstructor(
                         val endVerticalOffsetDp =
                             if ((endElementInstance?.isCombiner() == true && !(isShiftCableLeft || isShiftCableRight))) 9.75.dp.toPx() else 0.0f
 
-                        val startCenter = Offset(
+                        // raw centers without element drag offset
+                        val startCenterRaw = Offset(
                             x = paddingHorizontal + startCol * 2 * elementWidth + elementWidth / 2 + startHorizontalOffsetDp,
                             y = paddingVertical + startRow * 2 * elementHeight + elementHeight + startVerticalOffsetDp
                         )
-
-                        val endCenter = Offset(
+                        val endCenterRaw = Offset(
                             x = paddingHorizontal + endCol * 2 * elementWidth + elementWidth / 2 + endHorizontalOffsetDp,
                             y = paddingVertical + endRow * 2 * elementHeight + endVerticalOffsetDp
                         )
+                        // apply element drag offsets
+                        val startDragOffset = dragOffsets[startRow to startCol] ?: Offset.Zero
+                        val endDragOffset = dragOffsets[endRow to endCol] ?: Offset.Zero
+                        val startCenter = startCenterRaw + startDragOffset
+                        val endCenter = endCenterRaw + endDragOffset
 
                         CableView(
                             start = startCenter,
                             end = endCenter,
-                            isTwoCorners = isShiftCableLeft || isShiftCableRight ||
-                                    (endElementInstance?.isRepeater() == true && isRepeaterHalfShiftRender) ||
-                                    (startElementInstance?.isRepeater() == true && isRepeaterHalfShiftRender) ||
-                                    (startElementInstance?.isHalfShiftRender() == true) ||
-                                    (endElementInstance?.isHalfShiftRender() == true),
+                            isTwoCorners = true,
+//                            isTwoCorners = isShiftCableLeft || isShiftCableRight ||
+//                                    (endElementInstance?.isRepeater() == true && isRepeaterHalfShiftRender) ||
+//                                    (startElementInstance?.isRepeater() == true && isRepeaterHalfShiftRender) ||
+//                                    (startElementInstance?.isHalfShiftRender() == true) ||
+//                                    (endElementInstance?.isHalfShiftRender() == true),
                             isSideThenDown = startElementInstance?.isSplitterOrCoupler() == true &&
                                     (startElement.second != endElement.second || startElementInstance.isHalfShiftRender() == true),
                             cable = cable,

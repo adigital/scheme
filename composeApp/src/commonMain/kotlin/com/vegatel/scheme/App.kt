@@ -163,6 +163,7 @@ fun App() {
         val schemeState by appState.schemeState.collectAsState()
         var dragOffset by remember { mutableStateOf(Offset.Zero) }
         var scale by remember { mutableStateOf(1f) }
+        var schemeVersion by remember { mutableStateOf(0) }
 
         Box(
             Modifier
@@ -188,12 +189,13 @@ fun App() {
                     },
                     onNew = {
                         appState.resetState()
+                        schemeVersion++
                     },
                     onOpen = {
                         openElementMatrixFromDialog(appState.mutableSchemeState)
-                        // Очищаем историю после открытия файла
                         appState.clearHistory()
                         appState.addToHistory(appState.schemeState.value)
+                        schemeVersion++
                     },
                     onSave = {
                         if (schemeState.fileName == null) {
@@ -242,7 +244,8 @@ fun App() {
                             appState.updateState(newState)
                         },
                         baseStationSignal = schemeState.baseStationSignal,
-                        frequency = schemeState.frequency
+                        frequency = schemeState.frequency,
+                        resetKey = schemeVersion
                     )
                 }
             }
