@@ -30,6 +30,7 @@ import com.vegatel.scheme.log
 import com.vegatel.scheme.model.Cable
 import com.vegatel.scheme.model.CableType
 import com.vegatel.scheme.model.Element.Antenna
+import com.vegatel.scheme.model.Element.Booster
 import com.vegatel.scheme.model.Element.Combiner2
 import com.vegatel.scheme.model.Element.Combiner3
 import com.vegatel.scheme.model.Element.Combiner4
@@ -41,6 +42,7 @@ import com.vegatel.scheme.model.Element.Splitter3
 import com.vegatel.scheme.model.Element.Splitter4
 import com.vegatel.scheme.model.ElementMatrix
 import com.vegatel.scheme.ui.views.AntennaView
+import com.vegatel.scheme.ui.views.BoosterView
 import com.vegatel.scheme.ui.views.CableView
 import com.vegatel.scheme.ui.views.CombinerView
 import com.vegatel.scheme.ui.views.CouplerView
@@ -91,6 +93,7 @@ fun SchemeConstructor(
     var combinersMenuExpanded by remember { mutableStateOf(false) }
     var splittersMenuExpanded by remember { mutableStateOf(false) }
     var couplersMenuExpanded by remember { mutableStateOf(false) }
+    var boostersMenuExpanded by remember { mutableStateOf(false) }
 
     Box(
         Modifier
@@ -190,6 +193,16 @@ fun SchemeConstructor(
                             )
                         }
 
+                        is Booster -> {
+                            BoosterView(
+                                signalPower = calculatedSignalPower,
+                                onClick = {
+                                    antennasMenuExpanded = false
+                                    elementMenuOpenedForIndex = row to col
+                                }
+                            )
+                        }
+
                         is Splitter2 -> {
                             SplitterView(
                                 signalPower = calculatedSignalPower,
@@ -261,6 +274,7 @@ fun SchemeConstructor(
                             },
                         ) {
                             if (element is Repeater) {
+                                // Пункт Усиление для репитера
                                 DropdownMenuItem(onClick = {
                                     elementMenuOpenedForIndex = null
                                     repeaterGainDialogState = row to col
@@ -272,7 +286,7 @@ fun SchemeConstructor(
                                 }) { Text("Усиление") }
                                 return@DropdownMenu
                             } else {
-                                // Nested Antennas submenu
+                                // Антенны
                                 DropdownMenuItem(onClick = { antennasMenuExpanded = true }) {
                                     Text("Антенны")
                                     DropdownMenu(
@@ -294,7 +308,8 @@ fun SchemeConstructor(
                                                 val oldElement = newElements[row, col]
 
                                                 if (oldElement != null && (oldElement is Combiner2 || oldElement is Combiner3 || oldElement is Combiner4 ||
-                                                            oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4 || oldElement is Coupler)
+                                                            oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4 ||
+                                                            oldElement is Coupler || oldElement is Booster)
                                                 ) {
                                                     newElements.removeConnectedElementsAbove(
                                                         oldElement.id
@@ -335,13 +350,15 @@ fun SchemeConstructor(
                                 }
                             }
 
+                            // Нагрузка
                             DropdownMenuItem(onClick = {
                                 val newElements = elements.copy()
                                 val oldElement = newElements[row, col]
 
                                 if (oldElement != null &&
                                     (oldElement is Combiner2 || oldElement is Combiner3 || oldElement is Combiner4 ||
-                                            oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4 || oldElement is Coupler)
+                                            oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4 ||
+                                            oldElement is Coupler || oldElement is Booster)
                                 ) {
                                     newElements.removeConnectedElementsAbove(oldElement.id)
                                 }
@@ -362,6 +379,7 @@ fun SchemeConstructor(
                             if (element != null && !elements.isElementBelowRepeater(element.id)) {
                                 Divider()
 
+                                // Сумматоры
                                 DropdownMenuItem(onClick = { combinersMenuExpanded = true }) {
                                     Text("Сумматоры")
                                     DropdownMenu(
@@ -384,7 +402,8 @@ fun SchemeConstructor(
                                             val oldElement = newElements[currentRow, col]
                                             if (oldElement != null &&
                                                 (oldElement is Combiner2 || oldElement is Combiner3 || oldElement is Combiner4 ||
-                                                        oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4 || oldElement is Coupler)
+                                                        oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4 ||
+                                                        oldElement is Coupler || oldElement is Booster)
                                             ) {
                                                 newElements.removeConnectedElementsAbove(oldElement.id)
                                             }
@@ -469,7 +488,8 @@ fun SchemeConstructor(
                                             val oldElement = newElements[currentRow, col]
                                             if (oldElement != null &&
                                                 (oldElement is Combiner2 || oldElement is Combiner3 || oldElement is Combiner4 ||
-                                                        oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4 || oldElement is Coupler)
+                                                        oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4 ||
+                                                        oldElement is Coupler || oldElement is Booster)
                                             ) {
                                                 newElements.removeConnectedElementsAbove(oldElement.id)
                                             }
@@ -605,7 +625,8 @@ fun SchemeConstructor(
                                             val oldElement = newElements[currentRow, col]
                                             if (oldElement != null &&
                                                 (oldElement is Combiner2 || oldElement is Combiner3 || oldElement is Combiner4 ||
-                                                        oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4 || oldElement is Coupler)
+                                                        oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4 ||
+                                                        oldElement is Coupler || oldElement is Booster)
                                             ) {
                                                 newElements.removeConnectedElementsAbove(oldElement.id)
                                             }
@@ -756,7 +777,64 @@ fun SchemeConstructor(
                             if (element != null && elements.isElementBelowRepeater(element.id)) {
                                 Divider()
 
-                                // Меню ответвителей
+                                // Бустеры
+                                DropdownMenuItem(onClick = { boostersMenuExpanded = true }) {
+                                    Text("Бустеры")
+                                    DropdownMenu(
+                                        expanded = boostersMenuExpanded,
+                                        onDismissRequest = { boostersMenuExpanded = false }
+                                    ) {
+                                        val boosterOptions = listOf(
+                                            "VTL40" to (40.0 to 31.0),
+                                            "VTL33" to (33.0 to 31.0),
+                                            "VTL 20" to (20.0 to 31.0)
+                                        )
+                                        boosterOptions.forEach { (label, params) ->
+                                            DropdownMenuItem(onClick = {
+                                                boostersMenuExpanded = false
+                                                val newElements = elements.copy()
+                                                val oldElement = newElements[row, col]!!
+                                                val boosterId = oldElement.id
+                                                val piId = newElements.generateNewId()
+
+                                                // Удаляем старые подключенные элементы, если они есть
+                                                if ((oldElement is Combiner2 || oldElement is Combiner3 || oldElement is Combiner4 ||
+                                                            oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4 ||
+                                                            oldElement is Coupler || oldElement is Booster)
+                                                ) {
+                                                    newElements.removeConnectedElementsAbove(
+                                                        oldElement.id
+                                                    )
+                                                }
+
+                                                // Вставляем бустер на место старого элемента
+                                                newElements[row, col] = Booster(
+                                                    id = boosterId,
+                                                    maxOutputPower = params.first,
+                                                    signalPower = params.second,
+                                                    endElementId = element.fetchEndElementId(),
+                                                    cable = oldElement.fetchCable()
+                                                )
+
+                                                // Добавляем антенну PI под бустером
+                                                newElements[row + 1, col] = Antenna(
+                                                    id = piId,
+                                                    signalPower = 9.0,
+                                                    endElementId = boosterId,
+                                                    cable = Cable()
+                                                )
+
+                                                newElements.optimizeSpace()
+                                                elementMenuOpenedForIndex = null
+                                                onElementsChange(newElements)
+                                            }) {
+                                                Text("$label (${params.first} дБм; ${params.second} дБ)")
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Ответвители
                                 DropdownMenuItem(onClick = { couplersMenuExpanded = true }) {
                                     Text("Ответвители")
                                     DropdownMenu(
@@ -779,7 +857,8 @@ fun SchemeConstructor(
                                                 val oldElement = newElements[row, col]
                                                 if (oldElement != null &&
                                                     (oldElement is Combiner2 || oldElement is Combiner3 || oldElement is Combiner4 ||
-                                                            oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4 || oldElement is Coupler)
+                                                            oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4 ||
+                                                            oldElement is Coupler || oldElement is Booster)
                                                 ) {
                                                     newElements.removeConnectedElementsAbove(
                                                         oldElement.id
@@ -838,7 +917,7 @@ fun SchemeConstructor(
                                     }
                                 }
 
-                                // Меню сплиттеров
+                                // Сплиттеры
                                 DropdownMenuItem(onClick = { splittersMenuExpanded = true }) {
                                     Text("Сплиттеры")
                                     DropdownMenu(
@@ -858,7 +937,8 @@ fun SchemeConstructor(
                                             val oldElement = newElements[row, col]
                                             if (oldElement != null &&
                                                 (oldElement is Combiner2 || oldElement is Combiner3 || oldElement is Combiner4 ||
-                                                        oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4 || oldElement is Coupler)
+                                                        oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4 ||
+                                                        oldElement is Coupler || oldElement is Booster)
                                             ) {
                                                 newElements.removeConnectedElementsAbove(oldElement.id)
                                             }
@@ -941,7 +1021,8 @@ fun SchemeConstructor(
                                             val oldElement = newElements[row, col]
                                             if (oldElement != null &&
                                                 (oldElement is Combiner2 || oldElement is Combiner3 || oldElement is Combiner4 ||
-                                                        oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4 || oldElement is Coupler)
+                                                        oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4 ||
+                                                        oldElement is Coupler || oldElement is Booster)
                                             ) {
                                                 newElements.removeConnectedElementsAbove(oldElement.id)
                                             }
@@ -1074,7 +1155,8 @@ fun SchemeConstructor(
                                             val oldElement = newElements[row, col]
                                             if (oldElement != null &&
                                                 (oldElement is Combiner2 || oldElement is Combiner3 || oldElement is Combiner4 ||
-                                                        oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4 || oldElement is Coupler)
+                                                        oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4 ||
+                                                        oldElement is Coupler || oldElement is Booster)
                                             ) {
                                                 newElements.removeConnectedElementsAbove(oldElement.id)
                                             }
@@ -1231,6 +1313,11 @@ fun SchemeConstructor(
 
                     val isElementBelowRepeater = elements.isElementBelowRepeater(element.id)
 
+                    log(
+                        "TEST",
+                        "element: $element isElementBelowRepeater = $isElementBelowRepeater"
+                    )
+
                     // Получаем координаты первого и второго элемента по id
                     val startElement =
                         elements.findElementById(if (isElementBelowRepeater) element.fetchEndElementId() else element.fetchTopElementId())
@@ -1342,7 +1429,9 @@ fun SchemeConstructor(
                             end = endCenter,
                             isTwoCorners = isShiftCableLeft || isShiftCableRight ||
                                     (endElementInstance?.isRepeater() == true && isRepeaterHalfShiftRender) ||
-                                    (startElementInstance?.isRepeater() == true && isRepeaterHalfShiftRender),
+                                    (startElementInstance?.isRepeater() == true && isRepeaterHalfShiftRender) ||
+                                    (startElementInstance?.isHalfShiftRender() == true) ||
+                                    (endElementInstance?.isHalfShiftRender() == true),
                             isSideThenDown = startElementInstance?.isSplitterOrCoupler() == true &&
                                     (startElement.second != endElement.second || startElementInstance.isHalfShiftRender() == true),
                             cable = cable,
@@ -1403,6 +1492,7 @@ fun SchemeConstructor(
                                                     is Splitter3 -> oldElement.copy(cable = newCable)
                                                     is Splitter4 -> oldElement.copy(cable = newCable)
                                                     is Coupler -> oldElement.copy(cable = newCable)
+                                                    is Booster -> oldElement.copy(cable = newCable)
                                                 }
                                             }
                                             cableMenuOpenedForIndex = null

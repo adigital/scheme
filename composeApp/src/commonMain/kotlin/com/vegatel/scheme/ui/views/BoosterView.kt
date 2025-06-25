@@ -25,7 +25,7 @@ import kotlinx.coroutines.delay
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
-fun RepeaterView(
+fun BoosterView(
     signalPower: Double,
     onClick: (IntOffset) -> Unit,
     modifier: Modifier = Modifier
@@ -56,11 +56,11 @@ fun RepeaterView(
         Box(
             modifier = Modifier
                 .size(48.dp)
-                .border(4.dp, elementColor, RoundedCornerShape(4.dp))
+                .border(3.dp, elementColor, RoundedCornerShape(4.dp))
                 .padding(8.dp),
             contentAlignment = Alignment.Center
         ) {
-            Text("REP", color = elementColor)
+            Text("BST", color = elementColor)
         }
 
         Text(
@@ -73,7 +73,7 @@ fun RepeaterView(
 @Composable
 @Preview
 private fun preview() {
-    RepeaterView(
+    BoosterView(
         signalPower = 30.0,
         onClick = {})
 }

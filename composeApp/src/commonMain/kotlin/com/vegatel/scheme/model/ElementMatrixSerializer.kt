@@ -114,6 +114,15 @@ fun ElementMatrix.toSerializable(): SerializableElementMatrix {
                         attenuation1 = element.attenuation1,
                         attenuation2 = element.attenuation2
                     )
+
+                    is Element.Booster -> SerializableElement(
+                        "Booster", element.id, element.signalPower, element.endElementId,
+                        SerializableCable(
+                            length = element.cable.length,
+                            type = element.cable.type.name
+                        ),
+                        attenuation1 = element.maxOutputPower
+                    )
                 }
             })
         }
@@ -202,6 +211,14 @@ fun SerializableElementMatrix.toElementMatrix(): ElementMatrix {
                     id = e.id,
                     attenuation1 = e.attenuation1 ?: 0.0,
                     attenuation2 = e.attenuation2 ?: 0.0,
+                    signalPower = e.signalPower ?: 0.0,
+                    endElementId = e.endElementId ?: -1,
+                    cable = cable
+                )
+
+                "Booster" -> Element.Booster(
+                    id = e.id,
+                    maxOutputPower = e.attenuation1 ?: 0.0,
                     signalPower = e.signalPower ?: 0.0,
                     endElementId = e.endElementId ?: -1,
                     cable = cable

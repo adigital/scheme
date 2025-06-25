@@ -99,6 +99,17 @@ sealed class Element {
             "Repeater(id=$id, signalPower=$signalPower, endElementId=$endElementId, cable=$cable)"
     }
 
+    data class Booster(
+        override val id: Int,
+        val maxOutputPower: Double,
+        override val signalPower: Double,
+        val endElementId: Int,
+        val cable: Cable = Cable()
+    ) : Element() {
+        override fun toString(): String =
+            "Booster(id=$id, maxOutputPower=$maxOutputPower, maxGain=$signalPower, endElementId=$endElementId, cable=$cable)"
+    }
+
     data class Coupler(
         override val id: Int,
         val attenuation1: Double,
@@ -119,6 +130,7 @@ sealed class Element {
             is Combiner3 -> this.id
             is Combiner4 -> this.id
             is Repeater -> this.id
+            is Booster -> this.id
             is Splitter2 -> this.id
             is Splitter3 -> this.id
             is Splitter4 -> this.id
@@ -134,6 +146,7 @@ sealed class Element {
             is Combiner3 -> this.endElementId
             is Combiner4 -> this.endElementId
             is Repeater -> this.endElementId
+            is Booster -> this.endElementId
             is Splitter2 -> this.endElementId
             is Splitter3 -> this.endElementId
             is Splitter4 -> this.endElementId
@@ -149,6 +162,7 @@ sealed class Element {
             is Combiner3 -> this.cable
             is Combiner4 -> this.cable
             is Repeater -> this.cable
+            is Booster -> this.cable
             is Splitter2 -> this.cable
             is Splitter3 -> this.cable
             is Splitter4 -> this.cable

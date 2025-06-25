@@ -3,6 +3,7 @@ package com.vegatel.scheme.domain.usecase
 import com.vegatel.scheme.log
 import com.vegatel.scheme.model.Cable
 import com.vegatel.scheme.model.Element.Antenna
+import com.vegatel.scheme.model.Element.Booster
 import com.vegatel.scheme.model.Element.Combiner2
 import com.vegatel.scheme.model.Element.Combiner3
 import com.vegatel.scheme.model.Element.Combiner4
@@ -104,6 +105,21 @@ fun ElementMatrix.calculateSignalPower(
                 }
                 val maxIn = inputs.maxOrNull() ?: 0.0
                 maxIn + element.signalPower
+            }
+
+            // Бустер: усиливает сигнал максимум на signalPower, но не более maxOutputPower
+            element is Booster -> {
+                val inputs = mutableListOf<Double>()
+                forEachElement { rowChild, colChild, child ->
+                    if (child?.fetchEndElementId() == elementId) {
+                        val src = calculate(child.id)
+                        val loss = calculateCableLoss(child.fetchCable(), frequency)
+                        inputs.add(src + loss)
+                    }
+                }
+                val maxIn = inputs.maxOrNull() ?: 0.0
+                val amplified = maxIn + element.signalPower
+                if (amplified > element.maxOutputPower) element.maxOutputPower else amplified
             }
 
             // Сплиттер: сигнал на входе берётся от всех элементов, подключенных сверху (rowChild < row), включая родительский через fetchEndElementId()
