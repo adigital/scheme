@@ -17,6 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
@@ -69,7 +70,9 @@ data class SchemeState(
     val fileName: String? = null,
     val isDirty: Boolean = false,
     val baseStationSignal: Double = 30.0,
-    val frequency: Int = 800
+    val frequency: Int = 800,
+    val schemeOffset: Offset = Offset.Zero,
+    val elementOffsets: Map<Int, Offset> = emptyMap()
 )
 
 val initialSchemeState = SchemeState(
@@ -206,6 +209,16 @@ fun App() {
                 Box(Modifier.graphicsLayer(scaleX = scale, scaleY = scale)) {
                     SchemeConstructor(
                         elements = schemeState.elements,
+                        schemeOffset = schemeState.schemeOffset,
+                        elementOffsets = schemeState.elementOffsets,
+                        onSchemeOffsetChange = { newOffset ->
+                            appState.updateState(schemeState.copy(schemeOffset = newOffset))
+                        },
+                        onElementOffsetChange = { id, offset ->
+                            val newOffsets =
+                                schemeState.elementOffsets.toMutableMap().apply { put(id, offset) }
+                            appState.updateState(schemeState.copy(elementOffsets = newOffsets))
+                        },
                         onElementsChange = { newElements ->
                             val isDirty =
                                 newElements != schemeState.elements || schemeState.isDirty.not()

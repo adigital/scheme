@@ -3,9 +3,10 @@ package com.vegatel.scheme
 import android.net.Uri
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
-import com.vegatel.scheme.model.SerializableElementMatrix
+import androidx.compose.ui.geometry.Offset
+import com.vegatel.scheme.model.SerializableScheme
 import com.vegatel.scheme.model.toElementMatrix
-import com.vegatel.scheme.model.toSerializable
+import com.vegatel.scheme.model.toSerializableScheme
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.json.Json
 
@@ -24,12 +25,28 @@ fun ComponentActivity.registerOpenElementMatrixFromDialog(
                     val inputStream = contentResolver.openInputStream(uri)
                     val json = inputStream?.bufferedReader()?.use { it.readText() }
                     if (json != null) {
-                        val serializable = Json.decodeFromString<SerializableElementMatrix>(json)
-                        openFileState?.value = openFileState?.value?.copy(
-                            elements = serializable.toElementMatrix(),
-                            fileName = uri.toString(),
-                            isDirty = false
-                        ) ?: return@registerForActivityResult
+                        try {
+                            // Декодируем полную схему с учетом смещений
+                            val schemeSerializable = Json.decodeFromString<SerializableScheme>(json)
+                            val loadedElements = schemeSerializable.matrix.toElementMatrix()
+                            val loadedSchemeOffset = Offset(
+                                schemeSerializable.schemeOffset.x,
+                                schemeSerializable.schemeOffset.y
+                            )
+                            val loadedElementOffsets = schemeSerializable.elementOffsets.associate {
+                                it.id to
+                                        Offset(it.offset.x, it.offset.y)
+                            }
+                            openFileState?.value = openFileState?.value?.copy(
+                                elements = loadedElements,
+                                schemeOffset = loadedSchemeOffset,
+                                elementOffsets = loadedElementOffsets,
+                                fileName = uri.toString(),
+                                isDirty = false
+                            ) ?: return@registerForActivityResult
+                        } catch (e: Exception) {
+                            log("App", "Ошибка открытия файла: $e")
+                        }
                     }
                 } catch (e: Exception) {
                     log("App", "Ошибка открытия файла: $e")
@@ -59,16 +76,13 @@ fun ComponentActivity.registerSaveElementMatrixFromDialog(
             if (uri != null) {
                 try {
                     val outputStream = contentResolver.openOutputStream(uri, "wt")
-                    val serializable = saveFileState?.value?.elements?.toSerializable()
+                    val stateValue = saveFileState?.value ?: return@registerForActivityResult
+                    // Сериализуем всю схему с учетом смещений
+                    val schemeSerializable = stateValue.toSerializableScheme()
                     val json =
-                        serializable?.let {
-                            Json.encodeToString(
-                                SerializableElementMatrix.serializer(),
-                                it
-                            )
-                        }
+                        Json.encodeToString(SerializableScheme.serializer(), schemeSerializable)
                     outputStream?.bufferedWriter()
-                        ?.use { writer -> if (json != null) writer.write(json) }
+                        ?.use { writer -> writer.write(json) }
                     // После успешного сохранения обновляем fileName и isDirty
                     saveFileState?.value = saveFileState?.value?.copy(
                         fileName = uri.toString(),

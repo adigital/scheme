@@ -15,11 +15,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.consumePositionChange
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
@@ -27,7 +30,6 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.vegatel.scheme.domain.usecase.calculateSignalPower
-import com.vegatel.scheme.extensions.schemePanModifier
 import com.vegatel.scheme.extensions.toPx
 import com.vegatel.scheme.initialElements
 import com.vegatel.scheme.log
@@ -54,10 +56,15 @@ import com.vegatel.scheme.ui.views.LoadView
 import com.vegatel.scheme.ui.views.RepeaterView
 import com.vegatel.scheme.ui.views.SplitterView
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import kotlin.math.roundToInt
 
 @Composable
 fun SchemeConstructor(
     elements: ElementMatrix,
+    schemeOffset: Offset,
+    elementOffsets: Map<Int, Offset>,
+    onSchemeOffsetChange: (Offset) -> Unit,
+    onElementOffsetChange: (Int, Offset) -> Unit,
     onElementsChange: (ElementMatrix) -> Unit,
     baseStationSignal: Double = 30.0,
     frequency: Int = 800,
@@ -95,18 +102,43 @@ fun SchemeConstructor(
     var couplersMenuExpanded by remember { mutableStateOf(false) }
     var boostersMenuExpanded by remember { mutableStateOf(false) }
 
-    // Добавляю состояние смещений перетаскивания для элементов; сбрасывается при resetKey
-    val dragOffsets = remember(resetKey) { mutableStateMapOf<Int, Offset>() }
+    // Локальное смещение схемы во время drag
+    var localSchemeDrag by remember { mutableStateOf(Offset.Zero) }
+    // Стабильный state для актуальных schemeOffset и колбэка
+    val schemeOffsetState = rememberUpdatedState(schemeOffset)
+    val onSchemeOffsetChangeState = rememberUpdatedState(onSchemeOffsetChange)
 
-    // Состояние смещения всей схемы (перетаскивание холста)
-    val schemeOffset = remember { mutableStateOf(Offset.Zero) }
+    // Локальный стейт для перетаскивания элементов
+    val localDragOffsets = remember(resetKey) { mutableStateMapOf<Int, Offset>() }
+    // Стабильный state для актуальных elementOffsets и onElementOffsetChange
+    val elementOffsetsState = rememberUpdatedState(elementOffsets)
+    val onElementOffsetChangeState = rememberUpdatedState(onElementOffsetChange)
 
     Box(
         Modifier
             .fillMaxSize()
             .background(Color.White)
-            .schemePanModifier(schemeOffset)
-            .offset { IntOffset(schemeOffset.value.x.toInt(), schemeOffset.value.y.toInt()) }
+            .pointerInput(resetKey) {
+                detectDragGestures(
+                    onDrag = { change, dragAmount ->
+                        change.consumePositionChange()
+                        localSchemeDrag += dragAmount
+                    },
+                    onDragEnd = {
+                        // сбрасываем и обновляем внешнее состояние
+                        val total = schemeOffsetState.value + localSchemeDrag
+                        onSchemeOffsetChangeState.value(total)
+                        localSchemeDrag = Offset.Zero
+                    },
+                    onDragCancel = {
+                        localSchemeDrag = Offset.Zero
+                    }
+                )
+            }
+            .offset {
+                val combined = schemeOffset + localSchemeDrag
+                IntOffset(combined.x.roundToInt(), combined.y.roundToInt())
+            }
     ) {
         elements.forEachElementComposable { row, col, element ->
             // Рисуем элементы
@@ -128,24 +160,48 @@ fun SchemeConstructor(
                     )
                 } ?: 0.0
 
-            // Добавляю перетаскивание: корректирую pixel-координаты
-            val currentDrag = element?.let { dragOffsets[it.id] ?: Offset.Zero } ?: Offset.Zero
-            val combinedOffset = IntOffset(
-                elementOffset.x + currentDrag.x.toInt(),
-                elementOffset.y + currentDrag.y.toInt()
+            // Добавляю перетаскивание: корректирую pixel-координаты для элемента с float-позиционированием
+            val elementOffsetRaw = Offset(
+                paddingHorizontalDp.dp.toPx() + col * 2 * elementWidthDp.dp.toPx(),
+                paddingVerticalDp.dp.toPx() + row * 2 * elementHeightDp.dp.toPx()
             )
+
+            val externalOffset =
+                element?.let { elementOffsetsState.value[it.id] ?: Offset.Zero } ?: Offset.Zero
+            val localOffset = element?.let { localDragOffsets[it.id] ?: Offset.Zero } ?: Offset.Zero
+
+            val currentDragOffset = externalOffset + localOffset
+
             Box(
                 modifier = Modifier
                     .zIndex(1f)
-                    .offset { combinedOffset }
-                    .pointerInput(resetKey, element?.id) {
-                        detectDragGestures { change, dragAmount ->
-                            change.consume()
-                            element?.let {
-                                val oldOffset = dragOffsets[it.id] ?: Offset.Zero
-                                dragOffsets[it.id] = oldOffset + dragAmount
+                    .graphicsLayer {
+                        translationX = elementOffsetRaw.x + currentDragOffset.x
+                        translationY = elementOffsetRaw.y + currentDragOffset.y
+                    }
+                    .pointerInput(element?.id) {
+                        detectDragGestures(
+                            onDrag = { change, dragAmount ->
+                                change.consumePositionChange()
+                                element?.let {
+                                    val prev = localDragOffsets[it.id] ?: Offset.Zero
+                                    localDragOffsets[it.id] = prev + dragAmount
+                                }
+                            },
+                            onDragEnd = {
+                                element?.let {
+                                    val prevExternal =
+                                        elementOffsetsState.value[it.id] ?: Offset.Zero
+                                    val prevLocal = localDragOffsets[it.id] ?: Offset.Zero
+                                    val total = prevExternal + prevLocal
+                                    onElementOffsetChangeState.value(it.id, total)
+                                    localDragOffsets.remove(it.id)
+                                }
+                            },
+                            onDragCancel = {
+                                element?.let { localDragOffsets.remove(it.id) }
                             }
-                        }
+                        )
                     }
             ) {
                 when (element) {
@@ -1411,13 +1467,19 @@ fun SchemeConstructor(
                         x = paddingHorizontal + endCol * 2 * elementWidth + elementWidth / 2 + endHorizontalOffsetDp,
                         y = paddingVertical + endRow * 2 * elementHeight + endVerticalOffsetDp
                     )
-                    // apply element drag offsets
-                    val startDragOffset =
-                        startElementInstance?.let { dragOffsets[it.id] ?: Offset.Zero }
-                            ?: Offset.Zero
-                    val endDragOffset =
-                        endElementInstance?.let { dragOffsets[it.id] ?: Offset.Zero }
-                            ?: Offset.Zero
+
+                    // apply element drag offsets (external + local) for cables
+                    val startDragOffset = startElementInstance?.let {
+                        val external = elementOffsetsState.value[it.id] ?: Offset.Zero
+                        val local = localDragOffsets[it.id] ?: Offset.Zero
+                        external + local
+                    } ?: Offset.Zero
+                    val endDragOffset = endElementInstance?.let {
+                        val external = elementOffsetsState.value[it.id] ?: Offset.Zero
+                        val local = localDragOffsets[it.id] ?: Offset.Zero
+                        external + local
+                    } ?: Offset.Zero
+
                     val startCenter = startCenterRaw + startDragOffset
                     val endCenter = endCenterRaw + endDragOffset
 
@@ -1619,6 +1681,10 @@ fun SchemeConstructor(
 private fun preview() {
     SchemeConstructor(
         elements = initialElements,
+        schemeOffset = Offset.Zero,
+        elementOffsets = mapOf(),
+        onSchemeOffsetChange = {},
+        onElementOffsetChange = { _, _ -> },
         onElementsChange = {},
     )
 }
