@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Divider
 import androidx.compose.material.FloatingActionButton
@@ -19,11 +18,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.vegatel.scheme.model.Element.Antenna
 import com.vegatel.scheme.model.Element.Repeater
@@ -161,7 +157,6 @@ private val appState = AppState()
 fun App() {
     MaterialTheme {
         val schemeState by appState.schemeState.collectAsState()
-        var dragOffset by remember { mutableStateOf(Offset.Zero) }
         var scale by remember { mutableStateOf(1f) }
         var schemeVersion by remember { mutableStateOf(0) }
 
@@ -172,7 +167,7 @@ fun App() {
             Column(
                 Modifier
                     .fillMaxSize()
-                    .background(Color.LightGray)
+                    .background(Color.White)
             ) {
                 MainMenu(
                     fileName = schemeState.fileName,
@@ -214,26 +209,7 @@ fun App() {
 
                 Divider()
 
-                Box(
-                    Modifier
-                        .graphicsLayer(scaleX = scale, scaleY = scale)
-                        .offset { IntOffset(dragOffset.x.toInt(), dragOffset.y.toInt()) }
-                        .pointerInput(Unit) {
-                            awaitPointerEventScope {
-                                while (true) {
-                                    val event = awaitPointerEvent()
-                                    // Перетаскиваем только из области схемы
-                                    if (event.changes.first().pressed) {
-                                        val position = event.changes.first().position
-                                        val lastPosition = event.changes.first().previousPosition
-                                        val delta = position - lastPosition
-                                        dragOffset = dragOffset + delta
-                                        event.changes.forEach { it.consume() }
-                                    }
-                                }
-                            }
-                        }
-                ) {
+                Box(Modifier.graphicsLayer(scaleX = scale, scaleY = scale)) {
                     SchemeConstructor(
                         elements = schemeState.elements,
                         onElementsChange = { newElements ->
