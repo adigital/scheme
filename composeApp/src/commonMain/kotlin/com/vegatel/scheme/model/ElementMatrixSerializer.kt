@@ -23,7 +23,10 @@ data class SerializableElement(
 @Serializable
 data class SerializableCable(
     val length: Double,
-    val type: String
+    val type: String,
+    val isTwoCorners: Boolean = false,
+    val isSideThenDown: Boolean = false,
+    val isStraightLine: Boolean = false
 )
 
 fun ElementMatrix.toSerializable(): SerializableElementMatrix {
@@ -37,7 +40,10 @@ fun ElementMatrix.toSerializable(): SerializableElementMatrix {
                         "Antenna", element.id, element.signalPower, element.endElementId,
                         SerializableCable(
                             length = element.cable.length,
-                            type = element.cable.type.name
+                            type = element.cable.type.name,
+                            isTwoCorners = element.cable.isTwoCorners,
+                            isSideThenDown = element.cable.isSideThenDown,
+                            isStraightLine = element.cable.isStraightLine
                         )
                     )
 
@@ -45,7 +51,10 @@ fun ElementMatrix.toSerializable(): SerializableElementMatrix {
                         "Load", element.id, element.signalPower, element.endElementId,
                         SerializableCable(
                             length = element.cable.length,
-                            type = element.cable.type.name
+                            type = element.cable.type.name,
+                            isTwoCorners = element.cable.isTwoCorners,
+                            isSideThenDown = element.cable.isSideThenDown,
+                            isStraightLine = element.cable.isStraightLine
                         )
                     )
 
@@ -53,7 +62,10 @@ fun ElementMatrix.toSerializable(): SerializableElementMatrix {
                         "Combiner2", element.id, element.signalPower, element.endElementId,
                         SerializableCable(
                             length = element.cable.length,
-                            type = element.cable.type.name
+                            type = element.cable.type.name,
+                            isTwoCorners = element.cable.isTwoCorners,
+                            isSideThenDown = element.cable.isSideThenDown,
+                            isStraightLine = element.cable.isStraightLine
                         )
                     )
 
@@ -61,7 +73,10 @@ fun ElementMatrix.toSerializable(): SerializableElementMatrix {
                         "Combiner3", element.id, element.signalPower, element.endElementId,
                         SerializableCable(
                             length = element.cable.length,
-                            type = element.cable.type.name
+                            type = element.cable.type.name,
+                            isTwoCorners = element.cable.isTwoCorners,
+                            isSideThenDown = element.cable.isSideThenDown,
+                            isStraightLine = element.cable.isStraightLine
                         )
                     )
 
@@ -69,7 +84,10 @@ fun ElementMatrix.toSerializable(): SerializableElementMatrix {
                         "Combiner4", element.id, element.signalPower, element.endElementId,
                         SerializableCable(
                             length = element.cable.length,
-                            type = element.cable.type.name
+                            type = element.cable.type.name,
+                            isTwoCorners = element.cable.isTwoCorners,
+                            isSideThenDown = element.cable.isSideThenDown,
+                            isStraightLine = element.cable.isStraightLine
                         )
                     )
 
@@ -77,7 +95,10 @@ fun ElementMatrix.toSerializable(): SerializableElementMatrix {
                         "Repeater", element.id, element.signalPower, element.endElementId,
                         SerializableCable(
                             length = element.cable.length,
-                            type = element.cable.type.name
+                            type = element.cable.type.name,
+                            isTwoCorners = element.cable.isTwoCorners,
+                            isSideThenDown = element.cable.isSideThenDown,
+                            isStraightLine = element.cable.isStraightLine
                         )
                     )
 
@@ -85,7 +106,10 @@ fun ElementMatrix.toSerializable(): SerializableElementMatrix {
                         "Splitter2", element.id, element.signalPower, element.endElementId,
                         SerializableCable(
                             length = element.cable.length,
-                            type = element.cable.type.name
+                            type = element.cable.type.name,
+                            isTwoCorners = element.cable.isTwoCorners,
+                            isSideThenDown = element.cable.isSideThenDown,
+                            isStraightLine = element.cable.isStraightLine
                         )
                     )
 
@@ -93,7 +117,10 @@ fun ElementMatrix.toSerializable(): SerializableElementMatrix {
                         "Splitter3", element.id, element.signalPower, element.endElementId,
                         SerializableCable(
                             length = element.cable.length,
-                            type = element.cable.type.name
+                            type = element.cable.type.name,
+                            isTwoCorners = element.cable.isTwoCorners,
+                            isSideThenDown = element.cable.isSideThenDown,
+                            isStraightLine = element.cable.isStraightLine
                         )
                     )
 
@@ -101,7 +128,10 @@ fun ElementMatrix.toSerializable(): SerializableElementMatrix {
                         "Splitter4", element.id, element.signalPower, element.endElementId,
                         SerializableCable(
                             length = element.cable.length,
-                            type = element.cable.type.name
+                            type = element.cable.type.name,
+                            isTwoCorners = element.cable.isTwoCorners,
+                            isSideThenDown = element.cable.isSideThenDown,
+                            isStraightLine = element.cable.isStraightLine
                         )
                     )
 
@@ -109,7 +139,10 @@ fun ElementMatrix.toSerializable(): SerializableElementMatrix {
                         "Coupler", element.id, element.signalPower, element.endElementId,
                         SerializableCable(
                             length = element.cable.length,
-                            type = element.cable.type.name
+                            type = element.cable.type.name,
+                            isTwoCorners = element.cable.isTwoCorners,
+                            isSideThenDown = element.cable.isSideThenDown,
+                            isStraightLine = element.cable.isStraightLine
                         ),
                         attenuation1 = element.attenuation1,
                         attenuation2 = element.attenuation2
@@ -119,7 +152,10 @@ fun ElementMatrix.toSerializable(): SerializableElementMatrix {
                         "Booster", element.id, element.signalPower, element.endElementId,
                         SerializableCable(
                             length = element.cable.length,
-                            type = element.cable.type.name
+                            type = element.cable.type.name,
+                            isTwoCorners = element.cable.isTwoCorners,
+                            isSideThenDown = element.cable.isSideThenDown,
+                            isStraightLine = element.cable.isStraightLine
                         ),
                         attenuation1 = element.maxOutputPower
                     )
@@ -140,7 +176,10 @@ fun SerializableElementMatrix.toElementMatrix(): ElementMatrix {
                 val cableType = CableType.valueOf(it.type)
                 Cable(
                     length = it.length,
-                    type = cableType
+                    type = cableType,
+                    isTwoCorners = it.isTwoCorners,
+                    isSideThenDown = it.isSideThenDown,
+                    isStraightLine = it.isStraightLine
                 )
             } ?: Cable()
             val element = when (e.type) {

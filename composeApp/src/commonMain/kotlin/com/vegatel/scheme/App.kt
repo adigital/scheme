@@ -69,8 +69,7 @@ data class SchemeState(
     val fileName: String? = null,
     val isDirty: Boolean = false,
     val baseStationSignal: Double = 30.0,
-    val frequency: Int = 800,
-    val isStraightLine: Boolean = false
+    val frequency: Int = 800
 )
 
 val initialSchemeState = SchemeState(
@@ -78,8 +77,7 @@ val initialSchemeState = SchemeState(
     fileName = null,
     isDirty = false,
     baseStationSignal = 30.0,
-    frequency = 800,
-    isStraightLine = false
+    frequency = 800
 )
 
 class AppState {
@@ -174,15 +172,11 @@ fun App() {
                     canRedo = appState.canRedo(),
                     baseStationSignal = schemeState.baseStationSignal,
                     frequency = schemeState.frequency,
-                    isStraightLine = schemeState.isStraightLine,
                     onFrequencyChange = { newFreq ->
                         appState.updateState(schemeState.copy(frequency = newFreq))
                     },
                     onBaseStationSignalChange = { newSignal ->
                         appState.updateState(schemeState.copy(baseStationSignal = newSignal))
-                    },
-                    onStraightLineChange = { newStraightLine ->
-                        appState.updateState(schemeState.copy(isStraightLine = newStraightLine))
                     },
                     onNew = {
                         appState.resetState()
@@ -221,7 +215,6 @@ fun App() {
                         },
                         baseStationSignal = schemeState.baseStationSignal,
                         frequency = schemeState.frequency,
-                        isStraightLine = schemeState.isStraightLine,
                         resetKey = schemeVersion
                     )
                 }

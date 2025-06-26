@@ -49,10 +49,8 @@ fun MainMenu(
     canRedo: Boolean = false,
     baseStationSignal: Double = 30.0,
     frequency: Int = 800,
-    isStraightLine: Boolean = false,
     onBaseStationSignalChange: (Double) -> Unit = {},
     onFrequencyChange: (Int) -> Unit = {},
-    onStraightLineChange: (Boolean) -> Unit = {},
     onNew: () -> Unit = {},
     onOpen: () -> Unit = {},
     onSave: () -> Unit = {},
@@ -66,7 +64,6 @@ fun MainMenu(
     var expanded by remember { mutableStateOf(false) }
     var openSubmenu1Expanded by remember { mutableStateOf(false) }
     var openSubmenu2Expanded by remember { mutableStateOf(false) }
-    var openSubmenu3Expanded by remember { mutableStateOf(false) }
     var showBaseStationSignalDialog by remember { mutableStateOf(false) }
     var baseStationSignalInput by remember { mutableStateOf(TextFieldValue(baseStationSignal.toString())) }
     var showFrequencyDropdown by remember { mutableStateOf(false) }
@@ -167,8 +164,6 @@ fun MainMenu(
             onDismissRequest = {
                 expanded = false
                 openSubmenu1Expanded = false
-                openSubmenu2Expanded = false
-                openSubmenu3Expanded = false
             }
         ) {
             DropdownMenuItem(
@@ -257,28 +252,6 @@ fun MainMenu(
                         onCalc3()
                     }) {
                         Text("Подобрать кабель")
-                    }
-                }
-            }
-
-            DropdownMenuItem(
-                onClick = { openSubmenu3Expanded = true }
-            ) {
-                Text("Отображение")
-
-                DropdownMenu(
-                    expanded = openSubmenu3Expanded,
-                    onDismissRequest = {
-                        expanded = false
-                        openSubmenu3Expanded = false
-                    }
-                ) {
-                    DropdownMenuItem(onClick = {
-                        expanded = false
-                        openSubmenu3Expanded = false
-                        onStraightLineChange(!isStraightLine)
-                    }) {
-                        Text(if (isStraightLine) "Кабели под прямыми углами" else "Кабели по диагонали")
                     }
                 }
             }

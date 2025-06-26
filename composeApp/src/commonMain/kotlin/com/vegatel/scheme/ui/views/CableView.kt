@@ -92,15 +92,8 @@ fun CableView(
     }
 
     // Находим центральную точку для текста
-    val centerPoint = if (isStraightLine) {
-        // Для прямой линии - середина между start и end
+    val centerPoint =
         Offset((start.x + end.x) / 2, (start.y + end.y) / 2)
-    } else {
-        // Для изогнутой линии - как раньше
-        val midX = if (isSideThenDown) (start.x + end.x) / 2 else start.x
-        val midY = if (isSideThenDown) start.y else (start.y + end.y) / 2
-        Offset(midX, midY)
-    }
 
     // Слой с Box для каждого сегмента
     segments.forEach { (segStart, segEnd) ->
@@ -191,24 +184,17 @@ fun CableView(
     Box(
         modifier = Modifier.absoluteOffset {
             IntOffset(
-                centerPoint.x.toInt() + if (isStraightLine) {
-                    // Для прямой линии - небольшое смещение для лучшей читаемости
-                    -8.dp.toPx().toInt()
+                centerPoint.x.toInt() + -8.dp.toPx().toInt(),
+
+                if (isStraightLine) {
+                    centerPoint.y.toInt()
                 } else {
                     when {
-                        isSideThenDown && isTwoCorners -> -12.dp.toPx().toInt()
-                        isSideThenDown -> -8.dp.toPx().toInt()
-                        else -> 4.dp.toPx().toInt()
+                        !isTwoCorners && !isSideThenDown -> +end.y.toInt()
+                        !isTwoCorners && isSideThenDown -> +start.y.toInt()
+                        else -> centerPoint.y.toInt()
                     }
-                },
-
-                centerPoint.y.toInt() + if (isStraightLine) {
-                    // Для прямой линии - небольшое смещение вверх
-                    -20.dp.toPx().toInt()
-                } else {
-                    if (isSideThenDown && isTwoCorners) 12.dp.toPx().toInt()
-                    else -20.dp.toPx().toInt()
-                },
+                } - 20.dp.toPx().toInt(),
             )
         }
     ) {

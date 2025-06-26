@@ -61,7 +61,6 @@ fun SchemeConstructor(
     onElementsChange: (ElementMatrix) -> Unit,
     baseStationSignal: Double = 30.0,
     frequency: Int = 800,
-    isStraightLine: Boolean = false,
     resetKey: Int = 0
 ) {
     // Состояние для диалога длины кабеля
@@ -1425,10 +1424,9 @@ fun SchemeConstructor(
                     CableView(
                         start = startCenter,
                         end = endCenter,
-                        isTwoCorners = true,
-                        isSideThenDown = startElementInstance?.isSplitterOrCoupler() == true &&
-                                (startElement.second != endElement.second || startElementInstance.isHalfShiftRender() == true),
-                        isStraightLine = isStraightLine,
+                        isTwoCorners = cable.isTwoCorners,
+                        isSideThenDown = cable.isSideThenDown,
+                        isStraightLine = cable.isStraightLine,
                         cable = cable,
                         onClick = {
                             cableMenuOpenedForIndex = row to col
@@ -1496,6 +1494,96 @@ fun SchemeConstructor(
                                         Text(type.displayName)
                                     }
                                 }
+
+                                Divider()
+
+                                // Форма
+                                DropdownMenuItem(onClick = {
+                                    val newElements = elements.copy()
+                                    val oldElement = newElements[row, col]
+                                    if (oldElement != null) {
+                                        val newCable = oldElement.fetchCable().copy(
+                                            isStraightLine = !oldElement.fetchCable().isStraightLine
+                                        )
+                                        newElements[row, col] = when (oldElement) {
+                                            is Antenna -> oldElement.copy(cable = newCable)
+                                            is Load -> oldElement.copy(cable = newCable)
+                                            is Combiner2 -> oldElement.copy(cable = newCable)
+                                            is Combiner3 -> oldElement.copy(cable = newCable)
+                                            is Combiner4 -> oldElement.copy(cable = newCable)
+                                            is Repeater -> oldElement.copy(cable = newCable)
+                                            is Splitter2 -> oldElement.copy(cable = newCable)
+                                            is Splitter3 -> oldElement.copy(cable = newCable)
+                                            is Splitter4 -> oldElement.copy(cable = newCable)
+                                            is Coupler -> oldElement.copy(cable = newCable)
+                                            is Booster -> oldElement.copy(cable = newCable)
+                                        }
+                                    }
+                                    cableMenuOpenedForIndex = null
+                                    onElementsChange(newElements)
+                                }) {
+                                    Text(if (element.fetchCable().isStraightLine) "Угол" else "Диагональ")
+                                }
+
+                                if (!element.fetchCable().isStraightLine) {
+                                    // Углы
+                                    DropdownMenuItem(onClick = {
+                                        val newElements = elements.copy()
+                                        val oldElement = newElements[row, col]
+                                        if (oldElement != null) {
+                                            val newCable = oldElement.fetchCable().copy(
+                                                isTwoCorners = !oldElement.fetchCable().isTwoCorners
+                                            )
+                                            newElements[row, col] = when (oldElement) {
+                                                is Antenna -> oldElement.copy(cable = newCable)
+                                                is Load -> oldElement.copy(cable = newCable)
+                                                is Combiner2 -> oldElement.copy(cable = newCable)
+                                                is Combiner3 -> oldElement.copy(cable = newCable)
+                                                is Combiner4 -> oldElement.copy(cable = newCable)
+                                                is Repeater -> oldElement.copy(cable = newCable)
+                                                is Splitter2 -> oldElement.copy(cable = newCable)
+                                                is Splitter3 -> oldElement.copy(cable = newCable)
+                                                is Splitter4 -> oldElement.copy(cable = newCable)
+                                                is Coupler -> oldElement.copy(cable = newCable)
+                                                is Booster -> oldElement.copy(cable = newCable)
+                                            }
+                                        }
+                                        cableMenuOpenedForIndex = null
+                                        onElementsChange(newElements)
+                                    }) {
+                                        Text(if (element.fetchCable().isTwoCorners) "Один угол" else "Два угла")
+                                    }
+
+                                    if (!element.fetchCable().isTwoCorners) {
+                                        // Наклон
+                                        DropdownMenuItem(onClick = {
+                                            val newElements = elements.copy()
+                                            val oldElement = newElements[row, col]
+                                            if (oldElement != null) {
+                                                val newCable = oldElement.fetchCable().copy(
+                                                    isSideThenDown = !oldElement.fetchCable().isSideThenDown
+                                                )
+                                                newElements[row, col] = when (oldElement) {
+                                                    is Antenna -> oldElement.copy(cable = newCable)
+                                                    is Load -> oldElement.copy(cable = newCable)
+                                                    is Combiner2 -> oldElement.copy(cable = newCable)
+                                                    is Combiner3 -> oldElement.copy(cable = newCable)
+                                                    is Combiner4 -> oldElement.copy(cable = newCable)
+                                                    is Repeater -> oldElement.copy(cable = newCable)
+                                                    is Splitter2 -> oldElement.copy(cable = newCable)
+                                                    is Splitter3 -> oldElement.copy(cable = newCable)
+                                                    is Splitter4 -> oldElement.copy(cable = newCable)
+                                                    is Coupler -> oldElement.copy(cable = newCable)
+                                                    is Booster -> oldElement.copy(cable = newCable)
+                                                }
+                                            }
+                                            cableMenuOpenedForIndex = null
+                                            onElementsChange(newElements)
+                                        }) {
+                                            Text(if (element.fetchCable().isSideThenDown) "Ниже" else "Выше")
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -1532,6 +1620,5 @@ private fun preview() {
     SchemeConstructor(
         elements = initialElements,
         onElementsChange = {},
-        isStraightLine = false
     )
 }

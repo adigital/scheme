@@ -181,5 +181,8 @@ sealed class Element {
 
 data class Cable(
     val length: Double = 0.0,
-    val type: CableType = CableType.CF_HALF
+    val type: CableType = CableType.CF_HALF,
+    val isTwoCorners: Boolean = true,
+    val isSideThenDown: Boolean = true,
+    val isStraightLine: Boolean = false
 )
