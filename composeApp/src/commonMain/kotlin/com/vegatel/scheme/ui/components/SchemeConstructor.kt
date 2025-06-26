@@ -61,6 +61,7 @@ fun SchemeConstructor(
     onElementsChange: (ElementMatrix) -> Unit,
     baseStationSignal: Double = 30.0,
     frequency: Int = 800,
+    isStraightLine: Boolean = false,
     resetKey: Int = 0
 ) {
     // Состояние для диалога длины кабеля
@@ -1427,6 +1428,7 @@ fun SchemeConstructor(
                         isTwoCorners = true,
                         isSideThenDown = startElementInstance?.isSplitterOrCoupler() == true &&
                                 (startElement.second != endElement.second || startElementInstance.isHalfShiftRender() == true),
+                        isStraightLine = isStraightLine,
                         cable = cable,
                         onClick = {
                             cableMenuOpenedForIndex = row to col
@@ -1529,6 +1531,7 @@ fun SchemeConstructor(
 private fun preview() {
     SchemeConstructor(
         elements = initialElements,
-        onElementsChange = {}
+        onElementsChange = {},
+        isStraightLine = false
     )
 }
