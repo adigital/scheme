@@ -160,14 +160,11 @@ fun App() {
         var scale by remember { mutableStateOf(1f) }
         var schemeVersion by remember { mutableStateOf(0) }
 
-        Box(
-            Modifier
-                .fillMaxSize()
-        ) {
+        Box(Modifier.fillMaxSize()) {
             Column(
                 Modifier
                     .fillMaxSize()
-                    .background(Color.White)
+                    .background(Color.LightGray)
             ) {
                 MainMenu(
                     fileName = schemeState.fileName,
