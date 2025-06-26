@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.Divider
 import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
@@ -204,8 +203,6 @@ fun App() {
                     onRedo = { appState.redo() }
                 )
 
-                Divider()
-
                 Box(Modifier.graphicsLayer(scaleX = scale, scaleY = scale)) {
                     SchemeConstructor(
                         elements = schemeState.elements,
@@ -237,7 +234,7 @@ fun App() {
                     if (scale < 4f) {
                         FloatingActionButton(onClick = {
                             if (scale < 4f) scale += 0.25f
-                        }) {
+                        }, backgroundColor = MaterialTheme.colors.primary) {
                             Icon(
                                 painter = painterResource(Res.drawable.zoom_in),
                                 contentDescription = "Zoom In"
@@ -248,7 +245,7 @@ fun App() {
                     if (scale > 1f) {
                         FloatingActionButton(onClick = {
                             if (scale > 1f) scale -= 0.25f
-                        }) {
+                        }, backgroundColor = MaterialTheme.colors.primary) {
                             Icon(
                                 painter = painterResource(Res.drawable.zoom_out),
                                 contentDescription = "Zoom Out"
