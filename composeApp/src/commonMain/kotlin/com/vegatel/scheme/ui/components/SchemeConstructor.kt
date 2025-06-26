@@ -22,7 +22,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.consumePositionChange
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
@@ -121,7 +120,7 @@ fun SchemeConstructor(
             .pointerInput(resetKey) {
                 detectDragGestures(
                     onDrag = { change, dragAmount ->
-                        change.consumePositionChange()
+                        change.consume()
                         localSchemeDrag += dragAmount
                     },
                     onDragEnd = {
@@ -141,15 +140,6 @@ fun SchemeConstructor(
             }
     ) {
         elements.forEachElementComposable { row, col, element ->
-            // Рисуем элементы
-            val elementOffset = IntOffset(
-                paddingHorizontalDp.dp.toPx().toInt() + col * 2 * elementWidthDp.dp.toPx()
-                    .toInt(),
-
-                paddingVerticalDp.dp.toPx().toInt() + row * 2 * elementHeightDp.dp.toPx()
-                    .toInt()
-            )
-
             // Рассчитываем мощность сигнала для текущего элемента
             val calculatedSignalPower =
                 element?.let {
@@ -172,6 +162,7 @@ fun SchemeConstructor(
 
             val currentDragOffset = externalOffset + localOffset
 
+            // Рисуем элементы
             Box(
                 modifier = Modifier
                     .zIndex(1f)
@@ -182,7 +173,7 @@ fun SchemeConstructor(
                     .pointerInput(element?.id) {
                         detectDragGestures(
                             onDrag = { change, dragAmount ->
-                                change.consumePositionChange()
+                                change.consume()
                                 element?.let {
                                     val prev = localDragOffsets[it.id] ?: Offset.Zero
                                     localDragOffsets[it.id] = prev + dragAmount
