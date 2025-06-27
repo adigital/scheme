@@ -72,7 +72,7 @@ fun MainMenu(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.White)
+            .background(Color.LightGray)
             .padding(
                 top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
             )

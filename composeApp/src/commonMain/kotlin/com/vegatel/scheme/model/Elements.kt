@@ -175,13 +175,14 @@ sealed class Element {
     fun isSplitterOrCoupler(): Boolean =
         this is Splitter2 || this is Splitter3 || this is Splitter4 || this is Coupler
 
-    fun isRepeater(): Boolean = this is Repeater
-
     fun isHalfShiftRender(): Boolean =
         this is Combiner2 || this is Combiner4 || this is Splitter2 || this is Splitter4 || this is Coupler
 }
 
 data class Cable(
     val length: Double = 0.0,
-    val type: CableType = CableType.CF_HALF
+    val type: CableType = CableType.CF_HALF,
+    val isTwoCorners: Boolean = true,
+    val isSideThenDown: Boolean = true,
+    val isStraightLine: Boolean = false
 )

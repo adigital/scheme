@@ -188,38 +188,6 @@ class ElementMatrix(
         return false
     }
 
-    fun isRepeaterHalfShiftRender(): Boolean {
-        var result = false
-
-        forEachElement { row, col, element ->
-            if (element?.isHalfShiftRender() == true &&
-                ((element is Element.Combiner2 && element.endElementId == REPEATER_ID) ||
-                        (element is Element.Combiner4 && element.endElementId == REPEATER_ID) ||
-                        (element is Element.Splitter2 && element.id == getNextForRepeaterElementId()) ||
-                        (element is Element.Splitter4 && element.id == getNextForRepeaterElementId())) ||
-                (element is Element.Coupler && element.id == getNextForRepeaterElementId())
-            ) {
-                result = true
-                return@forEachElement
-            }
-        }
-
-        return result
-    }
-
-    fun getNextForRepeaterElementId(): Int {
-        var endElementId = -1
-
-        forEachElement { row, col, element ->
-            if (element is Element.Repeater) {
-                endElementId = element.endElementId
-                return@forEachElement
-            }
-        }
-
-        return endElementId
-    }
-
     // Удаляет все элементы, подключенные к указанному элементу сверху
     fun removeConnectedElementsAbove(elementId: Int) {
         // Находим все элементы, которые подключены к данному элементу (endElementId == elementId)

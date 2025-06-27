@@ -37,6 +37,7 @@ fun CableView(
     end: Offset,
     isTwoCorners: Boolean = false,
     isSideThenDown: Boolean = false,
+    isStraightLine: Boolean = false,
     cable: Cable,
     modifier: Modifier = Modifier,
     onClick: (IntOffset) -> Unit
@@ -59,36 +60,40 @@ fun CableView(
     var isRed by remember { mutableStateOf(false) }
 
     // Вычисляем сегменты линии и центральные точки
-    val segments = when {
-        isTwoCorners -> {
-            val midY = (start.y + end.y) / 2
-            listOf(
-                Pair(start, Offset(start.x, midY)),
-                Pair(Offset(start.x, midY), Offset(end.x, midY)),
-                Pair(Offset(end.x, midY), end)
-            )
-        }
+    val segments = if (isStraightLine) {
+        // Для прямой линии - один сегмент от start до end
+        listOf(Pair(start, end))
+    } else {
+        // Для изогнутой линии - как раньше
+        when {
+            isTwoCorners -> {
+                val midY = (start.y + end.y) / 2
+                listOf(
+                    Pair(start, Offset(start.x, midY)),
+                    Pair(Offset(start.x, midY), Offset(end.x, midY)),
+                    Pair(Offset(end.x, midY), end)
+                )
+            }
 
-        isSideThenDown -> {
-            listOf(
-                Pair(start, Offset(end.x, start.y)),
-                Pair(Offset(end.x, start.y), end)
-            )
-        }
+            isSideThenDown -> {
+                listOf(
+                    Pair(start, Offset(end.x, start.y)),
+                    Pair(Offset(end.x, start.y), end)
+                )
+            }
 
-        else -> {
-            listOf(
-                Pair(start, Offset(start.x, end.y)),
-                Pair(Offset(start.x, end.y), end)
-            )
+            else -> {
+                listOf(
+                    Pair(start, Offset(start.x, end.y)),
+                    Pair(Offset(start.x, end.y), end)
+                )
+            }
         }
     }
 
     // Находим центральную точку для текста
-    val midX = if (isSideThenDown) (start.x + end.x) / 2 else start.x
-    val midY = if (isSideThenDown) start.y else (start.y + end.y) / 2
-
-    val centerPoint = Offset(midX, midY)
+    val centerPoint =
+        Offset((start.x + end.x) / 2, (start.y + end.y) / 2)
 
     // Слой с Box для каждого сегмента
     segments.forEach { (segStart, segEnd) ->
@@ -142,22 +147,28 @@ fun CableView(
     Canvas(modifier = modifier) {
         val path = Path().apply {
             moveTo(start.x, start.y)
-            when {
-                isTwoCorners -> {
-                    val midY = (start.y + end.y) / 2
-                    lineTo(start.x, midY)
-                    lineTo(end.x, midY)
-                    lineTo(end.x, end.y)
-                }
+            if (isStraightLine) {
+                // Для прямой линии - просто линия от start до end
+                lineTo(end.x, end.y)
+            } else {
+                // Для изогнутой линии - как раньше
+                when {
+                    isTwoCorners -> {
+                        val midY = (start.y + end.y) / 2
+                        lineTo(start.x, midY)
+                        lineTo(end.x, midY)
+                        lineTo(end.x, end.y)
+                    }
 
-                isSideThenDown -> {
-                    lineTo(end.x, start.y)
-                    lineTo(end.x, end.y)
-                }
+                    isSideThenDown -> {
+                        lineTo(end.x, start.y)
+                        lineTo(end.x, end.y)
+                    }
 
-                else -> {
-                    lineTo(start.x, end.y)
-                    lineTo(end.x, end.y)
+                    else -> {
+                        lineTo(start.x, end.y)
+                        lineTo(end.x, end.y)
+                    }
                 }
             }
         }
@@ -173,14 +184,17 @@ fun CableView(
     Box(
         modifier = Modifier.absoluteOffset {
             IntOffset(
-                centerPoint.x.toInt() + when {
-                    isSideThenDown && isTwoCorners -> -12.dp.toPx().toInt()
-                    isSideThenDown -> -8.dp.toPx().toInt()
-                    else -> 4.dp.toPx().toInt()
-                },
+                centerPoint.x.toInt() + -8.dp.toPx().toInt(),
 
-                centerPoint.y.toInt() + if (isSideThenDown && isTwoCorners) 12.dp.toPx().toInt()
-                else -20.dp.toPx().toInt(),
+                if (isStraightLine) {
+                    centerPoint.y.toInt()
+                } else {
+                    when {
+                        !isTwoCorners && !isSideThenDown -> +end.y.toInt()
+                        !isTwoCorners && isSideThenDown -> +start.y.toInt()
+                        else -> centerPoint.y.toInt()
+                    }
+                } - 20.dp.toPx().toInt(),
             )
         }
     ) {

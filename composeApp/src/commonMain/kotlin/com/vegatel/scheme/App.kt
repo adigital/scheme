@@ -5,9 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.Divider
 import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
@@ -22,8 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.vegatel.scheme.model.Element.Antenna
 import com.vegatel.scheme.model.Element.Repeater
@@ -74,7 +70,9 @@ data class SchemeState(
     val fileName: String? = null,
     val isDirty: Boolean = false,
     val baseStationSignal: Double = 30.0,
-    val frequency: Int = 800
+    val frequency: Int = 800,
+    val schemeOffset: Offset = Offset.Zero,
+    val elementOffsets: Map<Int, Offset> = emptyMap()
 )
 
 val initialSchemeState = SchemeState(
@@ -161,13 +159,10 @@ private val appState = AppState()
 fun App() {
     MaterialTheme {
         val schemeState by appState.schemeState.collectAsState()
-        var dragOffset by remember { mutableStateOf(Offset.Zero) }
         var scale by remember { mutableStateOf(1f) }
+        var schemeVersion by remember { mutableStateOf(0) }
 
-        Box(
-            Modifier
-                .fillMaxSize()
-        ) {
+        Box(Modifier.fillMaxSize()) {
             Column(
                 Modifier
                     .fillMaxSize()
@@ -188,12 +183,13 @@ fun App() {
                     },
                     onNew = {
                         appState.resetState()
+                        schemeVersion++
                     },
                     onOpen = {
                         openElementMatrixFromDialog(appState.mutableSchemeState)
-                        // Очищаем историю после открытия файла
                         appState.clearHistory()
                         appState.addToHistory(appState.schemeState.value)
+                        schemeVersion++
                     },
                     onSave = {
                         if (schemeState.fileName == null) {
@@ -210,30 +206,19 @@ fun App() {
                     onRedo = { appState.redo() }
                 )
 
-                Divider()
-
-                Box(
-                    Modifier
-                        .graphicsLayer(scaleX = scale, scaleY = scale)
-                        .offset { IntOffset(dragOffset.x.toInt(), dragOffset.y.toInt()) }
-                        .pointerInput(Unit) {
-                            awaitPointerEventScope {
-                                while (true) {
-                                    val event = awaitPointerEvent()
-                                    // Перетаскиваем только из области схемы
-                                    if (event.changes.first().pressed) {
-                                        val position = event.changes.first().position
-                                        val lastPosition = event.changes.first().previousPosition
-                                        val delta = position - lastPosition
-                                        dragOffset = dragOffset + delta
-                                        event.changes.forEach { it.consume() }
-                                    }
-                                }
-                            }
-                        }
-                ) {
+                Box(Modifier.graphicsLayer(scaleX = scale, scaleY = scale)) {
                     SchemeConstructor(
                         elements = schemeState.elements,
+                        schemeOffset = schemeState.schemeOffset,
+                        elementOffsets = schemeState.elementOffsets,
+                        onSchemeOffsetChange = { newOffset ->
+                            appState.updateState(schemeState.copy(schemeOffset = newOffset))
+                        },
+                        onElementOffsetChange = { id, offset ->
+                            val newOffsets =
+                                schemeState.elementOffsets.toMutableMap().apply { put(id, offset) }
+                            appState.updateState(schemeState.copy(elementOffsets = newOffsets))
+                        },
                         onElementsChange = { newElements ->
                             val isDirty =
                                 newElements != schemeState.elements || schemeState.isDirty.not()
@@ -242,7 +227,8 @@ fun App() {
                             appState.updateState(newState)
                         },
                         baseStationSignal = schemeState.baseStationSignal,
-                        frequency = schemeState.frequency
+                        frequency = schemeState.frequency,
+                        resetKey = schemeVersion
                     )
                 }
             }
@@ -261,7 +247,7 @@ fun App() {
                     if (scale < 4f) {
                         FloatingActionButton(onClick = {
                             if (scale < 4f) scale += 0.25f
-                        }) {
+                        }, backgroundColor = MaterialTheme.colors.primary) {
                             Icon(
                                 painter = painterResource(Res.drawable.zoom_in),
                                 contentDescription = "Zoom In"
@@ -272,7 +258,7 @@ fun App() {
                     if (scale > 1f) {
                         FloatingActionButton(onClick = {
                             if (scale > 1f) scale -= 0.25f
-                        }) {
+                        }, backgroundColor = MaterialTheme.colors.primary) {
                             Icon(
                                 painter = painterResource(Res.drawable.zoom_out),
                                 contentDescription = "Zoom Out"
