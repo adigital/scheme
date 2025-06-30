@@ -7,6 +7,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.graphics.createBitmap
+import androidx.core.net.toUri
 import com.vegatel.scheme.model.SerializableScheme
 import com.vegatel.scheme.model.toElementMatrix
 import com.vegatel.scheme.model.toSerializableScheme
@@ -29,7 +30,7 @@ fun ComponentActivity.registerOpenElementMatrixFromDialog(
                     val json = inputStream?.bufferedReader()?.use { it.readText() }
                     if (json != null) {
                         try {
-                            // Декодируем полную схему с учетом смещений
+                            // Декодируем полную схему, включая зумы и фон
                             val schemeSerializable = Json.decodeFromString<SerializableScheme>(json)
                             val loadedElements = schemeSerializable.matrix.toElementMatrix()
                             val loadedSchemeOffset = Offset(
@@ -37,16 +38,43 @@ fun ComponentActivity.registerOpenElementMatrixFromDialog(
                                 schemeSerializable.schemeOffset.y
                             )
                             val loadedElementOffsets = schemeSerializable.elementOffsets.associate {
-                                it.id to
-                                        Offset(it.offset.x, it.offset.y)
+                                it.id to Offset(it.offset.x, it.offset.y)
                             }
-                            openFileState?.value = openFileState?.value?.copy(
+                            // Сохраняем новое состояние, включая зумы и имя фона
+                            var newState = openFileState?.value?.copy(
                                 elements = loadedElements,
                                 schemeOffset = loadedSchemeOffset,
                                 elementOffsets = loadedElementOffsets,
                                 fileName = uri.toString(),
-                                isDirty = false
+                                isDirty = false,
+                                schemeScale = schemeSerializable.schemeScale,
+                                backgroundFileName = schemeSerializable.backgroundFileName,
+                                backgroundScale = schemeSerializable.backgroundScale
                             ) ?: return@registerForActivityResult
+                            // Автозагрузка фонового PDF, если задан
+                            schemeSerializable.backgroundFileName?.let { bfn ->
+                                try {
+                                    val uriBg = bfn.toUri()
+                                    contentResolver.openFileDescriptor(uriBg, "r")?.use { pfd ->
+                                        PdfRenderer(pfd).use { renderer ->
+                                            renderer.openPage(0).use { page ->
+                                                val bitmap = createBitmap(page.width, page.height)
+                                                page.render(
+                                                    bitmap,
+                                                    null,
+                                                    null,
+                                                    PdfRenderer.Page.RENDER_MODE_FOR_PRINT
+                                                )
+                                                newState =
+                                                    newState.copy(background = bitmap.asImageBitmap())
+                                            }
+                                        }
+                                    }
+                                } catch (e: Exception) {
+                                    log("App", "Ошибка загрузки подложки: $e")
+                                }
+                            }
+                            openFileState?.value = newState
                         } catch (e: Exception) {
                             log("App", "Ошибка открытия файла: $e")
                         }
@@ -129,8 +157,14 @@ fun ComponentActivity.registerOpenBackgroundFromDialog(state: MutableStateFlow<S
                     renderer.close()
                     pfd.close()
                     val imageBitmap = bitmap.asImageBitmap()
-                    openBackgroundState?.value =
-                        openBackgroundState?.value?.copy(background = imageBitmap)!!
+                    // Обновляем подложку и сохраняем URI подложки
+                    openBackgroundState?.value = openBackgroundState?.value
+                        ?.copy(
+                            background = imageBitmap,
+                            backgroundFileName = uri.toString(),
+                            isDirty = true
+                        )
+                        ?: return@registerForActivityResult
                 } catch (e: Exception) {
                     log("App", "Ошибка открытия PDF: $e")
                 }
@@ -144,4 +178,11 @@ fun ComponentActivity.registerOpenBackgroundFromDialog(state: MutableStateFlow<S
 actual fun openBackgroundFromDialog(state: MutableStateFlow<SchemeState>) {
     openBackgroundState = state
     openBackgroundCallback?.invoke()
+}
+
+// Сохраняет полную схему (включая зум и подложку). Для Android перенаправляем на SaveAs диалог.
+actual fun saveSchemeToFile(state: MutableStateFlow<SchemeState>) {
+    // Используем SaveAs диалог для сохранения
+    saveFileState = state
+    saveFileCallback?.invoke()
 }

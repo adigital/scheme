@@ -10,5 +10,8 @@ fun SchemeState.toSerializableScheme(): SerializableScheme = SerializableScheme(
     schemeOffset = SerializableOffset(schemeOffset.x, schemeOffset.y),
     elementOffsets = elementOffsets.map { (id, offset) ->
         SerializableElementOffset(id, SerializableOffset(offset.x, offset.y))
-    }
+    },
+    schemeScale = schemeScale,
+    backgroundFileName = backgroundFileName,
+    backgroundScale = backgroundScale
 ) 

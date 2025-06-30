@@ -16,7 +16,6 @@ actual fun openElementMatrixFromDialog(state: MutableStateFlow<SchemeState>) {
     val filename = selectOpenFileDialog() ?: return
     try {
         val text = File(filename).readText()
-        // Декодируем полную схему с учетом смещений
         val schemeSerializable = Json.decodeFromString<SerializableScheme>(text)
         val loadedElements = schemeSerializable.matrix.toElementMatrix()
         val loadedSchemeOffset = Offset(
@@ -24,15 +23,29 @@ actual fun openElementMatrixFromDialog(state: MutableStateFlow<SchemeState>) {
             schemeSerializable.schemeOffset.y
         )
         val loadedElementOffsets = schemeSerializable.elementOffsets.associate {
-            it.id to
-                    Offset(it.offset.x, it.offset.y)
+            it.id to Offset(it.offset.x, it.offset.y)
+        }
+        // Директория файла схемы
+        val jsonDir = File(filename).parentFile
+        // Имя и полный путь PDF-файла подложки
+        val bgFileName = schemeSerializable.backgroundFileName
+        val bgFullPath = bgFileName?.let { jsonDir.resolve(it).absolutePath }
+        // Загружаем подложку, если задана
+        val bgImage = bgFullPath?.let {
+            PDDocument.load(File(it)).use { doc ->
+                PDFRenderer(doc).renderImageWithDPI(0, 200f).also { doc.close() }
+            }.toComposeImageBitmap()
         }
         state.value = state.value.copy(
             elements = loadedElements,
             schemeOffset = loadedSchemeOffset,
             elementOffsets = loadedElementOffsets,
             fileName = filename,
-            isDirty = false
+            isDirty = false,
+            schemeScale = schemeSerializable.schemeScale,
+            backgroundFileName = bgFullPath,
+            backgroundScale = schemeSerializable.backgroundScale,
+            background = bgImage
         )
     } catch (e: Exception) {
         log("App", "Ошибка загрузки файла: $e")
@@ -65,11 +78,32 @@ actual fun openBackgroundFromDialog(state: MutableStateFlow<SchemeState>) {
     try {
         val document = PDDocument.load(File(filename))
         val renderer = PDFRenderer(document)
-        val bufferedImage = renderer.renderImage(0)
+        val bufferedImage = renderer.renderImageWithDPI(0, 200f)
         document.close()
         val imageBitmap: ImageBitmap = bufferedImage.toComposeImageBitmap()
-        state.value = state.value.copy(background = imageBitmap)
+        state.value = state.value.copy(
+            background = imageBitmap,
+            backgroundFileName = File(filename).name,
+            isDirty = true
+        )
     } catch (e: Exception) {
         log("App", "Ошибка загрузки PDF: $e")
+    }
+}
+
+/**
+ * Сохраняет полную схему (включая зум и подложку) без диалога в существующий файл.
+ */
+actual fun saveSchemeToFile(state: MutableStateFlow<SchemeState>) {
+    val stateValue = state.value
+    val filename = stateValue.fileName ?: return
+    try {
+        val schemeSerializable = stateValue.toSerializableScheme()
+        File(filename).writeText(
+            Json.encodeToString(SerializableScheme.serializer(), schemeSerializable)
+        )
+        state.value = state.value.copy(isDirty = false)
+    } catch (e: Exception) {
+        log("App", "Ошибка сохранения схемы: $e")
     }
 }

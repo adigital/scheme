@@ -28,7 +28,6 @@ import com.vegatel.scheme.model.Element.Antenna
 import com.vegatel.scheme.model.Element.Repeater
 import com.vegatel.scheme.model.ElementMatrix
 import com.vegatel.scheme.model.REPEATER_ID
-import com.vegatel.scheme.model.saveElementMatrixToFile
 import com.vegatel.scheme.ui.components.SchemeConstructor
 import com.vegatel.scheme.ui.views.MainMenu
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -76,7 +75,10 @@ data class SchemeState(
     val frequency: Int = 800,
     val schemeOffset: Offset = Offset.Zero,
     val elementOffsets: Map<Int, Offset> = emptyMap(),
-    val background: ImageBitmap? = null
+    val background: ImageBitmap? = null,
+    val schemeScale: Float = 1f,
+    val backgroundScale: Float = 1f,
+    val backgroundFileName: String? = null
 )
 
 val initialSchemeState = SchemeState(
@@ -163,9 +165,9 @@ private val appState = AppState()
 fun App() {
     MaterialTheme {
         val schemeState by appState.schemeState.collectAsState()
-        var scale by remember { mutableStateOf(1f) }
+        val scale = schemeState.schemeScale
         var schemeVersion by remember { mutableStateOf(0) }
-        var bgScale by remember { mutableStateOf(1f) }
+        val bgScale = schemeState.backgroundScale
 
         Box(Modifier.fillMaxSize()) {
             Column(
@@ -196,10 +198,14 @@ fun App() {
                     },
                     onSave = {
                         if (schemeState.fileName == null) {
+                            // Новая схема: показываем SaveAs диалог
                             saveElementMatrixFromDialog(appState.mutableSchemeState)
+                        } else if (getPlatform() == "Desktop") {
+                            // Сохранение без диалога на Desktop
+                            saveSchemeToFile(appState.mutableSchemeState)
                         } else {
-                            saveElementMatrixToFile(schemeState.elements, schemeState.fileName!!)
-                            appState.updateState(schemeState.copy(isDirty = false))
+                            // На других платформах используем диалог SaveAs
+                            saveElementMatrixFromDialog(appState.mutableSchemeState)
                         }
                     },
                     onSaveAs = {
@@ -231,13 +237,23 @@ fun App() {
                             schemeOffset = schemeState.schemeOffset,
                             elementOffsets = schemeState.elementOffsets,
                             onSchemeOffsetChange = { newOffset ->
-                                appState.updateState(schemeState.copy(schemeOffset = newOffset))
+                                appState.updateState(
+                                    schemeState.copy(
+                                        schemeOffset = newOffset,
+                                        isDirty = true
+                                    )
+                                )
                             },
                             onElementOffsetChange = { id, offset ->
                                 val newOffsets =
                                     schemeState.elementOffsets.toMutableMap()
                                         .apply { put(id, offset) }
-                                appState.updateState(schemeState.copy(elementOffsets = newOffsets))
+                                appState.updateState(
+                                    schemeState.copy(
+                                        elementOffsets = newOffsets,
+                                        isDirty = true
+                                    )
+                                )
                             },
                             onElementsChange = { newElements ->
                                 val isDirty =
@@ -266,9 +282,14 @@ fun App() {
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    if (scale < 4f) {
+                    if (schemeState.schemeScale < 4f) {
                         FloatingActionButton(onClick = {
-                            if (scale < 4f) scale += 0.25f
+                            appState.updateState(
+                                schemeState.copy(
+                                    schemeScale = schemeState.schemeScale + 0.25f,
+                                    isDirty = true
+                                )
+                            )
                         }, backgroundColor = MaterialTheme.colors.primary) {
                             Icon(
                                 painter = painterResource(Res.drawable.zoom_in),
@@ -277,9 +298,14 @@ fun App() {
                         }
                     }
 
-                    if (scale > 1f) {
+                    if (schemeState.schemeScale > 0.25f) {
                         FloatingActionButton(onClick = {
-                            if (scale > 1f) scale -= 0.25f
+                            appState.updateState(
+                                schemeState.copy(
+                                    schemeScale = schemeState.schemeScale - 0.25f,
+                                    isDirty = true
+                                )
+                            )
                         }, backgroundColor = MaterialTheme.colors.primary) {
                             Icon(
                                 painter = painterResource(Res.drawable.zoom_out),
@@ -290,31 +316,43 @@ fun App() {
                 }
 
                 //  Zoom controls for background
-                Column(
-                    Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    if (bgScale < 4f) {
-                        FloatingActionButton(onClick = {
-                            if (bgScale < 4f) bgScale += 0.25f
-                        }, backgroundColor = MaterialTheme.colors.primary) {
-                            Icon(
-                                painter = painterResource(Res.drawable.zoom_in),
-                                contentDescription = "Zoom In Background"
-                            )
+                if (schemeState.background != null) {
+                    Column(
+                        Modifier
+                            .align(Alignment.BottomStart)
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        if (schemeState.backgroundScale < 4f) {
+                            FloatingActionButton(onClick = {
+                                appState.updateState(
+                                    schemeState.copy(
+                                        backgroundScale = schemeState.backgroundScale + 0.25f,
+                                        isDirty = true
+                                    )
+                                )
+                            }, backgroundColor = MaterialTheme.colors.primary) {
+                                Icon(
+                                    painter = painterResource(Res.drawable.zoom_in),
+                                    contentDescription = "Zoom In Background"
+                                )
+                            }
                         }
-                    }
 
-                    if (bgScale > 1f) {
-                        FloatingActionButton(onClick = {
-                            if (bgScale > 1f) bgScale -= 0.25f
-                        }, backgroundColor = MaterialTheme.colors.primary) {
-                            Icon(
-                                painter = painterResource(Res.drawable.zoom_out),
-                                contentDescription = "Zoom Out Background"
-                            )
+                        if (schemeState.backgroundScale > 0.25f) {
+                            FloatingActionButton(onClick = {
+                                appState.updateState(
+                                    schemeState.copy(
+                                        backgroundScale = schemeState.backgroundScale - 0.25f,
+                                        isDirty = true
+                                    )
+                                )
+                            }, backgroundColor = MaterialTheme.colors.primary) {
+                                Icon(
+                                    painter = painterResource(Res.drawable.zoom_out),
+                                    contentDescription = "Zoom Out Background"
+                                )
+                            }
                         }
                     }
                 }

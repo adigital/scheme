@@ -12,5 +12,8 @@ data class SerializableElementOffset(val id: Int, val offset: SerializableOffset
 data class SerializableScheme(
     val matrix: SerializableElementMatrix,
     val schemeOffset: SerializableOffset = SerializableOffset(0f, 0f),
-    val elementOffsets: List<SerializableElementOffset> = emptyList()
+    val elementOffsets: List<SerializableElementOffset> = emptyList(),
+    val schemeScale: Float = 1f,
+    val backgroundFileName: String? = null,
+    val backgroundScale: Float = 1f
 ) 
