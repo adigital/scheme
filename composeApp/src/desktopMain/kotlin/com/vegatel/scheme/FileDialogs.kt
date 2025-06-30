@@ -23,3 +23,16 @@ fun selectSaveFileDialog(title: String = "Сохранить файл схемы
     }
     return fileName?.let { dialog.directory?.let { dir -> "$dir$it" } }
 }
+
+/**
+ * Открывает диалог выбора PDF-файла для подложки.
+ */
+fun selectOpenPdfDialog(title: String = "Выбрать подложку"): String? {
+    val dialog = FileDialog(null as Frame?, title, FileDialog.LOAD)
+    dialog.file = "*.pdf"
+    dialog.filenameFilter = FilenameFilter { _, name -> name.lowercase().endsWith(".pdf") }
+    dialog.isVisible = true
+    return dialog.file?.let { fileName ->
+        dialog.directory?.let { dir -> "${dir}$fileName" }
+    }
+}

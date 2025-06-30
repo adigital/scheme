@@ -1,6 +1,5 @@
 package com.vegatel.scheme.ui.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.absoluteOffset
@@ -20,7 +19,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextRange
@@ -116,7 +114,6 @@ fun SchemeConstructor(
     Box(
         Modifier
             .fillMaxSize()
-            .background(Color.White)
             .pointerInput(resetKey) {
                 detectDragGestures(
                     onDrag = { change, dragAmount ->

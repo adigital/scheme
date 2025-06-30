@@ -6,7 +6,6 @@ import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.view.WindowCompat
-import com.vegatel.scheme.model.ElementMatrix
 import kotlinx.coroutines.flow.MutableStateFlow
 
 class MainActivity : ComponentActivity() {
@@ -21,6 +20,7 @@ class MainActivity : ComponentActivity() {
 
         registerOpenElementMatrixFromDialog(_schemeState)
         registerSaveElementMatrixFromDialog(_schemeState)
+        registerOpenBackgroundFromDialog(_schemeState)
 
         setContent {
             App()

@@ -1,5 +1,6 @@
 package com.vegatel.scheme
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,6 +20,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import com.vegatel.scheme.model.Element.Antenna
@@ -72,7 +75,8 @@ data class SchemeState(
     val baseStationSignal: Double = 30.0,
     val frequency: Int = 800,
     val schemeOffset: Offset = Offset.Zero,
-    val elementOffsets: Map<Int, Offset> = emptyMap()
+    val elementOffsets: Map<Int, Offset> = emptyMap(),
+    val background: ImageBitmap? = null
 )
 
 val initialSchemeState = SchemeState(
@@ -161,12 +165,11 @@ fun App() {
         val schemeState by appState.schemeState.collectAsState()
         var scale by remember { mutableStateOf(1f) }
         var schemeVersion by remember { mutableStateOf(0) }
+        var bgScale by remember { mutableStateOf(1f) }
 
         Box(Modifier.fillMaxSize()) {
             Column(
-                Modifier
-                    .fillMaxSize()
-                    .background(Color.LightGray)
+                Modifier.fillMaxSize()
             ) {
                 MainMenu(
                     fileName = schemeState.fileName,
@@ -202,34 +205,52 @@ fun App() {
                     onSaveAs = {
                         saveElementMatrixFromDialog(appState.mutableSchemeState)
                     },
+                    onLoadBackground = { openBackgroundFromDialog(appState.mutableSchemeState) },
                     onUndo = { appState.undo() },
                     onRedo = { appState.redo() }
                 )
 
-                Box(Modifier.graphicsLayer(scaleX = scale, scaleY = scale)) {
-                    SchemeConstructor(
-                        elements = schemeState.elements,
-                        schemeOffset = schemeState.schemeOffset,
-                        elementOffsets = schemeState.elementOffsets,
-                        onSchemeOffsetChange = { newOffset ->
-                            appState.updateState(schemeState.copy(schemeOffset = newOffset))
-                        },
-                        onElementOffsetChange = { id, offset ->
-                            val newOffsets =
-                                schemeState.elementOffsets.toMutableMap().apply { put(id, offset) }
-                            appState.updateState(schemeState.copy(elementOffsets = newOffsets))
-                        },
-                        onElementsChange = { newElements ->
-                            val isDirty =
-                                newElements != schemeState.elements || schemeState.isDirty.not()
-                            val newState =
-                                schemeState.copy(elements = newElements, isDirty = isDirty)
-                            appState.updateState(newState)
-                        },
-                        baseStationSignal = schemeState.baseStationSignal,
-                        frequency = schemeState.frequency,
-                        resetKey = schemeVersion
-                    )
+                Box(modifier = Modifier.background(if (schemeState.background != null) Color.Gray else Color.White)) {
+                    schemeState.background?.let { bmp ->
+                        Image(
+                            bitmap = bmp,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .graphicsLayer(
+                                    scaleX = bgScale,
+                                    scaleY = bgScale,
+                                    transformOrigin = TransformOrigin(0f, 0f)
+                                )
+                                .align(Alignment.TopStart)
+                        )
+                    }
+
+                    Box(Modifier.graphicsLayer(scaleX = scale, scaleY = scale)) {
+                        SchemeConstructor(
+                            elements = schemeState.elements,
+                            schemeOffset = schemeState.schemeOffset,
+                            elementOffsets = schemeState.elementOffsets,
+                            onSchemeOffsetChange = { newOffset ->
+                                appState.updateState(schemeState.copy(schemeOffset = newOffset))
+                            },
+                            onElementOffsetChange = { id, offset ->
+                                val newOffsets =
+                                    schemeState.elementOffsets.toMutableMap()
+                                        .apply { put(id, offset) }
+                                appState.updateState(schemeState.copy(elementOffsets = newOffsets))
+                            },
+                            onElementsChange = { newElements ->
+                                val isDirty =
+                                    newElements != schemeState.elements || schemeState.isDirty.not()
+                                val newState =
+                                    schemeState.copy(elements = newElements, isDirty = isDirty)
+                                appState.updateState(newState)
+                            },
+                            baseStationSignal = schemeState.baseStationSignal,
+                            frequency = schemeState.frequency,
+                            resetKey = schemeVersion
+                        )
+                    }
                 }
             }
 
@@ -238,6 +259,7 @@ fun App() {
                 Modifier
                     .fillMaxSize()
             ) {
+                // Zoom controls for scheme
                 Column(
                     Modifier
                         .align(Alignment.BottomEnd)
@@ -262,6 +284,36 @@ fun App() {
                             Icon(
                                 painter = painterResource(Res.drawable.zoom_out),
                                 contentDescription = "Zoom Out"
+                            )
+                        }
+                    }
+                }
+
+                //  Zoom controls for background
+                Column(
+                    Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (bgScale < 4f) {
+                        FloatingActionButton(onClick = {
+                            if (bgScale < 4f) bgScale += 0.25f
+                        }, backgroundColor = MaterialTheme.colors.primary) {
+                            Icon(
+                                painter = painterResource(Res.drawable.zoom_in),
+                                contentDescription = "Zoom In Background"
+                            )
+                        }
+                    }
+
+                    if (bgScale > 1f) {
+                        FloatingActionButton(onClick = {
+                            if (bgScale > 1f) bgScale -= 0.25f
+                        }, backgroundColor = MaterialTheme.colors.primary) {
+                            Icon(
+                                painter = painterResource(Res.drawable.zoom_out),
+                                contentDescription = "Zoom Out Background"
                             )
                         }
                     }

@@ -1,9 +1,12 @@
 package com.vegatel.scheme
 
+import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.core.graphics.createBitmap
 import com.vegatel.scheme.model.SerializableScheme
 import com.vegatel.scheme.model.toElementMatrix
 import com.vegatel.scheme.model.toSerializableScheme
@@ -102,4 +105,43 @@ fun ComponentActivity.registerSaveElementMatrixFromDialog(
 actual fun saveElementMatrixFromDialog(state: MutableStateFlow<SchemeState>) {
     saveFileState = state
     saveFileCallback?.invoke()
+}
+
+// --- Поддержка PDF-подложки ---
+private var openBackgroundState: MutableStateFlow<SchemeState>? = null
+private var openBackgroundCallback: (() -> Unit)? = null
+
+fun ComponentActivity.registerOpenBackgroundFromDialog(state: MutableStateFlow<SchemeState>) {
+    openBackgroundState = state
+    val openPdfLauncher =
+        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
+            if (uri != null) {
+                try {
+                    val pfd = contentResolver.openFileDescriptor(uri, "r")
+                        ?: return@registerForActivityResult
+                    val renderer = PdfRenderer(pfd)
+                    val page = renderer.openPage(0)
+                    val width = page.width
+                    val height = page.height
+                    val bitmap = createBitmap(width, height)
+                    page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_PRINT)
+                    page.close()
+                    renderer.close()
+                    pfd.close()
+                    val imageBitmap = bitmap.asImageBitmap()
+                    openBackgroundState?.value =
+                        openBackgroundState?.value?.copy(background = imageBitmap)!!
+                } catch (e: Exception) {
+                    log("App", "Ошибка открытия PDF: $e")
+                }
+            }
+        }
+    openBackgroundCallback = {
+        openPdfLauncher.launch(arrayOf("application/pdf"))
+    }
+}
+
+actual fun openBackgroundFromDialog(state: MutableStateFlow<SchemeState>) {
+    openBackgroundState = state
+    openBackgroundCallback?.invoke()
 }

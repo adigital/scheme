@@ -1,11 +1,15 @@
 package com.vegatel.scheme
 
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.toComposeImageBitmap
 import com.vegatel.scheme.model.SerializableScheme
 import com.vegatel.scheme.model.toElementMatrix
 import com.vegatel.scheme.model.toSerializableScheme
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.json.Json
+import org.apache.pdfbox.pdmodel.PDDocument
+import org.apache.pdfbox.rendering.PDFRenderer
 import java.io.File
 
 actual fun openElementMatrixFromDialog(state: MutableStateFlow<SchemeState>) {
@@ -50,5 +54,22 @@ actual fun saveElementMatrixFromDialog(state: MutableStateFlow<SchemeState>) {
         state.value = state.value.copy(fileName = filename, isDirty = false)
     } catch (e: Exception) {
         log("App", "Ошибка сохранения файла: $e")
+    }
+}
+
+/**
+ * Открывает PDF-файл и устанавливает первую страницу как подложку схемы.
+ */
+actual fun openBackgroundFromDialog(state: MutableStateFlow<SchemeState>) {
+    val filename = selectOpenPdfDialog() ?: return
+    try {
+        val document = PDDocument.load(File(filename))
+        val renderer = PDFRenderer(document)
+        val bufferedImage = renderer.renderImage(0)
+        document.close()
+        val imageBitmap: ImageBitmap = bufferedImage.toComposeImageBitmap()
+        state.value = state.value.copy(background = imageBitmap)
+    } catch (e: Exception) {
+        log("App", "Ошибка загрузки PDF: $e")
     }
 }

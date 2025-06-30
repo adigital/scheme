@@ -55,6 +55,7 @@ fun MainMenu(
     onOpen: () -> Unit = {},
     onSave: () -> Unit = {},
     onSaveAs: () -> Unit = {},
+    onLoadBackground: () -> Unit = {},
     onUndo: () -> Unit = {},
     onRedo: () -> Unit = {},
     onCalc1: () -> Unit = {},
@@ -210,6 +211,16 @@ fun MainMenu(
                         onSaveAs()
                     }) {
                         Text("Сохранить как...")
+                    }
+
+                    Divider()
+
+                    DropdownMenuItem(onClick = {
+                        expanded = false
+                        openSubmenu1Expanded = false
+                        onLoadBackground()
+                    }) {
+                        Text("Подложка")
                     }
                 }
             }
