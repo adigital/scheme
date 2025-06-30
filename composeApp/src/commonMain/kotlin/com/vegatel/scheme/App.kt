@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.vegatel.scheme.model.Element.Antenna
 import com.vegatel.scheme.model.Element.Repeater
@@ -207,9 +208,11 @@ fun App() {
                             // На других платформах используем диалог SaveAs
                             saveElementMatrixFromDialog(appState.mutableSchemeState)
                         }
+                        appState.addToHistory(appState.schemeState.value)
                     },
                     onSaveAs = {
                         saveElementMatrixFromDialog(appState.mutableSchemeState)
+                        appState.addToHistory(appState.schemeState.value)
                     },
                     onLoadBackground = { openBackgroundFromDialog(appState.mutableSchemeState) },
                     onUndo = { appState.undo() },
@@ -221,6 +224,8 @@ fun App() {
                         Image(
                             bitmap = bmp,
                             contentDescription = null,
+                            contentScale = ContentScale.None,
+                            alignment = Alignment.TopStart,
                             modifier = Modifier
                                 .graphicsLayer(
                                     scaleX = bgScale,

@@ -8,6 +8,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.graphics.createBitmap
 import androidx.core.net.toUri
+import com.vegatel.scheme.extensions.displayFileNameFromUri
 import com.vegatel.scheme.model.SerializableScheme
 import com.vegatel.scheme.model.toElementMatrix
 import com.vegatel.scheme.model.toSerializableScheme
@@ -157,11 +158,12 @@ fun ComponentActivity.registerOpenBackgroundFromDialog(state: MutableStateFlow<S
                     renderer.close()
                     pfd.close()
                     val imageBitmap = bitmap.asImageBitmap()
-                    // Обновляем подложку и сохраняем URI подложки
+                    // Обновляем подложку и сохраняем имя файла подложки вместо URI
+                    val backgroundName = displayFileNameFromUri(uri.toString())
                     openBackgroundState?.value = openBackgroundState?.value
                         ?.copy(
                             background = imageBitmap,
-                            backgroundFileName = uri.toString(),
+                            backgroundFileName = backgroundName,
                             isDirty = true
                         )
                         ?: return@registerForActivityResult
