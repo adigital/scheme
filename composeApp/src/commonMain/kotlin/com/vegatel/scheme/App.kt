@@ -25,11 +25,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
@@ -231,6 +234,7 @@ fun App() {
                         appState.addToHistory(appState.schemeState.value)
                     },
                     onLoadBackground = { openBackgroundFromDialog(appState.mutableSchemeState) },
+                    onExport = { exportSchemeToPdfFromDialog(appState.mutableSchemeState) },
                     onUndo = { appState.undo() },
                     onRedo = { appState.redo() }
                 )
@@ -258,11 +262,12 @@ fun App() {
                                         )
                                 )
                                 Box(
-                                    Modifier.graphicsLayer(
-                                        scaleX = scale,
-                                        scaleY = scale,
-                                        transformOrigin = TransformOrigin(0f, 0f)
-                                    )
+                                    Modifier
+                                        .graphicsLayer(
+                                            scaleX = scale,
+                                            scaleY = scale,
+                                            transformOrigin = TransformOrigin(0f, 0f)
+                                        )
                                 ) {
                                     SchemeConstructor(
                                         elements = schemeState.elements,
@@ -304,11 +309,22 @@ fun App() {
                                 }
                             }
                         } ?: Box(
-                            Modifier.graphicsLayer(
-                                scaleX = scale,
-                                scaleY = scale,
-                                transformOrigin = TransformOrigin(0f, 0f)
-                            )
+                            Modifier
+                                .graphicsLayer(
+                                    scaleX = scale,
+                                    scaleY = scale,
+                                    transformOrigin = TransformOrigin(0f, 0f)
+                                )
+                                .onGloballyPositioned { coords ->
+                                    val pos = coords.positionInWindow()
+                                    val size = coords.size
+                                    ExportArea.rect = Rect(
+                                        pos.x,
+                                        pos.y,
+                                        pos.x + size.width.toFloat(),
+                                        pos.y + size.height.toFloat()
+                                    )
+                                }
                         ) {
                             SchemeConstructor(
                                 elements = schemeState.elements,
@@ -355,47 +371,49 @@ fun App() {
                     .fillMaxSize()
             ) {
                 // Zoom controls for scheme
-                Column(
-                    Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    if (schemeState.schemeScale < 4f) {
-                        FloatingActionButton(onClick = {
-                            appState.updateState(
-                                schemeState.copy(
-                                    schemeScale = schemeState.schemeScale + 0.25f,
-                                    isDirty = true
+                if (!ExportFlag.isExporting) {
+                    Column(
+                        Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        if (schemeState.schemeScale < 4f) {
+                            FloatingActionButton(onClick = {
+                                appState.updateState(
+                                    schemeState.copy(
+                                        schemeScale = schemeState.schemeScale + 0.25f,
+                                        isDirty = true
+                                    )
                                 )
-                            )
-                        }, backgroundColor = MaterialTheme.colors.primary) {
-                            Icon(
-                                painter = painterResource(Res.drawable.zoom_in),
-                                contentDescription = "Zoom In"
-                            )
+                            }, backgroundColor = MaterialTheme.colors.primary) {
+                                Icon(
+                                    painter = painterResource(Res.drawable.zoom_in),
+                                    contentDescription = "Zoom In"
+                                )
+                            }
                         }
-                    }
 
-                    if (schemeState.schemeScale > 0.25f) {
-                        FloatingActionButton(onClick = {
-                            appState.updateState(
-                                schemeState.copy(
-                                    schemeScale = schemeState.schemeScale - 0.25f,
-                                    isDirty = true
+                        if (schemeState.schemeScale > 0.25f) {
+                            FloatingActionButton(onClick = {
+                                appState.updateState(
+                                    schemeState.copy(
+                                        schemeScale = schemeState.schemeScale - 0.25f,
+                                        isDirty = true
+                                    )
                                 )
-                            )
-                        }, backgroundColor = MaterialTheme.colors.primary) {
-                            Icon(
-                                painter = painterResource(Res.drawable.zoom_out),
-                                contentDescription = "Zoom Out"
-                            )
+                            }, backgroundColor = MaterialTheme.colors.primary) {
+                                Icon(
+                                    painter = painterResource(Res.drawable.zoom_out),
+                                    contentDescription = "Zoom Out"
+                                )
+                            }
                         }
                     }
                 }
 
                 //  Zoom controls for background
-                if (schemeState.background != null) {
+                if (schemeState.background != null && !ExportFlag.isExporting) {
                     Column(
                         Modifier
                             .align(Alignment.BottomStart)

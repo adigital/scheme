@@ -56,6 +56,7 @@ fun MainMenu(
     onSave: () -> Unit = {},
     onSaveAs: () -> Unit = {},
     onLoadBackground: () -> Unit = {},
+    onExport: () -> Unit = {},
     onUndo: () -> Unit = {},
     onRedo: () -> Unit = {},
     onCalc1: () -> Unit = {},
@@ -221,6 +222,16 @@ fun MainMenu(
                         onLoadBackground()
                     }) {
                         Text("Подложка")
+                    }
+
+                    Divider()
+
+                    DropdownMenuItem(onClick = {
+                        expanded = false
+                        openSubmenu1Expanded = false
+                        onExport()
+                    }) {
+                        Text("Экспорт PDF")
                     }
                 }
             }

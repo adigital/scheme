@@ -9,6 +9,10 @@ import com.vegatel.scheme.model.toSerializableScheme
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.json.Json
 import org.apache.pdfbox.pdmodel.PDDocument
+import org.apache.pdfbox.pdmodel.PDPage
+import org.apache.pdfbox.pdmodel.PDPageContentStream
+import org.apache.pdfbox.pdmodel.common.PDRectangle
+import org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory
 import org.apache.pdfbox.rendering.PDFRenderer
 import java.io.File
 
@@ -105,5 +109,56 @@ actual fun saveSchemeToFile(state: MutableStateFlow<SchemeState>) {
         state.value = state.value.copy(isDirty = false)
     } catch (e: Exception) {
         log("App", "Ошибка сохранения схемы: $e")
+    }
+}
+
+/**
+ * Открывает диалог сохранения PDF и сохраняет текущую схему (вместе с подложкой) как изображение в PDF.
+ */
+actual fun exportSchemeToPdfFromDialog(state: MutableStateFlow<SchemeState>) {
+    ExportFlag.isExporting = true
+    val filename = selectSavePdfDialog("Экспорт схемы в PDF") ?: run {
+        ExportFlag.isExporting = false
+        return
+    }
+    try {
+        val rect = ExportArea.rect ?: run {
+            log("App", "Неизвестна область схемы для экспорта")
+            return
+        }
+        val window =
+            java.awt.Frame.getFrames().firstOrNull { it.isActive } ?: java.awt.Frame.getFrames()
+                .firstOrNull()
+            ?: return
+        val windowBounds = window.bounds
+        val robot = java.awt.Robot(window.graphicsConfiguration.device)
+        val windowShot = robot.createScreenCapture(windowBounds)
+
+        // Координаты схемы внутри окна
+        var w = rect.width.toInt()
+        var h = rect.height.toInt()
+        var x = rect.left.toInt()
+        var y = rect.top.toInt()
+        if (x < 0) x = 0
+        if (y < 0) y = 0
+        if (x + w > windowShot.width) w = windowShot.width - x
+        if (y + h > windowShot.height) h = windowShot.height - y
+        // Обрезаем скриншот окна до области схемы
+        val schemeImage = windowShot.getSubimage(x, y, w, h)
+
+        // Создаём PDF-документ с размером схемы
+        val document = PDDocument()
+        val page = PDPage(PDRectangle(w.toFloat(), h.toFloat()))
+        document.addPage(page)
+        val pdImage = LosslessFactory.createFromImage(document, schemeImage)
+        PDPageContentStream(document, page).use { stream ->
+            stream.drawImage(pdImage, 0f, 0f, w.toFloat(), h.toFloat())
+        }
+        document.save(filename)
+        document.close()
+    } catch (e: Exception) {
+        log("App", "Ошибка экспорта в PDF: $e")
+    } finally {
+        ExportFlag.isExporting = false
     }
 }

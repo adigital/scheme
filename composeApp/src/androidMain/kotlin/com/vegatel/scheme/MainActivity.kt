@@ -21,6 +21,7 @@ class MainActivity : ComponentActivity() {
         registerOpenElementMatrixFromDialog(_schemeState)
         registerSaveElementMatrixFromDialog(_schemeState)
         registerOpenBackgroundFromDialog(_schemeState)
+        registerExportSchemeToPdfFromDialog()
 
         setContent {
             App()

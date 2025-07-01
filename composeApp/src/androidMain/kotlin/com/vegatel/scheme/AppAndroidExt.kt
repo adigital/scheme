@@ -200,3 +200,56 @@ actual fun saveSchemeToFile(state: MutableStateFlow<SchemeState>) {
     saveFileState = state
     saveFileCallback?.invoke()
 }
+
+// Export
+private var exportCallback: (() -> Unit)? = null
+
+fun ComponentActivity.registerExportSchemeToPdfFromDialog() {
+    val createPdfLauncher =
+        registerForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")) { uri: Uri? ->
+            if (uri != null) {
+                try {
+                    ExportFlag.isExporting = true
+                    val rect = ExportArea.rect ?: run {
+                        log("App", "Неизвестна область схемы для экспорта")
+                        return@registerForActivityResult
+                    }
+                    val rootView = window.decorView
+                    // Создаём bitmap нужного размера
+                    val bmpWidth = rect.width.toInt()
+                    val bmpHeight = rect.height.toInt()
+                    val bitmap = createBitmap(bmpWidth, bmpHeight)
+                    val canvas = android.graphics.Canvas(bitmap)
+                    canvas.translate(-rect.left, -rect.top)
+                    rootView.draw(canvas)
+
+                    // Создаём PDF
+                    val pdfDoc = android.graphics.pdf.PdfDocument()
+                    val pageInfo = android.graphics.pdf.PdfDocument.PageInfo.Builder(
+                        bmpWidth,
+                        bmpHeight,
+                        1
+                    ).create()
+                    val page = pdfDoc.startPage(pageInfo)
+                    page.canvas.drawBitmap(bitmap, 0f, 0f, null)
+                    pdfDoc.finishPage(page)
+                    contentResolver.openOutputStream(uri)?.use { out ->
+                        pdfDoc.writeTo(out)
+                    }
+                    pdfDoc.close()
+                } catch (e: Exception) {
+                    log("App", "Ошибка экспорта в PDF: $e")
+                } finally {
+                    ExportFlag.isExporting = false
+                }
+            }
+        }
+    exportCallback = {
+        ExportFlag.isExporting = true
+        createPdfLauncher.launch("Схема.pdf")
+    }
+}
+
+actual fun exportSchemeToPdfFromDialog(state: MutableStateFlow<SchemeState>) {
+    exportCallback?.invoke()
+}
