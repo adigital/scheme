@@ -48,6 +48,8 @@ fun ComponentActivity.registerOpenElementMatrixFromDialog(
                                 elementOffsets = loadedElementOffsets,
                                 fileName = uri.toString(),
                                 isDirty = false,
+                                // Очищаем старую подложку перед загрузкой новой
+                                background = null,
                                 schemeScale = schemeSerializable.schemeScale,
                                 backgroundFileName = schemeSerializable.backgroundFileName,
                                 backgroundScale = schemeSerializable.backgroundScale
