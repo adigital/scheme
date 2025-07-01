@@ -7,10 +7,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.AlertDialog
 import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Text
+import androidx.compose.material.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -169,6 +173,14 @@ fun App() {
         val scale = schemeState.schemeScale
         var schemeVersion by remember { mutableStateOf(0) }
         val bgScale = schemeState.backgroundScale
+
+        // Диалог выбора подложки при открытии схемы
+        var showBackgroundPrompt by remember { mutableStateOf(false) }
+        LaunchedEffect(schemeState.backgroundFileName) {
+            if (schemeState.backgroundFileName != null && schemeState.background == null) {
+                showBackgroundPrompt = true
+            }
+        }
 
         Box(Modifier.fillMaxSize()) {
             Column(
@@ -362,6 +374,24 @@ fun App() {
                     }
                 }
             }
+        }
+
+        // Показываем диалог, если требуется выбрать подложку
+        if (showBackgroundPrompt) {
+            AlertDialog(
+                onDismissRequest = { showBackgroundPrompt = false },
+                title = { Text("Загрузка подложки") },
+                text = { Text("Для схемы необходимо выбрать подложку \"${schemeState.backgroundFileName}\". Выбрать сейчас?") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        openBackgroundFromDialog(appState.mutableSchemeState)
+                        showBackgroundPrompt = false
+                    }) { Text("Да") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showBackgroundPrompt = false }) { Text("Нет") }
+                }
+            )
         }
     }
 }

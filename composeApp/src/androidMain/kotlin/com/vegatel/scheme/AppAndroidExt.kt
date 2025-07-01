@@ -2,13 +2,13 @@ package com.vegatel.scheme
 
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
+import android.provider.OpenableColumns
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.graphics.createBitmap
 import androidx.core.net.toUri
-import com.vegatel.scheme.extensions.displayFileNameFromUri
 import com.vegatel.scheme.model.SerializableScheme
 import com.vegatel.scheme.model.toElementMatrix
 import com.vegatel.scheme.model.toSerializableScheme
@@ -158,8 +158,18 @@ fun ComponentActivity.registerOpenBackgroundFromDialog(state: MutableStateFlow<S
                     renderer.close()
                     pfd.close()
                     val imageBitmap = bitmap.asImageBitmap()
-                    // Обновляем подложку и сохраняем имя файла подложки вместо URI
-                    val backgroundName = displayFileNameFromUri(uri.toString())
+                    // Обновляем подложку и сохраняем имя файла подложки с расширением
+                    val backgroundName = contentResolver.query(
+                        uri,
+                        arrayOf(OpenableColumns.DISPLAY_NAME),
+                        null,
+                        null,
+                        null
+                    )
+                        ?.use { cursor ->
+                            val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                            if (cursor.moveToFirst() && nameIndex >= 0) cursor.getString(nameIndex) else null
+                        } ?: uri.lastPathSegment ?: "Файл"
                     openBackgroundState?.value = openBackgroundState?.value
                         ?.copy(
                             background = imageBitmap,
