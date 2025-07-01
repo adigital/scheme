@@ -4,7 +4,6 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.offset
 import androidx.compose.material.Divider
 import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
@@ -19,6 +18,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextRange
@@ -53,7 +53,6 @@ import com.vegatel.scheme.ui.views.LoadView
 import com.vegatel.scheme.ui.views.RepeaterView
 import com.vegatel.scheme.ui.views.SplitterView
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import kotlin.math.roundToInt
 
 @Composable
 fun SchemeConstructor(
@@ -131,10 +130,11 @@ fun SchemeConstructor(
                     }
                 )
             }
-            .offset {
-                val combined = schemeOffset + localSchemeDrag
-                IntOffset(combined.x.roundToInt(), combined.y.roundToInt())
-            }
+            .graphicsLayer(
+                transformOrigin = TransformOrigin(0f, 0f),
+                translationX = schemeOffsetState.value.x + localSchemeDrag.x,
+                translationY = schemeOffsetState.value.y + localSchemeDrag.y
+            )
     ) {
         elements.forEachElementComposable { row, col, element ->
             // Рассчитываем мощность сигнала для текущего элемента

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.AlertDialog
 import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.Icon
@@ -14,6 +15,7 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -28,6 +30,8 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import com.vegatel.scheme.model.Element.Antenna
 import com.vegatel.scheme.model.Element.Repeater
@@ -232,57 +236,115 @@ fun App() {
                 )
 
                 Box(modifier = Modifier.background(if (schemeState.background != null) Color.Gray else Color.White)) {
-                    schemeState.background?.let { bmp ->
-                        Image(
-                            bitmap = bmp,
-                            contentDescription = null,
-                            contentScale = ContentScale.None,
-                            alignment = Alignment.TopStart,
-                            modifier = Modifier
-                                .graphicsLayer(
-                                    scaleX = bgScale,
-                                    scaleY = bgScale,
-                                    transformOrigin = TransformOrigin(0f, 0f)
+                    CompositionLocalProvider(
+                        LocalDensity provides Density(2f, LocalDensity.current.fontScale)
+                    ) {
+                        schemeState.background?.let { bmp ->
+                            val density = LocalDensity.current
+                            val bgWidthDp = with(density) { bmp.width.toDp() }
+                            val bgHeightDp = with(density) { bmp.height.toDp() }
+                            Box(Modifier.size(bgWidthDp, bgHeightDp)) {
+                                Image(
+                                    bitmap = bmp,
+                                    contentDescription = null,
+                                    contentScale = ContentScale.None,
+                                    alignment = Alignment.TopStart,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .graphicsLayer(
+                                            scaleX = bgScale,
+                                            scaleY = bgScale,
+                                            transformOrigin = TransformOrigin(0f, 0f)
+                                        )
                                 )
-                                .align(Alignment.TopStart)
-                        )
-                    }
-
-                    Box(Modifier.graphicsLayer(scaleX = scale, scaleY = scale)) {
-                        SchemeConstructor(
-                            elements = schemeState.elements,
-                            schemeOffset = schemeState.schemeOffset,
-                            elementOffsets = schemeState.elementOffsets,
-                            onSchemeOffsetChange = { newOffset ->
-                                appState.updateState(
-                                    schemeState.copy(
-                                        schemeOffset = newOffset,
-                                        isDirty = true
+                                Box(
+                                    Modifier.graphicsLayer(
+                                        scaleX = scale,
+                                        scaleY = scale,
+                                        transformOrigin = TransformOrigin(0f, 0f)
                                     )
-                                )
-                            },
-                            onElementOffsetChange = { id, offset ->
-                                val newOffsets =
-                                    schemeState.elementOffsets.toMutableMap()
-                                        .apply { put(id, offset) }
-                                appState.updateState(
-                                    schemeState.copy(
-                                        elementOffsets = newOffsets,
-                                        isDirty = true
+                                ) {
+                                    SchemeConstructor(
+                                        elements = schemeState.elements,
+                                        schemeOffset = schemeState.schemeOffset,
+                                        elementOffsets = schemeState.elementOffsets,
+                                        onSchemeOffsetChange = { newOffset ->
+                                            appState.updateState(
+                                                schemeState.copy(
+                                                    schemeOffset = newOffset,
+                                                    isDirty = true
+                                                )
+                                            )
+                                        },
+                                        onElementOffsetChange = { id, offset ->
+                                            val newOffsets =
+                                                schemeState.elementOffsets.toMutableMap()
+                                                    .apply { put(id, offset) }
+                                            appState.updateState(
+                                                schemeState.copy(
+                                                    elementOffsets = newOffsets,
+                                                    isDirty = true
+                                                )
+                                            )
+                                        },
+                                        onElementsChange = { newElements ->
+                                            val isDirty =
+                                                newElements != schemeState.elements || schemeState.isDirty.not()
+                                            val newState =
+                                                schemeState.copy(
+                                                    elements = newElements,
+                                                    isDirty = isDirty
+                                                )
+                                            appState.updateState(newState)
+                                        },
+                                        baseStationSignal = schemeState.baseStationSignal,
+                                        frequency = schemeState.frequency,
+                                        resetKey = schemeVersion
                                     )
-                                )
-                            },
-                            onElementsChange = { newElements ->
-                                val isDirty =
-                                    newElements != schemeState.elements || schemeState.isDirty.not()
-                                val newState =
-                                    schemeState.copy(elements = newElements, isDirty = isDirty)
-                                appState.updateState(newState)
-                            },
-                            baseStationSignal = schemeState.baseStationSignal,
-                            frequency = schemeState.frequency,
-                            resetKey = schemeVersion
-                        )
+                                }
+                            }
+                        } ?: Box(
+                            Modifier.graphicsLayer(
+                                scaleX = scale,
+                                scaleY = scale,
+                                transformOrigin = TransformOrigin(0f, 0f)
+                            )
+                        ) {
+                            SchemeConstructor(
+                                elements = schemeState.elements,
+                                schemeOffset = schemeState.schemeOffset,
+                                elementOffsets = schemeState.elementOffsets,
+                                onSchemeOffsetChange = { newOffset ->
+                                    appState.updateState(
+                                        schemeState.copy(
+                                            schemeOffset = newOffset,
+                                            isDirty = true
+                                        )
+                                    )
+                                },
+                                onElementOffsetChange = { id, offset ->
+                                    val newOffsets =
+                                        schemeState.elementOffsets.toMutableMap()
+                                            .apply { put(id, offset) }
+                                    appState.updateState(
+                                        schemeState.copy(
+                                            elementOffsets = newOffsets,
+                                            isDirty = true
+                                        )
+                                    )
+                                },
+                                onElementsChange = { newElements ->
+                                    val isDirty =
+                                        newElements != schemeState.elements || schemeState.isDirty.not()
+                                    val newState =
+                                        schemeState.copy(elements = newElements, isDirty = isDirty)
+                                    appState.updateState(newState)
+                                },
+                                baseStationSignal = schemeState.baseStationSignal,
+                                frequency = schemeState.frequency,
+                                resetKey = schemeVersion
+                            )
+                        }
                     }
                 }
             }

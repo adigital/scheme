@@ -33,7 +33,7 @@ actual fun openElementMatrixFromDialog(state: MutableStateFlow<SchemeState>) {
         // Загружаем подложку, если задана
         val bgImage = bgFullPath?.let {
             PDDocument.load(File(it)).use { doc ->
-                PDFRenderer(doc).renderImageWithDPI(0, 200f).also { doc.close() }
+                PDFRenderer(doc).renderImageWithDPI(0, 72f).also { doc.close() }
             }.toComposeImageBitmap()
         }
         state.value = state.value.copy(
@@ -78,7 +78,7 @@ actual fun openBackgroundFromDialog(state: MutableStateFlow<SchemeState>) {
     try {
         val document = PDDocument.load(File(filename))
         val renderer = PDFRenderer(document)
-        val bufferedImage = renderer.renderImageWithDPI(0, 200f)
+        val bufferedImage = renderer.renderImageWithDPI(0, 72f)
         document.close()
         val imageBitmap: ImageBitmap = bufferedImage.toComposeImageBitmap()
         state.value = state.value.copy(
