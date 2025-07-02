@@ -231,7 +231,7 @@ fun MainMenu(
                         openSubmenu1Expanded = false
                         onExport()
                     }) {
-                        Text("Экспорт PDF")
+                        Text("Экспорт в PDF")
                     }
                 }
             }

@@ -214,14 +214,49 @@ fun ComponentActivity.registerExportSchemeToPdfFromDialog() {
                         log("App", "Неизвестна область схемы для экспорта")
                         return@registerForActivityResult
                     }
-                    val rootView = window.decorView
-                    // Создаём bitmap нужного размера
+                    // Целевые размеры с учетом масштаба подложки
                     val bmpWidth = rect.width.toInt()
                     val bmpHeight = rect.height.toInt()
+
+                    // Пытаемся найти основной ComposeView
+                    val rootContent =
+                        window.decorView.findViewById<android.view.ViewGroup>(android.R.id.content)
+                    val composeView = rootContent?.getChildAt(0) ?: window.decorView
+
+                    // Сохраняем исходные размеры
+                    val oldWidth = composeView.measuredWidth
+                    val oldHeight = composeView.measuredHeight
+
+                    // Принудительно измеряем/раскладываем ComposeView под полный размер подложки
+                    val widthSpec = android.view.View.MeasureSpec.makeMeasureSpec(
+                        bmpWidth,
+                        android.view.View.MeasureSpec.EXACTLY
+                    )
+                    val heightSpec = android.view.View.MeasureSpec.makeMeasureSpec(
+                        bmpHeight,
+                        android.view.View.MeasureSpec.EXACTLY
+                    )
+                    composeView.measure(widthSpec, heightSpec)
+                    composeView.layout(0, 0, bmpWidth, bmpHeight)
+
+                    // Создаём bitmap заданного размера и рисуем ComposeView
                     val bitmap = createBitmap(bmpWidth, bmpHeight)
                     val canvas = android.graphics.Canvas(bitmap)
                     canvas.translate(-rect.left, -rect.top)
-                    rootView.draw(canvas)
+                    composeView.draw(canvas)
+
+                    // Восстанавливаем старые размеры, чтобы не ломать UI
+                    composeView.measure(
+                        android.view.View.MeasureSpec.makeMeasureSpec(
+                            oldWidth,
+                            android.view.View.MeasureSpec.EXACTLY
+                        ),
+                        android.view.View.MeasureSpec.makeMeasureSpec(
+                            oldHeight,
+                            android.view.View.MeasureSpec.EXACTLY
+                        )
+                    )
+                    composeView.layout(0, 0, oldWidth, oldHeight)
 
                     // Создаём PDF
                     val pdfDoc = android.graphics.pdf.PdfDocument()

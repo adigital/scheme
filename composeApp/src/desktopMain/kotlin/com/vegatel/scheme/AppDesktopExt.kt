@@ -1,5 +1,6 @@
 package com.vegatel.scheme
 
+import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
@@ -14,6 +15,9 @@ import org.apache.pdfbox.pdmodel.PDPageContentStream
 import org.apache.pdfbox.pdmodel.common.PDRectangle
 import org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory
 import org.apache.pdfbox.rendering.PDFRenderer
+import org.jetbrains.skiko.GraphicsApi
+import org.jetbrains.skiko.toBufferedImage
+import java.awt.image.BufferedImage
 import java.io.File
 
 actual fun openElementMatrixFromDialog(state: MutableStateFlow<SchemeState>) {
@@ -130,23 +134,95 @@ actual fun exportSchemeToPdfFromDialog(state: MutableStateFlow<SchemeState>) {
             java.awt.Frame.getFrames().firstOrNull { it.isActive } ?: java.awt.Frame.getFrames()
                 .firstOrNull()
             ?: return
-        val windowBounds = window.bounds
-        val robot = java.awt.Robot(window.graphicsConfiguration.device)
-        val windowShot = robot.createScreenCapture(windowBounds)
 
-        // Координаты схемы внутри окна
-        var w = rect.width.toInt()
-        var h = rect.height.toInt()
-        var x = rect.left.toInt()
-        var y = rect.top.toInt()
-        if (x < 0) x = 0
-        if (y < 0) y = 0
-        if (x + w > windowShot.width) w = windowShot.width - x
-        if (y + h > windowShot.height) h = windowShot.height - y
-        // Обрезаем скриншот окна до области схемы
-        val schemeImage = windowShot.getSubimage(x, y, w, h)
+        // Ищем SkiaLayer тремя способами: отражением из ComposeWindow, прямым кастом компонента, рекурсивным обходом
+        val skiaLayer: org.jetbrains.skiko.SkiaLayer? = when (window) {
+            is ComposeWindow -> {
+                // Пытаемся достать приватное поле/свойство "layer" рефлексией (в разных версиях Compose оно присутствует)
+                val byReflection = runCatching {
+                    val field = ComposeWindow::class.java.getDeclaredField("layer")
+                    field.isAccessible = true
+                    field.get(window) as? org.jetbrains.skiko.SkiaLayer
+                }.getOrNull()
 
-        // Создаём PDF-документ с размером схемы
+                byReflection ?: findSkiaLayer(window)
+            }
+
+            else -> findSkiaLayer(window)
+        }
+
+        val fullImage: BufferedImage = skiaLayer?.let { layer ->
+            // Переключаем рендер в SOFTWARE, иначе screenshot() может вернуть null
+            val prevApi = layer.renderApi
+            if (prevApi != GraphicsApi.SOFTWARE_FAST) {
+                layer.renderApi = GraphicsApi.SOFTWARE_FAST
+                layer.needRedraw()
+                java.awt.Toolkit.getDefaultToolkit().sync()
+            }
+
+            val desiredW = rect.width.toInt()
+            val desiredH = rect.height.toInt()
+
+            // также увеличиваем окно, чтобы GL viewport стал нужного размера
+            val oldBounds = window.bounds
+            if (desiredW > oldBounds.width || desiredH > oldBounds.height) {
+                window.setSize(desiredW, desiredH)
+                window.validate()
+                window.doLayout()
+                layer.setSize(desiredW, desiredH)
+                layer.needRedraw()
+                java.awt.Toolkit.getDefaultToolkit().sync()
+            }
+
+            val img = layer.screenshot()!!.toBufferedImage()
+
+            // Сохраняем исходный размер
+            val oldW = layer.width
+            val oldH = layer.height
+
+            var needResize = desiredW > oldW || desiredH > oldH
+            if (needResize) {
+                layer.setSize(desiredW, desiredH)
+                layer.needRedraw()
+                // ждём прорисовку (минимальная синхронизация OpenGL);
+                java.awt.Toolkit.getDefaultToolkit().sync()
+            }
+
+            // Возвращаем исходный размер, если меняли
+            if (needResize) {
+                layer.setSize(oldW, oldH)
+                layer.needRedraw()
+            }
+
+            // возвращаем старый размер окна
+            if (desiredW > oldBounds.width || desiredH > oldBounds.height) {
+                window.bounds = oldBounds
+                window.validate()
+                window.doLayout()
+            }
+
+            // Возвращаем прошлый API, если меняли
+            if (prevApi != GraphicsApi.SOFTWARE_FAST) {
+                layer.renderApi = prevApi
+                layer.needRedraw()
+            }
+
+            img
+        } ?: run {
+            // Fallback: делаем скриншот окна, если слой не найден
+            val wb = window.bounds
+            val robot = java.awt.Robot(window.graphicsConfiguration.device)
+            robot.createScreenCapture(wb)
+        }
+
+        // Обрезаем до нужного прямоугольника экспорта
+        val x = rect.left.toInt().coerceAtLeast(0)
+        val y = rect.top.toInt().coerceAtLeast(0)
+        val w = rect.width.toInt().coerceAtMost(fullImage.width - x)
+        val h = rect.height.toInt().coerceAtMost(fullImage.height - y)
+
+        val schemeImage = fullImage.getSubimage(x, y, w, h)
+
         val document = PDDocument()
         val page = PDPage(PDRectangle(w.toFloat(), h.toFloat()))
         document.addPage(page)
@@ -161,4 +237,15 @@ actual fun exportSchemeToPdfFromDialog(state: MutableStateFlow<SchemeState>) {
     } finally {
         ExportFlag.isExporting = false
     }
+}
+
+private fun findSkiaLayer(component: java.awt.Component): org.jetbrains.skiko.SkiaLayer? {
+    if (component is org.jetbrains.skiko.SkiaLayer) return component
+    if (component is java.awt.Container) {
+        component.components.forEach { child ->
+            val res = findSkiaLayer(child)
+            if (res != null) return res
+        }
+    }
+    return null
 }
