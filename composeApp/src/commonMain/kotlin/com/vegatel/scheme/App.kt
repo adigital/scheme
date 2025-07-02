@@ -200,6 +200,7 @@ fun App() {
                     canRedo = appState.canRedo(),
                     baseStationSignal = schemeState.baseStationSignal,
                     frequency = schemeState.frequency,
+                    showExport = schemeState.background != null,
                     onFrequencyChange = { newFreq ->
                         appState.updateState(schemeState.copy(frequency = newFreq))
                     },
@@ -327,72 +328,6 @@ fun App() {
                                     scaleY = scale,
                                     transformOrigin = TransformOrigin(0f, 0f)
                                 )
-                                .let { mod ->
-                                    val density = LocalDensity.current
-                                    mod.onGloballyPositioned { coordinates ->
-                                        // Вычисляем габариты всех элементов схемы (без учёта schemeOffset и масштаба)
-                                        fun calcElementsBounds(): Rect {
-                                            with(density) {
-                                                val elementWidth = 48.dp.toPx()
-                                                val elementHeight = 64.dp.toPx()
-                                                val padH = 24.dp.toPx()
-                                                val padV = 24.dp.toPx()
-
-                                                var minX = Float.MAX_VALUE
-                                                var minY = Float.MAX_VALUE
-                                                var maxX = Float.MIN_VALUE
-                                                var maxY = Float.MIN_VALUE
-
-                                                schemeState.elements.forEachElement { row, col, element ->
-                                                    if (element != null) {
-                                                        val baseX = padH + col * 2 * elementWidth
-                                                        val baseY = padV + row * 2 * elementHeight
-                                                        val extra =
-                                                            schemeState.elementOffsets[element.id]
-                                                                ?: Offset.Zero
-                                                        val x = baseX + extra.x
-                                                        val y = baseY + extra.y
-
-                                                        minX = kotlin.math.min(minX, x)
-                                                        minY = kotlin.math.min(minY, y)
-                                                        maxX =
-                                                            kotlin.math.max(maxX, x + elementWidth)
-                                                        maxY =
-                                                            kotlin.math.max(maxY, y + elementHeight)
-                                                    }
-                                                }
-
-                                                // Если элементов нет, возвращаем размер SchemeConstructor
-                                                if (minX == Float.MAX_VALUE) {
-                                                    val size = coordinates.size
-                                                    return Rect(
-                                                        0f,
-                                                        0f,
-                                                        size.width.toFloat(),
-                                                        size.height.toFloat()
-                                                    )
-                                                }
-
-                                                return Rect(minX, minY, maxX, maxY)
-                                            }
-                                        }
-
-                                        val pos = coordinates.positionInWindow()
-                                        val elemsRect = calcElementsBounds()
-
-                                        // Учитываем смещение схемы и масштаб
-                                        val left =
-                                            pos.x + scale * (schemeState.schemeOffset.x + elemsRect.left)
-                                        val top =
-                                            pos.y + scale * (schemeState.schemeOffset.y + elemsRect.top)
-                                        val right =
-                                            pos.x + scale * (schemeState.schemeOffset.x + elemsRect.right)
-                                        val bottom =
-                                            pos.y + scale * (schemeState.schemeOffset.y + elemsRect.bottom)
-
-                                        ExportArea.rect = Rect(left, top, right, bottom)
-                                    }
-                                }
                         ) {
                             SchemeConstructor(
                                 elements = schemeState.elements,

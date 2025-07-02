@@ -49,6 +49,7 @@ fun MainMenu(
     canRedo: Boolean = false,
     baseStationSignal: Double = 30.0,
     frequency: Int = 800,
+    showExport: Boolean = false,
     onBaseStationSignalChange: (Double) -> Unit = {},
     onFrequencyChange: (Int) -> Unit = {},
     onNew: () -> Unit = {},
@@ -224,14 +225,14 @@ fun MainMenu(
                         Text("Подложка")
                     }
 
-                    Divider()
-
-                    DropdownMenuItem(onClick = {
-                        expanded = false
-                        openSubmenu1Expanded = false
-                        onExport()
-                    }) {
-                        Text("Экспорт в PDF")
+                    if (showExport) {
+                        DropdownMenuItem(onClick = {
+                            expanded = false
+                            openSubmenu1Expanded = false
+                            onExport()
+                        }) {
+                            Text("Экспорт в PDF")
+                        }
                     }
                 }
             }
