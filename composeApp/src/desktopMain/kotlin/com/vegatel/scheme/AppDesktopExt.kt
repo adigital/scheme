@@ -15,7 +15,6 @@ import org.apache.pdfbox.pdmodel.PDPageContentStream
 import org.apache.pdfbox.pdmodel.common.PDRectangle
 import org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory
 import org.apache.pdfbox.rendering.PDFRenderer
-import org.jetbrains.skiko.GraphicsApi
 import org.jetbrains.skiko.toBufferedImage
 import java.awt.image.BufferedImage
 import java.io.File
@@ -152,14 +151,6 @@ actual fun exportSchemeToPdfFromDialog(state: MutableStateFlow<SchemeState>) {
         }
 
         val fullImage: BufferedImage = skiaLayer?.let { layer ->
-            // Переключаем рендер в SOFTWARE, иначе screenshot() может вернуть null
-            val prevApi = layer.renderApi
-            if (prevApi != GraphicsApi.SOFTWARE_FAST) {
-                layer.renderApi = GraphicsApi.SOFTWARE_FAST
-                layer.needRedraw()
-                java.awt.Toolkit.getDefaultToolkit().sync()
-            }
-
             val desiredW = rect.width.toInt()
             val desiredH = rect.height.toInt()
 
@@ -199,12 +190,6 @@ actual fun exportSchemeToPdfFromDialog(state: MutableStateFlow<SchemeState>) {
                 window.bounds = oldBounds
                 window.validate()
                 window.doLayout()
-            }
-
-            // Возвращаем прошлый API, если меняли
-            if (prevApi != GraphicsApi.SOFTWARE_FAST) {
-                layer.renderApi = prevApi
-                layer.needRedraw()
             }
 
             img
