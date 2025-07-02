@@ -16,6 +16,7 @@ import org.apache.pdfbox.pdmodel.common.PDRectangle
 import org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory
 import org.apache.pdfbox.rendering.PDFRenderer
 import org.jetbrains.skiko.toBufferedImage
+import java.awt.RenderingHints
 import java.awt.image.BufferedImage
 import java.io.File
 
@@ -48,7 +49,7 @@ actual fun openElementMatrixFromDialog(state: MutableStateFlow<SchemeState>) {
                 "jpg", "jpeg", "png" -> javax.imageio.ImageIO.read(File(path))
                 else -> null
             }
-            buffered?.toComposeImageBitmap()
+            buffered?.downscaleIfLarge()?.toComposeImageBitmap()
         }
         state.value = state.value.copy(
             elements = loadedElements,
@@ -102,7 +103,7 @@ actual fun openBackgroundFromDialog(state: MutableStateFlow<SchemeState>) {
             return
         }
 
-        val bufferedImage: BufferedImage = when (ext) {
+        val bufferedRaw: BufferedImage = when (ext) {
             "pdf" -> {
                 PDDocument.load(File(filename)).use { doc ->
                     PDFRenderer(doc).renderImageWithDPI(0, 72f)
@@ -115,6 +116,7 @@ actual fun openBackgroundFromDialog(state: MutableStateFlow<SchemeState>) {
             }
         }
 
+        val bufferedImage = bufferedRaw.downscaleIfLarge()
         val imageBitmap: ImageBitmap = bufferedImage.toComposeImageBitmap()
         state.value = state.value.copy(
             background = imageBitmap,
@@ -267,4 +269,20 @@ private fun findSkiaLayer(component: java.awt.Component): org.jetbrains.skiko.Sk
         }
     }
     return null
+}
+
+private fun BufferedImage.downscaleIfLarge(maxDim: Int = AppConfig.MAX_BACKGROUND_DIM): BufferedImage {
+    if (this.width <= maxDim && this.height <= maxDim) return this
+    val scale = maxDim.toDouble() / maxOf(this.width, this.height)
+    val newW = (this.width * scale).toInt().coerceAtLeast(1)
+    val newH = (this.height * scale).toInt().coerceAtLeast(1)
+    val scaled = BufferedImage(newW, newH, BufferedImage.TYPE_INT_ARGB)
+    val g = scaled.createGraphics()
+    g.setRenderingHint(
+        RenderingHints.KEY_INTERPOLATION,
+        RenderingHints.VALUE_INTERPOLATION_BILINEAR
+    )
+    g.drawImage(this, 0, 0, newW, newH, null)
+    g.dispose()
+    return scaled
 }

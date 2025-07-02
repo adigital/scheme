@@ -240,7 +240,11 @@ fun App() {
                     onRedo = { appState.redo() }
                 )
 
-                Box(modifier = Modifier.background(if (schemeState.background != null) Color.Gray else Color.White)) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(if (schemeState.background != null) Color.Gray else Color.White)
+                ) {
                     CompositionLocalProvider(
                         LocalDensity provides Density(2f, LocalDensity.current.fontScale)
                     ) {
@@ -267,15 +271,16 @@ fun App() {
                                     contentScale = ContentScale.None,
                                     alignment = Alignment.TopStart,
                                     modifier = Modifier
-                                        .fillMaxSize()
                                         .graphicsLayer(
                                             scaleX = bgScale,
                                             scaleY = bgScale,
                                             transformOrigin = TransformOrigin(0f, 0f)
                                         )
+                                        .fillMaxSize()
                                 )
                                 Box(
                                     Modifier
+                                        .fillMaxSize()
                                         .graphicsLayer(
                                             scaleX = scale,
                                             scaleY = scale,

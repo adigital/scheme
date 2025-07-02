@@ -8,6 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.graphics.createBitmap
+import androidx.core.graphics.scale
 import androidx.core.net.toUri
 import com.vegatel.scheme.model.SerializableScheme
 import com.vegatel.scheme.model.toElementMatrix
@@ -149,7 +150,7 @@ fun ComponentActivity.registerOpenBackgroundFromDialog(state: MutableStateFlow<S
             if (uri != null) {
                 try {
                     val mime = contentResolver.getType(uri) ?: ""
-                    val bitmap: android.graphics.Bitmap? = when {
+                    val rawBitmap: android.graphics.Bitmap? = when {
                         mime == "application/pdf" || uri.toString().endsWith(".pdf", true) -> {
                             val pfd = contentResolver.openFileDescriptor(uri, "r")
                                 ?: return@registerForActivityResult
@@ -171,7 +172,15 @@ fun ComponentActivity.registerOpenBackgroundFromDialog(state: MutableStateFlow<S
                         else -> null
                     }
 
-                    bitmap ?: return@registerForActivityResult
+                    rawBitmap ?: return@registerForActivityResult
+
+                    val maxDim = AppConfig.MAX_BACKGROUND_DIM
+                    val bitmap = if (rawBitmap.width > maxDim || rawBitmap.height > maxDim) {
+                        val scale = maxDim.toFloat() / maxOf(rawBitmap.width, rawBitmap.height)
+                        val newW = (rawBitmap.width * scale).toInt().coerceAtLeast(1)
+                        val newH = (rawBitmap.height * scale).toInt().coerceAtLeast(1)
+                        rawBitmap.scale(newW, newH)
+                    } else rawBitmap
 
                     val imageBitmap = bitmap.asImageBitmap()
 
