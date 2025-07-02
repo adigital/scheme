@@ -222,7 +222,7 @@ fun MainMenu(
                         openSubmenu1Expanded = false
                         onLoadBackground()
                     }) {
-                        Text("Подложка")
+                        Text("Подложка (PDF/JPG/PNG)")
                     }
 
                     if (showExport) {

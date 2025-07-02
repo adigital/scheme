@@ -38,10 +38,17 @@ actual fun openElementMatrixFromDialog(state: MutableStateFlow<SchemeState>) {
         val bgFileName = schemeSerializable.backgroundFileName
         val bgFullPath = bgFileName?.let { jsonDir.resolve(it).absolutePath }
         // Загружаем подложку, если задана
-        val bgImage = bgFullPath?.let {
-            PDDocument.load(File(it)).use { doc ->
-                PDFRenderer(doc).renderImageWithDPI(0, 72f).also { doc.close() }
-            }.toComposeImageBitmap()
+        val bgImage = bgFullPath?.let { path ->
+            val ext = File(path).extension.lowercase()
+            val buffered: BufferedImage? = when (ext) {
+                "pdf" -> PDDocument.load(File(path)).use { doc ->
+                    PDFRenderer(doc).renderImageWithDPI(0, 72f)
+                }
+
+                "jpg", "jpeg", "png" -> javax.imageio.ImageIO.read(File(path))
+                else -> null
+            }
+            buffered?.toComposeImageBitmap()
         }
         state.value = state.value.copy(
             elements = loadedElements,
@@ -83,10 +90,31 @@ actual fun saveElementMatrixFromDialog(state: MutableStateFlow<SchemeState>) {
 actual fun openBackgroundFromDialog(state: MutableStateFlow<SchemeState>) {
     val filename = selectOpenPdfDialog() ?: return
     try {
-        val document = PDDocument.load(File(filename))
-        val renderer = PDFRenderer(document)
-        val bufferedImage = renderer.renderImageWithDPI(0, 72f)
-        document.close()
+        val ext = File(filename).extension.lowercase()
+        val allowed = setOf("pdf", "jpg", "jpeg", "png")
+        if (ext !in allowed) {
+            javax.swing.JOptionPane.showMessageDialog(
+                null,
+                "Поддерживаются только PDF, JPG, PNG",
+                "Неподдерживаемый файл",
+                javax.swing.JOptionPane.WARNING_MESSAGE
+            )
+            return
+        }
+
+        val bufferedImage: BufferedImage = when (ext) {
+            "pdf" -> {
+                PDDocument.load(File(filename)).use { doc ->
+                    PDFRenderer(doc).renderImageWithDPI(0, 72f)
+                }
+            }
+
+            else -> {
+                javax.imageio.ImageIO.read(File(filename))
+                    ?: throw IllegalArgumentException("Не удалось прочитать изображение $filename")
+            }
+        }
+
         val imageBitmap: ImageBitmap = bufferedImage.toComposeImageBitmap()
         state.value = state.value.copy(
             background = imageBitmap,
@@ -94,7 +122,13 @@ actual fun openBackgroundFromDialog(state: MutableStateFlow<SchemeState>) {
             isDirty = true
         )
     } catch (e: Exception) {
-        log("App", "Ошибка загрузки PDF: $e")
+        javax.swing.JOptionPane.showMessageDialog(
+            null,
+            "Ошибка загрузки подложки: ${'$'}e",
+            "Ошибка",
+            javax.swing.JOptionPane.ERROR_MESSAGE
+        )
+        log("App", "Ошибка загрузки подложки: $e")
     }
 }
 

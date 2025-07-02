@@ -144,48 +144,62 @@ private var openBackgroundCallback: (() -> Unit)? = null
 
 fun ComponentActivity.registerOpenBackgroundFromDialog(state: MutableStateFlow<SchemeState>) {
     openBackgroundState = state
-    val openPdfLauncher =
+    val openBgLauncher =
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
             if (uri != null) {
                 try {
-                    val pfd = contentResolver.openFileDescriptor(uri, "r")
-                        ?: return@registerForActivityResult
-                    val renderer = PdfRenderer(pfd)
-                    val page = renderer.openPage(0)
-                    val width = page.width
-                    val height = page.height
-                    val bitmap = createBitmap(width, height)
-                    page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_PRINT)
-                    page.close()
-                    renderer.close()
-                    pfd.close()
+                    val mime = contentResolver.getType(uri) ?: ""
+                    val bitmap: android.graphics.Bitmap? = when {
+                        mime == "application/pdf" || uri.toString().endsWith(".pdf", true) -> {
+                            val pfd = contentResolver.openFileDescriptor(uri, "r")
+                                ?: return@registerForActivityResult
+                            val renderer = PdfRenderer(pfd)
+                            val page = renderer.openPage(0)
+                            val bmp = createBitmap(page.width, page.height)
+                            page.render(bmp, null, null, PdfRenderer.Page.RENDER_MODE_FOR_PRINT)
+                            page.close(); renderer.close(); pfd.close()
+                            bmp
+                        }
+
+                        mime.startsWith("image/") || uri.toString()
+                            .matches(Regex(".*\\.(png|jpg|jpeg)", RegexOption.IGNORE_CASE)) -> {
+                            contentResolver.openInputStream(uri)?.use { stream ->
+                                android.graphics.BitmapFactory.decodeStream(stream)
+                            }
+                        }
+
+                        else -> null
+                    }
+
+                    bitmap ?: return@registerForActivityResult
+
                     val imageBitmap = bitmap.asImageBitmap()
-                    // Обновляем подложку и сохраняем имя файла подложки с расширением
+
+                    // Получаем название файла
                     val backgroundName = contentResolver.query(
                         uri,
                         arrayOf(OpenableColumns.DISPLAY_NAME),
                         null,
                         null,
                         null
-                    )
-                        ?.use { cursor ->
-                            val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                            if (cursor.moveToFirst() && nameIndex >= 0) cursor.getString(nameIndex) else null
-                        } ?: uri.lastPathSegment ?: "Файл"
-                    openBackgroundState?.value = openBackgroundState?.value
-                        ?.copy(
-                            background = imageBitmap,
-                            backgroundFileName = backgroundName,
-                            isDirty = true
-                        )
-                        ?: return@registerForActivityResult
+                    )?.use { cursor ->
+                        val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                        if (cursor.moveToFirst() && nameIndex >= 0) cursor.getString(nameIndex) else null
+                    } ?: uri.lastPathSegment ?: "Файл"
+
+                    openBackgroundState?.value = openBackgroundState?.value?.copy(
+                        background = imageBitmap,
+                        backgroundFileName = backgroundName,
+                        isDirty = true
+                    ) ?: return@registerForActivityResult
                 } catch (e: Exception) {
-                    log("App", "Ошибка открытия PDF: $e")
+                    log("App", "Ошибка открытия подложки: $e")
                 }
             }
         }
+
     openBackgroundCallback = {
-        openPdfLauncher.launch(arrayOf("application/pdf"))
+        openBgLauncher.launch(arrayOf("application/pdf", "image/png", "image/jpeg"))
     }
 }
 
