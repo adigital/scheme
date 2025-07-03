@@ -186,55 +186,14 @@ actual fun exportSchemeToPdfFromDialog(state: MutableStateFlow<SchemeState>) {
             else -> findSkiaLayer(window)
         }
 
-        val fullImage: BufferedImage = skiaLayer?.let { layer ->
-            val desiredW = rect.width.toInt()
-            val desiredH = rect.height.toInt()
-
-            // также увеличиваем окно, чтобы GL viewport стал нужного размера
-            val oldBounds = window.bounds
-            if (desiredW > oldBounds.width || desiredH > oldBounds.height) {
-                window.setSize(desiredW, desiredH)
-                window.validate()
-                window.doLayout()
-                layer.setSize(desiredW, desiredH)
-                layer.needRedraw()
-                java.awt.Toolkit.getDefaultToolkit().sync()
+        val fullImage: BufferedImage = skiaLayer
+            ?.screenshot()
+            ?.toBufferedImage()
+            ?: run {
+                val wb = window.bounds
+                val robot = java.awt.Robot(window.graphicsConfiguration.device)
+                robot.createScreenCapture(wb)
             }
-
-            val img = layer.screenshot()!!.toBufferedImage()
-
-            // Сохраняем исходный размер
-            val oldW = layer.width
-            val oldH = layer.height
-
-            var needResize = desiredW > oldW || desiredH > oldH
-            if (needResize) {
-                layer.setSize(desiredW, desiredH)
-                layer.needRedraw()
-                // ждём прорисовку (минимальная синхронизация OpenGL);
-                java.awt.Toolkit.getDefaultToolkit().sync()
-            }
-
-            // Возвращаем исходный размер, если меняли
-            if (needResize) {
-                layer.setSize(oldW, oldH)
-                layer.needRedraw()
-            }
-
-            // возвращаем старый размер окна
-            if (desiredW > oldBounds.width || desiredH > oldBounds.height) {
-                window.bounds = oldBounds
-                window.validate()
-                window.doLayout()
-            }
-
-            img
-        } ?: run {
-            // Fallback: делаем скриншот окна, если слой не найден
-            val wb = window.bounds
-            val robot = java.awt.Robot(window.graphicsConfiguration.device)
-            robot.createScreenCapture(wb)
-        }
 
         // Обрезаем до нужного прямоугольника экспорта
         val x = rect.left.toInt().coerceAtLeast(0)

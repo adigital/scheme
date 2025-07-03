@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material.AlertDialog
 import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.Icon
@@ -50,6 +49,7 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 import scheme.composeapp.generated.resources.Res
 import scheme.composeapp.generated.resources.zoom_in
 import scheme.composeapp.generated.resources.zoom_out
+import kotlin.math.min
 
 // Elements
 fun buildElementMatrix(
@@ -177,9 +177,14 @@ private val appState = AppState()
 fun App() {
     MaterialTheme {
         val schemeState by appState.schemeState.collectAsState()
+        // пользовательский масштаб схемы
         val scale = schemeState.schemeScale
-        var schemeVersion by remember { mutableStateOf(0) }
+        // пользовательский масштаб подложки
         val bgScale = schemeState.backgroundScale
+        // автоматический масштаб подложки (и схемы) при изменении размера экрана
+        var fitScale by remember { mutableStateOf(1f) }
+        // счётчик версии для сброса положения при повторном рендере
+        var schemeVersion by remember { mutableStateOf(0) }
 
         // Диалог выбора подложки при открытии схемы
         var showBackgroundPrompt by remember { mutableStateOf(false) }
@@ -249,41 +254,48 @@ fun App() {
                         LocalDensity provides Density(2f, LocalDensity.current.fontScale)
                     ) {
                         schemeState.background?.let { bmp ->
-                            val density = LocalDensity.current
-                            val bgWidthDp = with(density) { bmp.width.toDp() }
-                            val bgHeightDp = with(density) { bmp.height.toDp() }
                             Box(
-                                Modifier.size(bgWidthDp, bgHeightDp)
+                                Modifier
+                                    .fillMaxSize()
                                     .onGloballyPositioned { coords ->
-                                        // Вычисляем прямоугольник подложки с учётом масштаба
+                                        val containerPxWidth = coords.size.width.toFloat()
+                                        val containerPxHeight = coords.size.height.toFloat()
+                                        val bmpPxWidth = bmp.width.toFloat()
+                                        val bmpPxHeight = bmp.height.toFloat()
+                                        // пересчитываем автоматический масштаб для подложки при изменении размеров контейнера
+                                        fitScale = min(
+                                            containerPxWidth / bmpPxWidth,
+                                            containerPxHeight / bmpPxHeight
+                                        )
+                                        val effectiveScale = fitScale * bgScale
                                         val pos = coords.positionInWindow()
-                                        val size = coords.size
                                         val left = pos.x
                                         val top = pos.y
-                                        val right = pos.x + size.width * bgScale
-                                        val bottom = pos.y + size.height * bgScale
+                                        val right = pos.x + bmpPxWidth * effectiveScale
+                                        val bottom = pos.y + bmpPxHeight * effectiveScale
                                         ExportArea.rect = Rect(left, top, right, bottom)
                                     }
                             ) {
                                 Image(
                                     bitmap = bmp,
                                     contentDescription = null,
-                                    contentScale = ContentScale.None,
+                                    contentScale = ContentScale.Fit,
                                     alignment = Alignment.TopStart,
                                     modifier = Modifier
+                                        .fillMaxSize()
                                         .graphicsLayer(
                                             scaleX = bgScale,
                                             scaleY = bgScale,
                                             transformOrigin = TransformOrigin(0f, 0f)
                                         )
-                                        .fillMaxSize()
                                 )
                                 Box(
                                     Modifier
                                         .fillMaxSize()
                                         .graphicsLayer(
-                                            scaleX = scale,
-                                            scaleY = scale,
+                                            // применяем автоматический fitScale и пользовательский zoom-scheme
+                                            scaleX = fitScale * scale,
+                                            scaleY = fitScale * scale,
                                             transformOrigin = TransformOrigin(0f, 0f)
                                         )
                                 ) {

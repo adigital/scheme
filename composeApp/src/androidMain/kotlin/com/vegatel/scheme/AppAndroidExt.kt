@@ -237,59 +237,30 @@ fun ComponentActivity.registerExportSchemeToPdfFromDialog() {
                         log("App", "Неизвестна область схемы для экспорта")
                         return@registerForActivityResult
                     }
-                    // Целевые размеры с учетом масштаба подложки
-                    val bmpWidth = rect.width.toInt()
-                    val bmpHeight = rect.height.toInt()
-
-                    // Пытаемся найти основной ComposeView
+                    // Рисуем текущий ComposeView и обрезаем по области экспорта
                     val rootContent =
                         window.decorView.findViewById<android.view.ViewGroup>(android.R.id.content)
                     val composeView = rootContent?.getChildAt(0) ?: window.decorView
-
-                    // Сохраняем исходные размеры
-                    val oldWidth = composeView.measuredWidth
-                    val oldHeight = composeView.measuredHeight
-
-                    // Принудительно измеряем/раскладываем ComposeView под полный размер подложки
-                    val widthSpec = android.view.View.MeasureSpec.makeMeasureSpec(
-                        bmpWidth,
-                        android.view.View.MeasureSpec.EXACTLY
-                    )
-                    val heightSpec = android.view.View.MeasureSpec.makeMeasureSpec(
-                        bmpHeight,
-                        android.view.View.MeasureSpec.EXACTLY
-                    )
-                    composeView.measure(widthSpec, heightSpec)
-                    composeView.layout(0, 0, bmpWidth, bmpHeight)
-
-                    // Создаём bitmap заданного размера и рисуем ComposeView
-                    val bitmap = createBitmap(bmpWidth, bmpHeight)
-                    val canvas = android.graphics.Canvas(bitmap)
-                    canvas.translate(-rect.left, -rect.top)
+                    val fullWidth = composeView.width
+                    val fullHeight = composeView.height
+                    val fullBitmap = createBitmap(fullWidth, fullHeight)
+                    val canvas = android.graphics.Canvas(fullBitmap)
                     composeView.draw(canvas)
+                    val x = rect.left.toInt().coerceAtLeast(0)
+                    val y = rect.top.toInt().coerceAtLeast(0)
+                    val w = rect.width.toInt().coerceAtMost(fullWidth - x)
+                    val h = rect.height.toInt().coerceAtMost(fullHeight - y)
+                    val schemeBitmap = android.graphics.Bitmap.createBitmap(fullBitmap, x, y, w, h)
 
-                    // Восстанавливаем старые размеры, чтобы не ломать UI
-                    composeView.measure(
-                        android.view.View.MeasureSpec.makeMeasureSpec(
-                            oldWidth,
-                            android.view.View.MeasureSpec.EXACTLY
-                        ),
-                        android.view.View.MeasureSpec.makeMeasureSpec(
-                            oldHeight,
-                            android.view.View.MeasureSpec.EXACTLY
-                        )
-                    )
-                    composeView.layout(0, 0, oldWidth, oldHeight)
-
-                    // Создаём PDF
+                    // Создаём PDF из обрезанного Bitmap
                     val pdfDoc = android.graphics.pdf.PdfDocument()
                     val pageInfo = android.graphics.pdf.PdfDocument.PageInfo.Builder(
-                        bmpWidth,
-                        bmpHeight,
+                        w,
+                        h,
                         1
                     ).create()
                     val page = pdfDoc.startPage(pageInfo)
-                    page.canvas.drawBitmap(bitmap, 0f, 0f, null)
+                    page.canvas.drawBitmap(schemeBitmap, 0f, 0f, null)
                     pdfDoc.finishPage(page)
                     contentResolver.openOutputStream(uri)?.use { out ->
                         pdfDoc.writeTo(out)
