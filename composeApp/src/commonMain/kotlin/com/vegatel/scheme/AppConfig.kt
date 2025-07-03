@@ -7,4 +7,9 @@ object AppConfig {
      * пропорционально так, чтобы наибольшая сторона стала равна этому значению.
      */
     const val MAX_BACKGROUND_DIM = 4096
+
+    /**
+     * Сигнал базовой станции по умолчанию (дБм)
+     */
+    const val DEFAULT_BASE_STATION_SIGNAL_DBM = 10.0
 } 

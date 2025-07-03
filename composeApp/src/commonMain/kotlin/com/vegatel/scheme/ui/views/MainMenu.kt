@@ -35,6 +35,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import com.vegatel.scheme.AppConfig
 import com.vegatel.scheme.extensions.displayFileName
 import com.vegatel.scheme.getPlatform
 import com.vegatel.scheme.ui.components.BaseStationSignalDialog
@@ -47,7 +48,7 @@ fun MainMenu(
     isDirty: Boolean,
     canUndo: Boolean = false,
     canRedo: Boolean = false,
-    baseStationSignal: Double = 30.0,
+    baseStationSignal: Double = AppConfig.DEFAULT_BASE_STATION_SIGNAL_DBM,
     frequency: Int = 800,
     showExport: Boolean = false,
     onBaseStationSignalChange: (Double) -> Unit = {},

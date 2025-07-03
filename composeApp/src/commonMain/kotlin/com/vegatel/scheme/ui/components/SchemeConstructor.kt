@@ -26,6 +26,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import com.vegatel.scheme.AppConfig
 import com.vegatel.scheme.domain.usecase.calculateSignalPower
 import com.vegatel.scheme.extensions.toPx
 import com.vegatel.scheme.initialElements
@@ -62,7 +63,7 @@ fun SchemeConstructor(
     onSchemeOffsetChange: (Offset) -> Unit,
     onElementOffsetChange: (Int, Offset) -> Unit,
     onElementsChange: (ElementMatrix) -> Unit,
-    baseStationSignal: Double = 30.0,
+    baseStationSignal: Double = AppConfig.DEFAULT_BASE_STATION_SIGNAL_DBM,
     frequency: Int = 800,
     resetKey: Int = 0
 ) {
@@ -245,8 +246,10 @@ fun SchemeConstructor(
                     }
 
                     is Repeater -> {
+                        val isOverloaded = calculatedSignalPower >= element.maxOutputPower - 1e-6
                         RepeaterView(
                             signalPower = calculatedSignalPower,
+                            isOverloaded = isOverloaded,
                             onClick = {
                                 antennasMenuExpanded = false
                                 elementMenuOpenedForIndex = row to col
@@ -255,8 +258,10 @@ fun SchemeConstructor(
                     }
 
                     is Booster -> {
+                        val isOverloaded = calculatedSignalPower >= element.maxOutputPower - 1e-6
                         BoosterView(
                             signalPower = calculatedSignalPower,
+                            isOverloaded = isOverloaded,
                             onClick = {
                                 antennasMenuExpanded = false
                                 elementMenuOpenedForIndex = row to col
@@ -344,7 +349,7 @@ fun SchemeConstructor(
                                     text = text,
                                     selection = TextRange(0, text.length)
                                 )
-                            }) { Text("Усиление") }
+                            }) { Text("Параметры") }
                             return@DropdownMenu
                         } else {
                             // Антенны
@@ -355,12 +360,12 @@ fun SchemeConstructor(
                                     onDismissRequest = { antennasMenuExpanded = false }
                                 ) {
                                     val antennaOptions = listOf(
-                                        "Антенна FI (6 дБм)" to 6.0,
-                                        "Антенна PI (9 дБм)" to 9.0,
-                                        "Антенна 15PO (15 дБм)" to 15.0,
-                                        "Антенна 16S (16 дБм)" to 16.0,
-                                        "Антенна 11Y (11 дБм)" to 11.0,
-                                        "Антенна Wi (3 дБм)" to 3.0
+                                        "Антенна FI (6 дБ)" to 6.0,
+                                        "Антенна PI (9 дБ)" to 9.0,
+                                        "Антенна 15PO (15 дБ)" to 15.0,
+                                        "Антенна 16S (16 дБ)" to 16.0,
+                                        "Антенна 11Y (11 дБ)" to 11.0,
+                                        "Антенна Wi (3 дБ)" to 3.0
                                     )
                                     antennaOptions.forEach { (label, power) ->
                                         DropdownMenuItem(onClick = {

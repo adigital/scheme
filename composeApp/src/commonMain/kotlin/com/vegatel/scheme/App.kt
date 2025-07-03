@@ -83,7 +83,7 @@ data class SchemeState(
     val elements: ElementMatrix,
     val fileName: String? = null,
     val isDirty: Boolean = false,
-    val baseStationSignal: Double = 30.0,
+    val baseStationSignal: Double = AppConfig.DEFAULT_BASE_STATION_SIGNAL_DBM,
     val frequency: Int = 800,
     val schemeOffset: Offset = Offset.Zero,
     val elementOffsets: Map<Int, Offset> = emptyMap(),
@@ -97,7 +97,7 @@ val initialSchemeState = SchemeState(
     elements = initialElements,
     fileName = null,
     isDirty = false,
-    baseStationSignal = 30.0,
+    baseStationSignal = AppConfig.DEFAULT_BASE_STATION_SIGNAL_DBM,
     frequency = 800
 )
 

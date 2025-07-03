@@ -99,7 +99,8 @@ fun ElementMatrix.toSerializable(): SerializableElementMatrix {
                             isTwoCorners = element.cable.isTwoCorners,
                             isSideThenDown = element.cable.isSideThenDown,
                             isStraightLine = element.cable.isStraightLine
-                        )
+                        ),
+                        attenuation1 = element.maxOutputPower
                     )
 
                     is Element.Splitter2 -> SerializableElement(
@@ -219,10 +220,11 @@ fun SerializableElementMatrix.toElementMatrix(): ElementMatrix {
                 )
 
                 "Repeater" -> Element.Repeater(
-                    e.id,
-                    e.signalPower ?: 50.0,
-                    e.endElementId ?: -1,
-                    cable
+                    id = e.id,
+                    signalPower = e.signalPower ?: 50.0,
+                    maxOutputPower = e.attenuation1 ?: 33.0,
+                    endElementId = e.endElementId ?: -1,
+                    cable = cable
                 )
 
                 "Splitter2" -> Element.Splitter2(

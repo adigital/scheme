@@ -96,15 +96,18 @@ fun ElementMatrix.calculateSignalPower(
             // Репитер: берём максимальный входящий сигнал
             element is Repeater -> {
                 val inputs = mutableListOf<Double>()
+                val currentCoords = findElementById(elementId) ?: return 0.0
+                val elementRow = currentCoords.first
                 forEachElement { row, col, child ->
-                    if (child?.fetchEndElementId() == elementId) {
+                    if (child?.fetchEndElementId() == elementId && row < elementRow) {
                         val src = calculate(child.id)
                         val loss = calculateCableLoss(child.fetchCable(), frequency)
                         inputs.add(src + loss)
                     }
                 }
                 val maxIn = inputs.maxOrNull() ?: 0.0
-                maxIn + element.signalPower
+                val amplified = maxIn + element.signalPower
+                if (amplified > element.maxOutputPower) element.maxOutputPower else amplified
             }
 
             // Бустер: усиливает сигнал максимум на signalPower, но не более maxOutputPower

@@ -27,27 +27,31 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 @Composable
 fun RepeaterView(
     signalPower: Double,
+    isOverloaded: Boolean,
     onClick: (IntOffset) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var elementColor by remember { mutableStateOf(Color.Black) }
-    var isRed by remember { mutableStateOf(false) }
+    var flash by remember { mutableStateOf(false) }
 
-    LaunchedEffect(isRed) {
-        if (isRed) {
-            elementColor = Color.Red
+    LaunchedEffect(flash) {
+        if (flash) {
             delay(1000)
-            elementColor = Color.Black
-            isRed = false
+            flash = false
         }
+    }
+
+    val elementColor = when {
+        isOverloaded -> Color.Red
+        flash -> Color.Red
+        else -> Color.Black
     }
 
     Column(
         modifier = modifier
             .pointerInput(Unit) {
                 detectTapGestures { offset ->
+                    if (!isOverloaded) flash = true
                     onClick(IntOffset(offset.x.toInt(), offset.y.toInt()))
-                    isRed = true
                 }
             },
         horizontalAlignment = Alignment.CenterHorizontally
@@ -75,5 +79,6 @@ fun RepeaterView(
 private fun preview() {
     RepeaterView(
         signalPower = 30.0,
+        isOverloaded = false,
         onClick = {})
 }
