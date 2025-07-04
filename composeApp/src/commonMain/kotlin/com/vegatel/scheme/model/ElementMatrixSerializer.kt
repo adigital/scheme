@@ -161,6 +161,17 @@ fun ElementMatrix.toSerializable(): SerializableElementMatrix {
                         attenuation1 = element.maxOutputPower,
                         attenuation2 = element.maxGain
                     )
+
+                    is Element.Attenuator -> SerializableElement(
+                        "Attenuator", element.id, element.signalPower, element.endElementId,
+                        SerializableCable(
+                            length = element.cable.length,
+                            type = element.cable.type.name,
+                            isTwoCorners = element.cable.isTwoCorners,
+                            isSideThenDown = element.cable.isSideThenDown,
+                            isStraightLine = element.cable.isStraightLine
+                        )
+                    )
                 }
             })
         }
@@ -265,6 +276,13 @@ fun SerializableElementMatrix.toElementMatrix(): ElementMatrix {
                     signalPower = e.signalPower ?: 0.0,
                     endElementId = e.endElementId ?: -1,
                     cable = cable
+                )
+
+                "Attenuator" -> Element.Attenuator(
+                    e.id,
+                    e.signalPower ?: 0.0,
+                    e.endElementId ?: -1,
+                    cable
                 )
 
                 else -> null

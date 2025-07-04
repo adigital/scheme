@@ -120,6 +120,10 @@ fun CableLengthDialog(
                                     is Element.Booster -> element.copy(
                                         cable = newCable
                                     )
+
+                                    is Element.Attenuator -> element.copy(
+                                        cable = newCable
+                                    )
                                 }
                                 onElementsChange(newElements)
                             }
@@ -156,6 +160,7 @@ fun CableLengthDialog(
                             is Element.Splitter4 -> element.copy(cable = newCable)
                             is Element.Coupler -> element.copy(cable = newCable)
                             is Element.Booster -> element.copy(cable = newCable)
+                            is Element.Attenuator -> element.copy(cable = newCable)
                         }
                         onElementsChange(newElements)
                     }

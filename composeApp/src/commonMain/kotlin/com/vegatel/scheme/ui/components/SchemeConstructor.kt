@@ -34,6 +34,7 @@ import com.vegatel.scheme.log
 import com.vegatel.scheme.model.Cable
 import com.vegatel.scheme.model.CableType
 import com.vegatel.scheme.model.Element.Antenna
+import com.vegatel.scheme.model.Element.Attenuator
 import com.vegatel.scheme.model.Element.Booster
 import com.vegatel.scheme.model.Element.Combiner2
 import com.vegatel.scheme.model.Element.Combiner3
@@ -46,6 +47,7 @@ import com.vegatel.scheme.model.Element.Splitter3
 import com.vegatel.scheme.model.Element.Splitter4
 import com.vegatel.scheme.model.ElementMatrix
 import com.vegatel.scheme.ui.views.AntennaView
+import com.vegatel.scheme.ui.views.AttenuatorView
 import com.vegatel.scheme.ui.views.BoosterView
 import com.vegatel.scheme.ui.views.CableView
 import com.vegatel.scheme.ui.views.CombinerView
@@ -78,6 +80,9 @@ fun SchemeConstructor(
     // Состояние для диалога усиления бустера
     var boosterGainDialogState: Pair<Int, Int>? by remember { mutableStateOf<Pair<Int, Int>?>(null) }
     var boosterGainInput: TextFieldValue by remember { mutableStateOf(TextFieldValue()) }
+
+    var attenuatorDialogState: Pair<Int, Int>? by remember { mutableStateOf<Pair<Int, Int>?>(null) }
+    var attenuatorLossInput: TextFieldValue by remember { mutableStateOf(TextFieldValue()) }
 
     val focusRequester = remember { FocusRequester() }
 
@@ -332,6 +337,17 @@ fun SchemeConstructor(
                         )
                     }
 
+                    is Attenuator -> {
+                        AttenuatorView(
+                            signalPower = calculatedSignalPower,
+                            attenuation = element.signalPower,
+                            onClick = {
+                                antennasMenuExpanded = false
+                                elementMenuOpenedForIndex = row to col
+                            }
+                        )
+                    }
+
                     null -> Unit
                 }
 
@@ -371,6 +387,21 @@ fun SchemeConstructor(
                                 Divider()
                             }
 
+                            // Параметры аттенюатора (первым пунктом)
+                            if (element is Attenuator) {
+                                DropdownMenuItem(onClick = {
+                                    elementMenuOpenedForIndex = null
+                                    attenuatorDialogState = row to col
+                                    val text = element.signalPower.toString()
+                                    attenuatorLossInput = TextFieldValue(
+                                        text = text,
+                                        selection = TextRange(0, text.length)
+                                    )
+                                }) { Text("Параметры") }
+
+                                Divider()
+                            }
+
                             // Антенны
                             DropdownMenuItem(onClick = { antennasMenuExpanded = true }) {
                                 Text("Антенны")
@@ -394,7 +425,7 @@ fun SchemeConstructor(
 
                                             if (oldElement != null && (oldElement is Combiner2 || oldElement is Combiner3 || oldElement is Combiner4 ||
                                                         oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4 ||
-                                                        oldElement is Coupler || oldElement is Booster)
+                                                        oldElement is Coupler || oldElement is Booster || oldElement is Attenuator)
                                             ) {
                                                 newElements.removeConnectedElementsAbove(
                                                     oldElement.id
@@ -425,6 +456,7 @@ fun SchemeConstructor(
                                                 )
                                             }
                                             elementMenuOpenedForIndex = null
+                                            newElements.optimizeSpace()
                                             onElementsChange(newElements)
                                         }) {
                                             Text(label)
@@ -442,7 +474,7 @@ fun SchemeConstructor(
                             if (oldElement != null &&
                                 (oldElement is Combiner2 || oldElement is Combiner3 || oldElement is Combiner4 ||
                                         oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4 ||
-                                        oldElement is Coupler || oldElement is Booster)
+                                        oldElement is Coupler || oldElement is Booster || oldElement is Attenuator)
                             ) {
                                 newElements.removeConnectedElementsAbove(oldElement.id)
                             }
@@ -454,8 +486,125 @@ fun SchemeConstructor(
                             )
 
                             elementMenuOpenedForIndex = null
+                            newElements.optimizeSpace()
                             onElementsChange(newElements)
                         }) { Text("Нагрузка") }
+
+                        // Аттенюатор
+                        if (element !is Attenuator) {
+                            DropdownMenuItem(onClick = {
+                                val newElements = elements.copy()
+                                val clickedElement =
+                                    newElements[row, col] ?: return@DropdownMenuItem
+
+                                val isBelow = newElements.isElementBelowRepeater(clickedElement.id)
+                                val newAttenuatorId = newElements.generateNewId()
+
+                                val insertIndex = if (isBelow) row else row + 1
+                                newElements.insertRow(insertIndex)
+
+                                val attenuatorRow = if (isBelow) row else row + 1
+                                val clickedRowAfter = if (isBelow) row + 1 else row
+
+                                val oldEndId = clickedElement.fetchEndElementId()
+                                val parentForAttenuator = if (isBelow) oldEndId else oldEndId
+                                // Помещаем аттенюатор
+                                newElements[attenuatorRow, col] = Attenuator(
+                                    id = newAttenuatorId,
+                                    signalPower = 0.0,
+                                    endElementId = parentForAttenuator,
+                                    cable = Cable()
+                                )
+
+                                // Если элемент был ниже репитера, меняем его parent на аттенюатор
+                                if (isBelow) {
+                                    when (val old = newElements[clickedRowAfter, col]) {
+                                        is Antenna -> newElements[clickedRowAfter, col] =
+                                            old.copy(endElementId = newAttenuatorId)
+
+                                        is Load -> newElements[clickedRowAfter, col] =
+                                            old.copy(endElementId = newAttenuatorId)
+
+                                        is Combiner2 -> newElements[clickedRowAfter, col] =
+                                            old.copy(endElementId = newAttenuatorId)
+
+                                        is Combiner3 -> newElements[clickedRowAfter, col] =
+                                            old.copy(endElementId = newAttenuatorId)
+
+                                        is Combiner4 -> newElements[clickedRowAfter, col] =
+                                            old.copy(endElementId = newAttenuatorId)
+
+                                        is Splitter2 -> newElements[clickedRowAfter, col] =
+                                            old.copy(endElementId = newAttenuatorId)
+
+                                        is Splitter3 -> newElements[clickedRowAfter, col] =
+                                            old.copy(endElementId = newAttenuatorId)
+
+                                        is Splitter4 -> newElements[clickedRowAfter, col] =
+                                            old.copy(endElementId = newAttenuatorId)
+
+                                        is Coupler -> newElements[clickedRowAfter, col] =
+                                            old.copy(endElementId = newAttenuatorId)
+
+                                        is Booster -> newElements[clickedRowAfter, col] =
+                                            old.copy(endElementId = newAttenuatorId)
+
+                                        is Attenuator -> newElements[clickedRowAfter, col] =
+                                            old.copy(endElementId = newAttenuatorId)
+
+                                        is Repeater -> newElements[clickedRowAfter, col] =
+                                            old.copy(endElementId = newAttenuatorId)
+
+                                        null -> Unit
+                                    }
+                                } else {
+                                    // Обновляем parent самого кликнутого элемента
+                                    when (val old = newElements[clickedRowAfter, col]) {
+                                        is Antenna -> newElements[clickedRowAfter, col] =
+                                            old.copy(endElementId = newAttenuatorId)
+
+                                        is Load -> newElements[clickedRowAfter, col] =
+                                            old.copy(endElementId = newAttenuatorId)
+
+                                        is Combiner2 -> newElements[clickedRowAfter, col] =
+                                            old.copy(endElementId = newAttenuatorId)
+
+                                        is Combiner3 -> newElements[clickedRowAfter, col] =
+                                            old.copy(endElementId = newAttenuatorId)
+
+                                        is Combiner4 -> newElements[clickedRowAfter, col] =
+                                            old.copy(endElementId = newAttenuatorId)
+
+                                        is Splitter2 -> newElements[clickedRowAfter, col] =
+                                            old.copy(endElementId = newAttenuatorId)
+
+                                        is Splitter3 -> newElements[clickedRowAfter, col] =
+                                            old.copy(endElementId = newAttenuatorId)
+
+                                        is Splitter4 -> newElements[clickedRowAfter, col] =
+                                            old.copy(endElementId = newAttenuatorId)
+
+                                        is Coupler -> newElements[clickedRowAfter, col] =
+                                            old.copy(endElementId = newAttenuatorId)
+
+                                        is Booster -> newElements[clickedRowAfter, col] =
+                                            old.copy(endElementId = newAttenuatorId)
+
+                                        is Attenuator -> newElements[clickedRowAfter, col] =
+                                            old.copy(endElementId = newAttenuatorId)
+
+                                        is Repeater -> newElements[clickedRowAfter, col] =
+                                            old.copy(endElementId = newAttenuatorId)
+
+                                        null -> Unit
+                                    }
+                                }
+
+                                elementMenuOpenedForIndex = null
+                                newElements.optimizeSpace()
+                                onElementsChange(newElements)
+                            }) { Text("Аттенюатор") }
+                        }
 
                         if (element != null && !elements.isElementBelowRepeater(element.id)) {
                             Divider()
@@ -484,7 +633,7 @@ fun SchemeConstructor(
                                         if (oldElement != null &&
                                             (oldElement is Combiner2 || oldElement is Combiner3 || oldElement is Combiner4 ||
                                                     oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4 ||
-                                                    oldElement is Coupler || oldElement is Booster)
+                                                    oldElement is Coupler || oldElement is Booster || oldElement is Attenuator)
                                         ) {
                                             newElements.removeConnectedElementsAbove(oldElement.id)
                                         }
@@ -547,6 +696,7 @@ fun SchemeConstructor(
 
                                         elementMenuOpenedForIndex = null
                                         combinersMenuExpanded = false
+                                        newElements.optimizeSpace()
                                         onElementsChange(newElements)
                                     }) { Text("Сумматор 2") }
 
@@ -567,7 +717,7 @@ fun SchemeConstructor(
                                         if (oldElement != null &&
                                             (oldElement is Combiner2 || oldElement is Combiner3 || oldElement is Combiner4 ||
                                                     oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4 ||
-                                                    oldElement is Coupler || oldElement is Booster)
+                                                    oldElement is Coupler || oldElement is Booster || oldElement is Attenuator)
                                         ) {
                                             newElements.removeConnectedElementsAbove(oldElement.id)
                                         }
@@ -681,6 +831,7 @@ fun SchemeConstructor(
 
                                         elementMenuOpenedForIndex = null
                                         combinersMenuExpanded = false
+                                        newElements.optimizeSpace()
                                         onElementsChange(newElements)
                                     }) { Text("Сумматор 3") }
 
@@ -701,7 +852,7 @@ fun SchemeConstructor(
                                         if (oldElement != null &&
                                             (oldElement is Combiner2 || oldElement is Combiner3 || oldElement is Combiner4 ||
                                                     oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4 ||
-                                                    oldElement is Coupler || oldElement is Booster)
+                                                    oldElement is Coupler || oldElement is Booster || oldElement is Attenuator)
                                         ) {
                                             newElements.removeConnectedElementsAbove(oldElement.id)
                                         }
@@ -840,6 +991,7 @@ fun SchemeConstructor(
 
                                         elementMenuOpenedForIndex = null
                                         combinersMenuExpanded = false
+                                        newElements.optimizeSpace()
                                         onElementsChange(newElements)
                                     }) { Text("Сумматор 4") }
                                 }
@@ -873,7 +1025,7 @@ fun SchemeConstructor(
                                             // Удаляем старые подключенные элементы, если они есть
                                             if ((oldElement is Combiner2 || oldElement is Combiner3 || oldElement is Combiner4 ||
                                                         oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4 ||
-                                                        oldElement is Coupler || oldElement is Booster)
+                                                        oldElement is Coupler || oldElement is Booster || oldElement is Attenuator)
                                             ) {
                                                 newElements.removeConnectedElementsAbove(
                                                     oldElement.id
@@ -899,6 +1051,7 @@ fun SchemeConstructor(
                                             )
 
                                             elementMenuOpenedForIndex = null
+                                            newElements.optimizeSpace()
                                             onElementsChange(newElements)
                                         }) {
                                             Text("$label (${params.first} дБм; ${params.second} дБ)")
@@ -931,7 +1084,7 @@ fun SchemeConstructor(
                                             if (oldElement != null &&
                                                 (oldElement is Combiner2 || oldElement is Combiner3 || oldElement is Combiner4 ||
                                                         oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4 ||
-                                                        oldElement is Coupler || oldElement is Booster)
+                                                        oldElement is Coupler || oldElement is Booster || oldElement is Attenuator)
                                             ) {
                                                 newElements.removeConnectedElementsAbove(
                                                     oldElement.id
@@ -983,6 +1136,7 @@ fun SchemeConstructor(
                                             )
                                             elementMenuOpenedForIndex = null
                                             couplersMenuExpanded = false
+                                            newElements.optimizeSpace()
                                             onElementsChange(newElements)
                                         }) { Text(label) }
                                     }
@@ -1010,7 +1164,7 @@ fun SchemeConstructor(
                                         if (oldElement != null &&
                                             (oldElement is Combiner2 || oldElement is Combiner3 || oldElement is Combiner4 ||
                                                     oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4 ||
-                                                    oldElement is Coupler || oldElement is Booster)
+                                                    oldElement is Coupler || oldElement is Booster || oldElement is Attenuator)
                                         ) {
                                             newElements.removeConnectedElementsAbove(oldElement.id)
                                         }
@@ -1073,6 +1227,7 @@ fun SchemeConstructor(
 
                                         elementMenuOpenedForIndex = null
                                         splittersMenuExpanded = false
+                                        newElements.optimizeSpace()
                                         onElementsChange(newElements)
                                     }) { Text("Сплиттер SW2") }
 
@@ -1091,7 +1246,7 @@ fun SchemeConstructor(
                                         if (oldElement != null &&
                                             (oldElement is Combiner2 || oldElement is Combiner3 || oldElement is Combiner4 ||
                                                     oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4 ||
-                                                    oldElement is Coupler || oldElement is Booster)
+                                                    oldElement is Coupler || oldElement is Booster || oldElement is Attenuator)
                                         ) {
                                             newElements.removeConnectedElementsAbove(oldElement.id)
                                         }
@@ -1205,6 +1360,7 @@ fun SchemeConstructor(
 
                                         elementMenuOpenedForIndex = null
                                         splittersMenuExpanded = false
+                                        newElements.optimizeSpace()
                                         onElementsChange(newElements)
                                     }) { Text("Сплиттер SW3") }
 
@@ -1222,7 +1378,7 @@ fun SchemeConstructor(
                                         if (oldElement != null &&
                                             (oldElement is Combiner2 || oldElement is Combiner3 || oldElement is Combiner4 ||
                                                     oldElement is Splitter2 || oldElement is Splitter3 || oldElement is Splitter4 ||
-                                                    oldElement is Coupler || oldElement is Booster)
+                                                    oldElement is Coupler || oldElement is Booster || oldElement is Attenuator)
                                         ) {
                                             newElements.removeConnectedElementsAbove(oldElement.id)
                                         }
@@ -1361,6 +1517,7 @@ fun SchemeConstructor(
 
                                         elementMenuOpenedForIndex = null
                                         splittersMenuExpanded = false
+                                        newElements.optimizeSpace()
                                         onElementsChange(newElements)
                                     }) { Text("Сплиттер SW4") }
                                 }
@@ -1561,9 +1718,11 @@ fun SchemeConstructor(
                                                 is Splitter4 -> oldElement.copy(cable = newCable)
                                                 is Coupler -> oldElement.copy(cable = newCable)
                                                 is Booster -> oldElement.copy(cable = newCable)
+                                                is Attenuator -> oldElement.copy(cable = newCable)
                                             }
                                         }
                                         cableMenuOpenedForIndex = null
+                                        newElements.optimizeSpace()
                                         onElementsChange(newElements)
                                     }) {
                                         Text(type.displayName)
@@ -1592,9 +1751,11 @@ fun SchemeConstructor(
                                             is Splitter4 -> oldElement.copy(cable = newCable)
                                             is Coupler -> oldElement.copy(cable = newCable)
                                             is Booster -> oldElement.copy(cable = newCable)
+                                            is Attenuator -> oldElement.copy(cable = newCable)
                                         }
                                     }
                                     cableMenuOpenedForIndex = null
+                                    newElements.optimizeSpace()
                                     onElementsChange(newElements)
                                 }) {
                                     Text(if (element.fetchCable().isStraightLine) "Угол" else "Диагональ")
@@ -1621,9 +1782,11 @@ fun SchemeConstructor(
                                                 is Splitter4 -> oldElement.copy(cable = newCable)
                                                 is Coupler -> oldElement.copy(cable = newCable)
                                                 is Booster -> oldElement.copy(cable = newCable)
+                                                is Attenuator -> oldElement.copy(cable = newCable)
                                             }
                                         }
                                         cableMenuOpenedForIndex = null
+                                        newElements.optimizeSpace()
                                         onElementsChange(newElements)
                                     }) {
                                         Text(if (element.fetchCable().isTwoCorners) "Один угол" else "Два угла")
@@ -1650,9 +1813,11 @@ fun SchemeConstructor(
                                                     is Splitter4 -> oldElement.copy(cable = newCable)
                                                     is Coupler -> oldElement.copy(cable = newCable)
                                                     is Booster -> oldElement.copy(cable = newCable)
+                                                    is Attenuator -> oldElement.copy(cable = newCable)
                                                 }
                                             }
                                             cableMenuOpenedForIndex = null
+                                            newElements.optimizeSpace()
                                             onElementsChange(newElements)
                                         }) {
                                             Text(if (element.fetchCable().isSideThenDown) "Ниже" else "Выше")
@@ -1695,6 +1860,16 @@ fun SchemeConstructor(
         onBoosterGainDialogStateChange = { boosterGainDialogState = it },
         boosterGainInput = boosterGainInput,
         onBoosterGainInputChange = { boosterGainInput = it },
+        focusRequester = focusRequester
+    )
+
+    AttenuatorLossDialog(
+        elements = elements,
+        onElementsChange = onElementsChange,
+        attenuatorDialogState = attenuatorDialogState,
+        onDialogStateChange = { attenuatorDialogState = it },
+        lossInput = attenuatorLossInput,
+        onLossInputChange = { attenuatorLossInput = it },
         focusRequester = focusRequester
     )
 }

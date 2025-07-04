@@ -112,28 +112,6 @@ class ElementMatrix(
         }
     }
 
-    // Сдвигает всю колонку и элементы правее неё
-    fun shiftColumnAndRightElementsRight(fromCol: Int) {
-        // Проверяем, нужно ли увеличить матрицу
-        if (colCount == 0) {
-            insertCol(0)
-            return
-        }
-
-        // Добавляем столбец в конец
-        for (row in matrix) {
-            row.add(null)
-        }
-
-        // Сдвигаем элементы вправо во всех строках
-        for (row in 0 until rowCount) {
-            for (col in (colCount - 2) downTo fromCol) {
-                matrix[row][col + 1] = matrix[row][col]
-                matrix[row][col] = null
-            }
-        }
-    }
-
     // Сдвигает элементы в указанной строке вправо
     fun shiftRowElementsRight(row: Int, fromCol: Int) {
         // Проверяем, нужно ли увеличить матрицу
@@ -195,7 +173,8 @@ class ElementMatrix(
             if (element?.fetchEndElementId() == elementId) {
                 // Если найденный элемент - сумматор или сплиттер, рекурсивно удаляем его подключения
                 if (element is Element.Combiner2 || element is Element.Combiner3 || element is Element.Combiner4 ||
-                    element is Element.Splitter2 || element is Element.Splitter3 || element is Element.Splitter4
+                    element is Element.Splitter2 || element is Element.Splitter3 || element is Element.Splitter4 ||
+                    element is Element.Coupler || element is Element.Attenuator
                 ) {
                     removeConnectedElementsAbove(element.id)
                 }

@@ -124,6 +124,16 @@ sealed class Element {
             "Coupler(id=$id, attenuation1=$attenuation1, attenuation2=$attenuation2, endElementId=$endElementId, cable=$cable)"
     }
 
+    data class Attenuator(
+        override val id: Int,
+        override val signalPower: Double = 0.0, // ослабление сигнала (0..-20 дБ)
+        val endElementId: Int,
+        val cable: Cable = Cable()
+    ) : Element() {
+        override fun toString(): String =
+            "Attenuator(id=$id, signalPower=$signalPower, endElementId=$endElementId, cable=$cable)"
+    }
+
     fun fetchTopElementId(): Int {
         return when (this) {
             is Antenna -> this.id
@@ -137,6 +147,7 @@ sealed class Element {
             is Splitter3 -> this.id
             is Splitter4 -> this.id
             is Coupler -> this.id
+            is Attenuator -> this.id
         }
     }
 
@@ -153,6 +164,7 @@ sealed class Element {
             is Splitter3 -> this.endElementId
             is Splitter4 -> this.endElementId
             is Coupler -> this.endElementId
+            is Attenuator -> this.endElementId
         }
     }
 
@@ -169,6 +181,7 @@ sealed class Element {
             is Splitter3 -> this.cable
             is Splitter4 -> this.cable
             is Coupler -> this.cable
+            is Attenuator -> this.cable
         }
     }
 

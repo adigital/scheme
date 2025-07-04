@@ -3,6 +3,7 @@ package com.vegatel.scheme.domain.usecase
 import com.vegatel.scheme.log
 import com.vegatel.scheme.model.Cable
 import com.vegatel.scheme.model.Element.Antenna
+import com.vegatel.scheme.model.Element.Attenuator
 import com.vegatel.scheme.model.Element.Booster
 import com.vegatel.scheme.model.Element.Combiner2
 import com.vegatel.scheme.model.Element.Combiner3
@@ -212,6 +213,33 @@ fun ElementMatrix.calculateSignalPower(
                         }
                     }
                     signal
+                }
+            }
+
+            element is Attenuator -> {
+                val isBelow = isElementBelowRepeater(elementId)
+
+                if (isBelow) {
+                    // Ниже репитера: берём сигнал родителя (он выше) и прибавляем собственное ослабление
+                    val parentId = element.fetchEndElementId()
+                    if (parentId >= 0) {
+                        val parentPow = calculate(parentId)
+                        parentPow + element.signalPower // signalPower ≤ 0
+                    } else 0.0
+                } else {
+                    // Выше репитера: вход ищем среди элементов, подключённых сверху (rowChild < row)
+                    val currentCoords = findElementById(elementId) ?: return@calculate 0.0
+                    val elementRow = currentCoords.first
+
+                    var input = 0.0
+                    forEachElement { rowChild, colChild, child ->
+                        if (child?.fetchEndElementId() == elementId && rowChild < elementRow) {
+                            val src = calculate(child.id)
+                            val loss = calculateCableLoss(child.fetchCable(), frequency)
+                            input = src + loss // единственный вход
+                        }
+                    }
+                    input + element.signalPower // signalPower ≤ 0
                 }
             }
 
