@@ -102,13 +102,14 @@ sealed class Element {
 
     data class Booster(
         override val id: Int,
-        val maxOutputPower: Double,
-        override val signalPower: Double,
+        val maxOutputPower: Double,      // предельная выходная мощность, дБм
+        val maxGain: Double,             // максимальное возможное усиление бустера, дБ (константа модели)
+        override val signalPower: Double, // текущее установленное усиление, дБ
         val endElementId: Int,
         val cable: Cable = Cable()
     ) : Element() {
         override fun toString(): String =
-            "Booster(id=$id, maxOutputPower=$maxOutputPower, maxGain=$signalPower, endElementId=$endElementId, cable=$cable)"
+            "Booster(id=$id, maxOutputPower=$maxOutputPower, maxGain=$maxGain, signalPower=$signalPower, endElementId=$endElementId, cable=$cable)"
     }
 
     data class Coupler(

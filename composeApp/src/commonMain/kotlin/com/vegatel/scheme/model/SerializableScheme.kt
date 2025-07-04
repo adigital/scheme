@@ -1,5 +1,6 @@
 package com.vegatel.scheme.model
 
+import com.vegatel.scheme.AppConfig
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -15,5 +16,6 @@ data class SerializableScheme(
     val elementOffsets: List<SerializableElementOffset> = emptyList(),
     val schemeScale: Float = 1f,
     val backgroundFileName: String? = null,
-    val backgroundScale: Float = 1f
+    val backgroundScale: Float = 1f,
+    val baseStationSignal: Double = AppConfig.DEFAULT_BASE_STATION_SIGNAL_DBM
 ) 

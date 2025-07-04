@@ -43,7 +43,7 @@ fun ComponentActivity.registerOpenElementMatrixFromDialog(
                                 it.id to Offset(it.offset.x, it.offset.y)
                             }
                             // Сохраняем новое состояние, включая зумы и имя фона
-                            var newState = openFileState?.value?.copy(
+                            var newState = state.value.copy(
                                 elements = loadedElements,
                                 schemeOffset = loadedSchemeOffset,
                                 elementOffsets = loadedElementOffsets,
@@ -53,8 +53,9 @@ fun ComponentActivity.registerOpenElementMatrixFromDialog(
                                 background = null,
                                 schemeScale = schemeSerializable.schemeScale,
                                 backgroundFileName = schemeSerializable.backgroundFileName,
-                                backgroundScale = schemeSerializable.backgroundScale
-                            ) ?: return@registerForActivityResult
+                                backgroundScale = schemeSerializable.backgroundScale,
+                                baseStationSignal = schemeSerializable.baseStationSignal
+                            )
                             // Автозагрузка фонового PDF, если задан
                             schemeSerializable.backgroundFileName?.let { bfn ->
                                 try {

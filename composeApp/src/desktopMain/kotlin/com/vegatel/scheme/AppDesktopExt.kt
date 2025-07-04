@@ -60,7 +60,8 @@ actual fun openElementMatrixFromDialog(state: MutableStateFlow<SchemeState>) {
             schemeScale = schemeSerializable.schemeScale,
             backgroundFileName = bgFullPath,
             backgroundScale = schemeSerializable.backgroundScale,
-            background = bgImage
+            background = bgImage,
+            baseStationSignal = schemeSerializable.baseStationSignal
         )
     } catch (e: Exception) {
         log("App", "Ошибка загрузки файла: $e")

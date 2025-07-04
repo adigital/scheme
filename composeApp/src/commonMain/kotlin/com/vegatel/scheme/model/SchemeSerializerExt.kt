@@ -13,5 +13,6 @@ fun SchemeState.toSerializableScheme(): SerializableScheme = SerializableScheme(
     },
     schemeScale = schemeScale,
     backgroundFileName = backgroundFileName,
-    backgroundScale = backgroundScale
+    backgroundScale = backgroundScale,
+    baseStationSignal = baseStationSignal
 ) 

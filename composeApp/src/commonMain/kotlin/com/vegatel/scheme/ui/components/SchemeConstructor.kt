@@ -75,6 +75,10 @@ fun SchemeConstructor(
     var repeaterGainDialogState: Pair<Int, Int>? by remember { mutableStateOf<Pair<Int, Int>?>(null) }
     var repeaterGainInput: TextFieldValue by remember { mutableStateOf(TextFieldValue()) }
 
+    // Состояние для диалога усиления бустера
+    var boosterGainDialogState: Pair<Int, Int>? by remember { mutableStateOf<Pair<Int, Int>?>(null) }
+    var boosterGainInput: TextFieldValue by remember { mutableStateOf(TextFieldValue()) }
+
     val focusRequester = remember { FocusRequester() }
 
     elements.forEachElement { row, col, element ->
@@ -352,6 +356,21 @@ fun SchemeConstructor(
                             }) { Text("Параметры") }
                             return@DropdownMenu
                         } else {
+                            // Параметры бустера (первым пунктом)
+                            if (element is Booster) {
+                                DropdownMenuItem(onClick = {
+                                    elementMenuOpenedForIndex = null
+                                    boosterGainDialogState = row to col
+                                    val text = element.signalPower.toString()
+                                    boosterGainInput = TextFieldValue(
+                                        text = text,
+                                        selection = TextRange(0, text.length)
+                                    )
+                                }) { Text("Параметры") }
+
+                                Divider()
+                            }
+
                             // Антенны
                             DropdownMenuItem(onClick = { antennasMenuExpanded = true }) {
                                 Text("Антенны")
@@ -865,6 +884,7 @@ fun SchemeConstructor(
                                             newElements[row, col] = Booster(
                                                 id = boosterId,
                                                 maxOutputPower = params.first,
+                                                maxGain = params.second,
                                                 signalPower = params.second,
                                                 endElementId = element.fetchEndElementId(),
                                                 cable = oldElement.fetchCable()
@@ -1665,6 +1685,16 @@ fun SchemeConstructor(
         onRepeaterGainDialogStateChange = { repeaterGainDialogState = it },
         repeaterGainInput = repeaterGainInput,
         onRepeaterGainInputChange = { repeaterGainInput = it },
+        focusRequester = focusRequester
+    )
+
+    BoosterGainDialog(
+        elements = elements,
+        onElementsChange = onElementsChange,
+        boosterGainDialogState = boosterGainDialogState,
+        onBoosterGainDialogStateChange = { boosterGainDialogState = it },
+        boosterGainInput = boosterGainInput,
+        onBoosterGainInputChange = { boosterGainInput = it },
         focusRequester = focusRequester
     )
 }
