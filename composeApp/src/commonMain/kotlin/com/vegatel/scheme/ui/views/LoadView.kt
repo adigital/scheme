@@ -1,5 +1,6 @@
 package com.vegatel.scheme.ui.views
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
@@ -44,6 +45,7 @@ fun LoadView(
 
     Column(
         modifier = modifier
+            .background(Color.White.copy(alpha = 0.7f))
             .pointerInput(Unit) {
                 detectTapGestures { offset ->
                     onClick(IntOffset(offset.x.toInt(), offset.y.toInt()))

@@ -1,12 +1,15 @@
 package com.vegatel.scheme.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
 import androidx.compose.material.Divider
 import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -15,9 +18,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -119,6 +124,31 @@ fun SchemeConstructor(
     // Стабильный state для актуальных elementOffsets и onElementOffsetChange
     val elementOffsetsState = rememberUpdatedState(elementOffsets)
     val onElementOffsetChangeState = rememberUpdatedState(onElementOffsetChange)
+
+    val elementLabels = remember(elements) {
+        val counters = mutableMapOf<String, Int>()
+        val map = mutableMapOf<Int, String>()
+        elements.forEachElement { _, _, el ->
+            el?.let { element ->
+                val prefix = when (element) {
+                    is Antenna -> "A"
+                    is Load -> "L"
+                    is Combiner2, is Combiner3, is Combiner4 -> "SM"
+                    is Coupler -> "DC"
+                    is Splitter2, is Splitter3, is Splitter4 -> "SW"
+                    is Booster -> "VTL"
+                    is Attenuator -> "AT"
+                    else -> null
+                }
+                prefix?.let {
+                    val index = (counters[it] ?: 0) + 1
+                    counters[it] = index
+                    map[element.id] = "$it$index"
+                }
+            }
+        }
+        map
+    }
 
     Box(
         Modifier
@@ -1523,6 +1553,22 @@ fun SchemeConstructor(
                                 }
                             }
                         }
+                    }
+                }
+
+                // Отрисовка маркера (этикетки) над элементом
+                element?.let { el ->
+                    val label = elementLabels[el.id]
+                    label?.let { textLabel ->
+                        Text(
+                            text = textLabel,
+                            color = Color.Red,
+                            modifier = Modifier
+                                .align(Alignment.TopCenter)
+                                .offset(y = (-16).dp)
+                                .background(Color.White.copy(alpha = 0.7f)),
+                            style = MaterialTheme.typography.caption
+                        )
                     }
                 }
             }

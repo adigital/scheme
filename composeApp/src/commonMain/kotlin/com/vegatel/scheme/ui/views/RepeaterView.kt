@@ -1,5 +1,6 @@
 package com.vegatel.scheme.ui.views
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
@@ -48,6 +49,7 @@ fun RepeaterView(
 
     Column(
         modifier = modifier
+            .background(Color.White.copy(alpha = 0.7f))
             .pointerInput(Unit) {
                 detectTapGestures { offset ->
                     if (!isOverloaded) flash = true

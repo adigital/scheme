@@ -238,47 +238,47 @@ fun MainMenu(
                 }
             }
 
-            DropdownMenuItem(
-                onClick = { openSubmenu2Expanded = true }
-            ) {
-                Text("Расчёт")
-
-                DropdownMenu(
-                    expanded = openSubmenu2Expanded,
-                    onDismissRequest = {
-                        expanded = false
-                        openSubmenu2Expanded = false
-                    }
-                ) {
-                    DropdownMenuItem(onClick = {
-                        expanded = false
-                        openSubmenu2Expanded = false
-                        onCalc1()
-                    }) {
-                        Text("Подобрать кабель и пассивные устройства (DC, SW)")
-                    }
-
-                    Divider()
-
-                    DropdownMenuItem(onClick = {
-                        expanded = false
-                        openSubmenu2Expanded = false
-                        onCalc2()
-                    }) {
-                        Text("Подобрать пассивные устройства (DC, SW)")
-                    }
-
-                    Divider()
-
-                    DropdownMenuItem(onClick = {
-                        expanded = false
-                        openSubmenu2Expanded = false
-                        onCalc3()
-                    }) {
-                        Text("Подобрать кабель")
-                    }
-                }
-            }
+//            DropdownMenuItem(
+//                onClick = { openSubmenu2Expanded = true }
+//            ) {
+//                Text("Расчёт")
+//
+//                DropdownMenu(
+//                    expanded = openSubmenu2Expanded,
+//                    onDismissRequest = {
+//                        expanded = false
+//                        openSubmenu2Expanded = false
+//                    }
+//                ) {
+//                    DropdownMenuItem(onClick = {
+//                        expanded = false
+//                        openSubmenu2Expanded = false
+//                        onCalc1()
+//                    }) {
+//                        Text("Подобрать кабель и пассивные устройства (DC, SW)")
+//                    }
+//
+//                    Divider()
+//
+//                    DropdownMenuItem(onClick = {
+//                        expanded = false
+//                        openSubmenu2Expanded = false
+//                        onCalc2()
+//                    }) {
+//                        Text("Подобрать пассивные устройства (DC, SW)")
+//                    }
+//
+//                    Divider()
+//
+//                    DropdownMenuItem(onClick = {
+//                        expanded = false
+//                        openSubmenu2Expanded = false
+//                        onCalc3()
+//                    }) {
+//                        Text("Подобрать кабель")
+//                    }
+//                }
+//            }
         }
     }
 

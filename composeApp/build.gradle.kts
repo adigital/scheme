@@ -85,6 +85,15 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "com.vegatel.scheme"
             packageVersion = "1.0.0"
+
+            windows {
+                // Настройки для Windows MSI
+                menuGroup = "Vegatel"
+                shortcut = true
+                dirChooser = true
+                perUserInstall = true
+                upgradeUuid = "89f8b8b8-89f8-89f8-89f8-89f8b8b8b8b8"
+            }
         }
     }
 }

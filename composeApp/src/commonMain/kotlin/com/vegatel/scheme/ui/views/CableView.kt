@@ -1,11 +1,13 @@
 package com.vegatel.scheme.ui.views
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -20,10 +22,8 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.vegatel.scheme.model.Cable
 import com.vegatel.scheme.model.CableType
 import kotlinx.coroutines.delay
@@ -200,8 +200,9 @@ fun CableView(
     ) {
         Text(
             text = "${cable.length.toString().replace(Regex("\\.?0*$"), "")}м",
+            modifier = Modifier.background(Color.White.copy(alpha = 0.7f)),
             color = Color.Red,
-            style = TextStyle(fontSize = 12.sp)
+            style = MaterialTheme.typography.caption
         )
     }
 }

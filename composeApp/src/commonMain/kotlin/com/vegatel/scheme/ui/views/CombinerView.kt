@@ -48,6 +48,7 @@ fun CombinerView(
 
     Column(
         modifier = modifier
+            .background(Color.White.copy(alpha = 0.7f))
             .pointerInput(Unit) {
                 detectTapGestures { offset ->
                     onClick(IntOffset(offset.x.toInt(), offset.y.toInt()))
