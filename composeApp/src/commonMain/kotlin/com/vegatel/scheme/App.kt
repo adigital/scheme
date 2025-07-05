@@ -35,6 +35,7 @@ import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import com.vegatel.scheme.extensions.toPx
 import com.vegatel.scheme.model.Element.Antenna
 import com.vegatel.scheme.model.Element.Repeater
 import com.vegatel.scheme.model.ElementMatrix
@@ -307,6 +308,10 @@ fun App() {
                                             transformOrigin = TransformOrigin(0f, 0f)
                                         )
                                 ) {
+                                    // шаги ячейки в пикселях для текущей Density (2f)
+                                    val dxPx = 96.dp.toPx()
+                                    val dyPx = 128.dp.toPx()
+
                                     SchemeConstructor(
                                         elements = schemeState.elements,
                                         schemeOffset = schemeState.schemeOffset,
@@ -333,9 +338,23 @@ fun App() {
                                         onElementsChange = { newElements ->
                                             val isDirty =
                                                 newElements != schemeState.elements || schemeState.isDirty.not()
+
+                                            // Если схема или хотя бы один элемент уже сдвинуты, компенсируем смещения
+                                            val updatedOffsets =
+                                                if (schemeState.elementOffsets.isNotEmpty() || schemeState.schemeOffset != Offset.Zero) {
+                                                    compensateOffsets(
+                                                        schemeState.elements,
+                                                        newElements,
+                                                        schemeState.elementOffsets,
+                                                        dxPx,
+                                                        dyPx
+                                                    )
+                                                } else schemeState.elementOffsets
+
                                             val newState =
                                                 schemeState.copy(
                                                     elements = newElements,
+                                                    elementOffsets = updatedOffsets,
                                                     isDirty = isDirty
                                                 )
                                             appState.updateState(newState)
@@ -355,6 +374,10 @@ fun App() {
                                     transformOrigin = TransformOrigin(0f, 0f)
                                 )
                         ) {
+                            // вычисляем dx/dy для «обычной» Density
+                            val dxPx2 = 96.dp.toPx()
+                            val dyPx2 = 128.dp.toPx()
+
                             SchemeConstructor(
                                 elements = schemeState.elements,
                                 schemeOffset = schemeState.schemeOffset,
@@ -381,8 +404,24 @@ fun App() {
                                 onElementsChange = { newElements ->
                                     val isDirty =
                                         newElements != schemeState.elements || schemeState.isDirty.not()
+
+                                    val updatedOffsets =
+                                        if (schemeState.elementOffsets.isNotEmpty() || schemeState.schemeOffset != Offset.Zero) {
+                                            compensateOffsets(
+                                                schemeState.elements,
+                                                newElements,
+                                                schemeState.elementOffsets,
+                                                dxPx2,
+                                                dyPx2
+                                            )
+                                        } else schemeState.elementOffsets
+
                                     val newState =
-                                        schemeState.copy(elements = newElements, isDirty = isDirty)
+                                        schemeState.copy(
+                                            elements = newElements,
+                                            elementOffsets = updatedOffsets,
+                                            isDirty = isDirty
+                                        )
                                     appState.updateState(newState)
                                 },
                                 baseStationSignal = schemeState.baseStationSignal,
@@ -504,4 +543,28 @@ fun App() {
             )
         }
     }
+}
+
+// Компенсируем смещения элементов при изменении матрицы
+fun compensateOffsets(
+    oldMatrix: ElementMatrix,
+    newMatrix: ElementMatrix,
+    existingOffsets: Map<Int, Offset>,
+    dx: Float,
+    dy: Float
+): Map<Int, Offset> {
+    val updated = existingOffsets.toMutableMap()
+    oldMatrix.forEachElement { rowOld, colOld, element ->
+        element?.let { el ->
+            newMatrix.findElementById(el.id)?.let { (rowNew, colNew) ->
+                val dr = rowNew - rowOld
+                val dc = colNew - colOld
+                if (dr != 0 || dc != 0) {
+                    val prev = updated[el.id] ?: Offset.Zero
+                    updated[el.id] = prev - Offset(dc * dx, dr * dy)
+                }
+            }
+        }
+    }
+    return updated
 }
