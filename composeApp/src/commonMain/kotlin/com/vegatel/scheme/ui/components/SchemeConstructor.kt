@@ -1676,14 +1676,17 @@ fun SchemeConstructor(
                     val endVerticalOffsetDp =
                         if ((endElementInstance?.isCombiner() == true && !(isShiftCableLeft || isShiftCableRight))) 9.75.dp.toPx() else 0.0f
 
-                    // raw centers without element drag offset
+                    // базовые Y-координаты верхней стороны элементов
+                    val startBaseY = paddingVertical + startRow * 2 * elementHeight
+                    val endBaseY = paddingVertical + endRow * 2 * elementHeight
+
                     val startCenterRaw = Offset(
                         x = paddingHorizontal + startCol * 2 * elementWidth + elementWidth / 2 + startHorizontalOffsetDp,
-                        y = paddingVertical + startRow * 2 * elementHeight + elementHeight + startVerticalOffsetDp
+                        y = startBaseY + (if (cable.isStartFromTop) 0f else elementHeight) + startVerticalOffsetDp
                     )
                     val endCenterRaw = Offset(
                         x = paddingHorizontal + endCol * 2 * elementWidth + elementWidth / 2 + endHorizontalOffsetDp,
-                        y = paddingVertical + endRow * 2 * elementHeight + endVerticalOffsetDp
+                        y = endBaseY + (if (cable.isEndFromTop) 0f else elementHeight) + endVerticalOffsetDp
                     )
 
                     // apply element drag offsets (external + local) for cables
@@ -1778,6 +1781,66 @@ fun SchemeConstructor(
                                 }
 
                                 Divider()
+
+                                // Переключение начала кабеля (снизу/сверху)
+                                DropdownMenuItem(onClick = {
+                                    val newElements = elements.copy()
+                                    val oldElement = newElements[row, col]
+                                    if (oldElement != null) {
+                                        val newCable = oldElement.fetchCable().copy(
+                                            isStartFromTop = !oldElement.fetchCable().isStartFromTop
+                                        )
+                                        newElements[row, col] = when (oldElement) {
+                                            is Antenna -> oldElement.copy(cable = newCable)
+                                            is Load -> oldElement.copy(cable = newCable)
+                                            is Combiner2 -> oldElement.copy(cable = newCable)
+                                            is Combiner3 -> oldElement.copy(cable = newCable)
+                                            is Combiner4 -> oldElement.copy(cable = newCable)
+                                            is Repeater -> oldElement.copy(cable = newCable)
+                                            is Splitter2 -> oldElement.copy(cable = newCable)
+                                            is Splitter3 -> oldElement.copy(cable = newCable)
+                                            is Splitter4 -> oldElement.copy(cable = newCable)
+                                            is Coupler -> oldElement.copy(cable = newCable)
+                                            is Booster -> oldElement.copy(cable = newCable)
+                                            is Attenuator -> oldElement.copy(cable = newCable)
+                                        }
+                                    }
+                                    cableMenuOpenedForIndex = null
+                                    newElements.optimizeSpace()
+                                    onElementsChange(newElements)
+                                }) {
+                                    Text("Перевернуть начало")
+                                }
+
+                                // Переключение конца кабеля (сверху/снизу)
+                                DropdownMenuItem(onClick = {
+                                    val newElements = elements.copy()
+                                    val oldElement = newElements[row, col]
+                                    if (oldElement != null) {
+                                        val newCable = oldElement.fetchCable().copy(
+                                            isEndFromTop = !oldElement.fetchCable().isEndFromTop
+                                        )
+                                        newElements[row, col] = when (oldElement) {
+                                            is Antenna -> oldElement.copy(cable = newCable)
+                                            is Load -> oldElement.copy(cable = newCable)
+                                            is Combiner2 -> oldElement.copy(cable = newCable)
+                                            is Combiner3 -> oldElement.copy(cable = newCable)
+                                            is Combiner4 -> oldElement.copy(cable = newCable)
+                                            is Repeater -> oldElement.copy(cable = newCable)
+                                            is Splitter2 -> oldElement.copy(cable = newCable)
+                                            is Splitter3 -> oldElement.copy(cable = newCable)
+                                            is Splitter4 -> oldElement.copy(cable = newCable)
+                                            is Coupler -> oldElement.copy(cable = newCable)
+                                            is Booster -> oldElement.copy(cable = newCable)
+                                            is Attenuator -> oldElement.copy(cable = newCable)
+                                        }
+                                    }
+                                    cableMenuOpenedForIndex = null
+                                    newElements.optimizeSpace()
+                                    onElementsChange(newElements)
+                                }) {
+                                    Text("Перевернуть конец")
+                                }
 
                                 // Форма
                                 DropdownMenuItem(onClick = {

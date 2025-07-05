@@ -199,5 +199,7 @@ data class Cable(
     val type: CableType = CableType.CF_HALF,
     val isTwoCorners: Boolean = true,
     val isSideThenDown: Boolean = true,
-    val isStraightLine: Boolean = false
+    val isStraightLine: Boolean = false,
+    val isStartFromTop: Boolean = false,
+    val isEndFromTop: Boolean = true
 )
