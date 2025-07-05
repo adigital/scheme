@@ -21,6 +21,9 @@ import androidx.compose.ui.unit.dp
 import com.vegatel.scheme.model.Element.Booster
 import com.vegatel.scheme.model.ElementMatrix
 
+private const val MIN_BOOSTER_GAIN = 0.0
+private const val DEFAULT_MAX_BOOSTER_GAIN = 100.0
+
 @Composable
 fun BoosterGainDialog(
     elements: ElementMatrix,
@@ -34,14 +37,14 @@ fun BoosterGainDialog(
     if (boosterGainDialogState != null) {
         val (dialogRow, dialogCol) = boosterGainDialogState
         val currentElement = elements[dialogRow, dialogCol] as? Booster
-        val maxGain = currentElement?.maxGain ?: 100.0
+        val maxGain = currentElement?.maxGain ?: DEFAULT_MAX_BOOSTER_GAIN
 
         AlertDialog(
             onDismissRequest = { onBoosterGainDialogStateChange(null) },
             title = { Text("Параметры бустера") },
             text = {
                 Column {
-                    Text("Усиление, дБ")
+                    Text("Усиление, дБ (${MIN_BOOSTER_GAIN.toInt()} - ${maxGain.toInt()})")
 
                     TextField(
                         value = boosterGainInput,
@@ -60,7 +63,7 @@ fun BoosterGainDialog(
 
                                     else -> {
                                         withDot.toDoubleOrNull()?.let { value ->
-                                            if (value in 0.0..maxGain) {
+                                            if (value in MIN_BOOSTER_GAIN..maxGain) {
                                                 onBoosterGainInputChange(
                                                     TextFieldValue(
                                                         text = withDot,
@@ -90,7 +93,7 @@ fun BoosterGainDialog(
                             }
                             onBoosterGainDialogStateChange(null)
                         }),
-                        placeholder = { Text("0.0 - $maxGain") },
+                        placeholder = { Text("$MIN_BOOSTER_GAIN … $maxGain") },
                         singleLine = true,
                         modifier = Modifier.focusRequester(focusRequester)
                     )

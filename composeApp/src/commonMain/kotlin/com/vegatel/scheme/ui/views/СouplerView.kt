@@ -29,7 +29,7 @@ import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import scheme.composeapp.generated.resources.Res
-import scheme.composeapp.generated.resources.splitter
+import scheme.composeapp.generated.resources.coupler
 
 @Composable
 fun CouplerView(
@@ -52,7 +52,6 @@ fun CouplerView(
 
     Column(
         modifier = modifier
-            .background(Color.White.copy(alpha = 0.7f))
             .pointerInput(Unit) {
                 detectTapGestures { offset ->
                     onClick(IntOffset(offset.x.toInt(), offset.y.toInt()))
@@ -75,7 +74,7 @@ fun CouplerView(
 
             Icon(
                 modifier = Modifier.size(48.dp),
-                painter = painterResource(Res.drawable.splitter),
+                painter = painterResource(Res.drawable.coupler),
                 contentDescription = "Ответвитель",
                 tint = elementColor
             )
@@ -85,6 +84,7 @@ fun CouplerView(
                     Text(
                         if (attenuation % 1 == 0.0) attenuation.toInt()
                             .toString() else "%.1f".format(attenuation),
+                        modifier = Modifier.background(Color.White.copy(alpha = 0.7f)),
                         style = MaterialTheme.typography.caption,
                         fontSize = 9.sp
                     )
@@ -97,8 +97,9 @@ fun CouplerView(
             signalPowers.forEachIndexed { index, power ->
                 Text(
                     String.format("%.1f", power),
+                    modifier = Modifier.background(Color.White.copy(alpha = 0.7f)),
                     style = MaterialTheme.typography.caption,
-                    fontSize = 11.sp
+                    fontSize = 9.sp
                 )
                 if (index != signalPowers.lastIndex) Spacer(modifier = Modifier.weight(1f))
             }
@@ -111,7 +112,7 @@ fun CouplerView(
 private fun preview() {
     CouplerView(
         attenuations = listOf(0.3, 25.0),
-        signalPowers = listOf(35.0, 45.0),
+        signalPowers = listOf(-35.0, -45.0),
         onClick = {}
     )
 }

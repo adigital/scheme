@@ -11,5 +11,5 @@ object AppConfig {
     /**
      * Сигнал базовой станции по умолчанию (дБм)
      */
-    const val DEFAULT_BASE_STATION_SIGNAL_DBM = 10.0
+    const val DEFAULT_BASE_STATION_SIGNAL_DBM = -30.0
 } 

@@ -15,6 +15,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 
+private const val MIN_BASE_STATION_SIGNAL = -100.0
+private const val MAX_BASE_STATION_SIGNAL = 100.0
+
 @Composable
 fun BaseStationSignalDialog(
     baseStationSignalInput: TextFieldValue,
@@ -25,7 +28,7 @@ fun BaseStationSignalDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Укажите уровень сигнала базовой станции") },
+        title = { Text("Укажите уровень сигнала базовой станции, дБм (${MIN_BASE_STATION_SIGNAL.toInt()} - ${MAX_BASE_STATION_SIGNAL.toInt()})") },
         text = {
             TextField(
                 value = baseStationSignalInput,
@@ -33,11 +36,11 @@ fun BaseStationSignalDialog(
                     // Заменяем запятую на точку и удаляем пробелы
                     val withDot = input.text.replace(",", ".").replace(" ", "")
 
-                    // Разрешаем ввод только цифр и одной точки
-                    if (withDot.matches(Regex("^\\d*\\.?\\d*$"))) {
+                    // Разрешаем ввод цифр, одной точки и знака минус в начале
+                    if (withDot.matches(Regex("^-?\\d*\\.?\\d*$"))) {
                         when {
-                            // Пустая строка или одна точка - разрешаем
-                            withDot.isEmpty() || withDot == "." -> {
+                            // Пустая строка, одна точка или только минус - разрешаем
+                            withDot.isEmpty() || withDot == "." || withDot == "-" -> {
                                 onBaseStationSignalInputChange(
                                     TextFieldValue(
                                         text = withDot,
@@ -48,7 +51,7 @@ fun BaseStationSignalDialog(
                             // Если есть число после точки или целое число
                             else -> {
                                 withDot.toDoubleOrNull()?.let { value ->
-                                    if (value in 0.0..100.0) {
+                                    if (value in MIN_BASE_STATION_SIGNAL..MAX_BASE_STATION_SIGNAL) {
                                         onBaseStationSignalInputChange(
                                             TextFieldValue(
                                                 text = withDot,
@@ -68,14 +71,14 @@ fun BaseStationSignalDialog(
                 keyboardActions = KeyboardActions(
                     onDone = {
                         baseStationSignalInput.text.toDoubleOrNull()?.let { value ->
-                            if (value in 0.0..100.0) {
+                            if (value in MIN_BASE_STATION_SIGNAL..MAX_BASE_STATION_SIGNAL) {
                                 onBaseStationSignalChange(value)
                             }
                         }
                         onDismiss()
                     }
                 ),
-                placeholder = { Text("0.0 - 100.0") },
+                placeholder = { Text("$MIN_BASE_STATION_SIGNAL … $MAX_BASE_STATION_SIGNAL") },
                 singleLine = true,
                 modifier = Modifier.focusRequester(focusRequester)
             )
@@ -87,7 +90,7 @@ fun BaseStationSignalDialog(
         confirmButton = {
             Button(onClick = {
                 baseStationSignalInput.text.toDoubleOrNull()?.let { value ->
-                    if (value in 0.0..100.0) {
+                    if (value in MIN_BASE_STATION_SIGNAL..MAX_BASE_STATION_SIGNAL) {
                         onBaseStationSignalChange(value)
                     }
                 }

@@ -72,6 +72,7 @@ fun SchemeConstructor(
     onElementsChange: (ElementMatrix) -> Unit,
     baseStationSignal: Double = AppConfig.DEFAULT_BASE_STATION_SIGNAL_DBM,
     frequency: Int = 800,
+    considerAntennaGain: Boolean = true,
     resetKey: Int = 0
 ) {
     // Состояние для диалога длины кабеля
@@ -183,7 +184,8 @@ fun SchemeConstructor(
                     elements.calculateSignalPower(
                         it.id,
                         baseStationSignal,
-                        frequency
+                        frequency,
+                        considerAntennaGain
                     )
                 } ?: 0.0
 
@@ -344,20 +346,20 @@ fun SchemeConstructor(
                         val rightCoords = row + 1 to col + 1
                         val leftElem = elements[leftCoords.first, leftCoords.second]
                         val rightElem = elements[rightCoords.first, rightCoords.second]
-                        val power1 = leftElem?.let {
-                            elements.calculateSignalPower(
-                                it.id,
-                                baseStationSignal,
-                                frequency
-                            )
-                        } ?: 0.0
-                        val power2 = rightElem?.let {
-                            elements.calculateSignalPower(
-                                it.id,
-                                baseStationSignal,
-                                frequency
-                            )
-                        } ?: 0.0
+                        // Отображаем выходы самого ответвителя (до усиления антенн).
+                        // 1. Сигнал на основном выходе уже хранится в calculatedSignalPower у Coupler.
+                        val power1 = elements.calculateSignalPower(
+                            element.id,
+                            baseStationSignal,
+                            frequency,
+                            considerAntennaGain
+                        )
+
+                        // 2. Рассчитываем входную мощность в ответвитель = основной выход + attenuation1
+                        val inputPower = power1 + element.attenuation1
+
+                        // 3. Сигнал на ответвлении = вход − attenuation2
+                        val power2 = inputPower - element.attenuation2
                         CouplerView(
                             attenuations = listOf(element.attenuation1, element.attenuation2),
                             signalPowers = listOf(power1, power2),

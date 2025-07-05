@@ -25,6 +25,12 @@ import androidx.compose.ui.unit.dp
 import com.vegatel.scheme.model.Element.Repeater
 import com.vegatel.scheme.model.ElementMatrix
 
+private const val MIN_REPEATER_GAIN = 0.0
+private const val MAX_REPEATER_GAIN = 100.0
+private const val MIN_REPEATER_MAX_OUTPUT_POWER = 0.0
+private const val MAX_REPEATER_MAX_OUTPUT_POWER = 50.0
+private const val DEFAULT_REPEATER_MAX_OUTPUT_POWER = 33.0
+
 @Composable
 fun RepeaterGainDialog(
     elements: ElementMatrix,
@@ -39,7 +45,11 @@ fun RepeaterGainDialog(
         val (dialogRow, dialogCol) = repeaterGainDialogState
         val currentElement = elements[dialogRow, dialogCol] as? Repeater
         var maxOutputInput by remember {
-            mutableStateOf(TextFieldValue((currentElement?.maxOutputPower ?: 33.0).toString()))
+            mutableStateOf(
+                TextFieldValue(
+                    (currentElement?.maxOutputPower ?: DEFAULT_REPEATER_MAX_OUTPUT_POWER).toString()
+                )
+            )
         }
 
         AlertDialog(
@@ -47,7 +57,7 @@ fun RepeaterGainDialog(
             title = { Text("Параметры репитера") },
             text = {
                 Column {
-                    Text("Усиление, дБ")
+                    Text("Усиление, дБ (${MIN_REPEATER_GAIN.toInt()} - ${MAX_REPEATER_GAIN.toInt()})")
 
                     TextField(
                         value = repeaterGainInput,
@@ -70,7 +80,7 @@ fun RepeaterGainDialog(
                                     // Если есть число после точки или целое число
                                     else -> {
                                         withDot.toDoubleOrNull()?.let { value ->
-                                            if (value in 0.0..100.0) {
+                                            if (value in MIN_REPEATER_GAIN..MAX_REPEATER_GAIN) {
                                                 onRepeaterGainInputChange(
                                                     TextFieldValue(
                                                         text = withDot,
@@ -104,14 +114,14 @@ fun RepeaterGainDialog(
                                 onRepeaterGainDialogStateChange(null)
                             }
                         ),
-                        placeholder = { Text("0.0 - 100.0") },
+                        placeholder = { Text("$MIN_REPEATER_GAIN … $MAX_REPEATER_GAIN") },
                         singleLine = true,
                         modifier = Modifier.focusRequester(focusRequester)
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    Text("Максимальная выходная мощность, дБм")
+                    Text("Максимальная выходная мощность, дБм (${MIN_REPEATER_MAX_OUTPUT_POWER.toInt()} - ${MAX_REPEATER_MAX_OUTPUT_POWER.toInt()})")
 
                     TextField(
                         value = maxOutputInput,
@@ -128,7 +138,7 @@ fun RepeaterGainDialog(
 
                                     else -> {
                                         withDot.toDoubleOrNull()?.let { value ->
-                                            if (value in 0.0..50.0) {
+                                            if (value in MIN_REPEATER_MAX_OUTPUT_POWER..MAX_REPEATER_MAX_OUTPUT_POWER) {
                                                 maxOutputInput = TextFieldValue(
                                                     text = withDot,
                                                     selection = input.selection
@@ -160,7 +170,7 @@ fun RepeaterGainDialog(
                                 onRepeaterGainDialogStateChange(null)
                             }
                         ),
-                        placeholder = { Text("0.0 - 50.0 дБм") },
+                        placeholder = { Text("$MIN_REPEATER_MAX_OUTPUT_POWER … $MAX_REPEATER_MAX_OUTPUT_POWER") },
                         singleLine = true
                     )
                 }

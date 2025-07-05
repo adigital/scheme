@@ -17,6 +17,9 @@ import androidx.compose.ui.text.input.TextFieldValue
 import com.vegatel.scheme.model.Element
 import com.vegatel.scheme.model.ElementMatrix
 
+private const val MIN_CABLE_LENGTH = 0.0
+private const val MAX_CABLE_LENGTH = 100.0
+
 @Composable
 fun CableLengthDialog(
     elements: ElementMatrix,
@@ -30,7 +33,7 @@ fun CableLengthDialog(
     if (cableLengthDialogState != null) {
         AlertDialog(
             onDismissRequest = { onCableLengthDialogStateChange(null) },
-            title = { Text("Укажите длину кабеля") },
+            title = { Text("Укажите длину кабеля, м (${MIN_CABLE_LENGTH.toInt()} - ${MAX_CABLE_LENGTH.toInt()})") },
             text = {
                 TextField(
                     value = cableLengthInput,
@@ -53,7 +56,7 @@ fun CableLengthDialog(
                                 // Если есть число после точки или целое число
                                 else -> {
                                     withDot.toDoubleOrNull()?.let { value ->
-                                        if (value in 0.0..100.0) {
+                                        if (value in MIN_CABLE_LENGTH..MAX_CABLE_LENGTH) {
                                             onCableLengthInputChange(
                                                 TextFieldValue(
                                                     text = withDot,
@@ -130,7 +133,7 @@ fun CableLengthDialog(
                             onCableLengthDialogStateChange(null)
                         }
                     ),
-                    placeholder = { Text("0.0 - 100.0") },
+                    placeholder = { Text("$MIN_CABLE_LENGTH … $MAX_CABLE_LENGTH") },
                     singleLine = true,
                     modifier = Modifier.focusRequester(focusRequester)
                 )

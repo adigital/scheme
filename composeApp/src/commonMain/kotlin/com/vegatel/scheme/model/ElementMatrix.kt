@@ -188,49 +188,37 @@ class ElementMatrix(
 
     // Оптимизирует пустое пространство в матрице
     fun optimizeSpace() {
-        // Находим пустые столбцы
-        val emptyColumns = mutableListOf<Int>()
-        for (col in 0 until colCount) {
-            var isEmpty = true
+        // Удаляем пустые столбцы только справа
+        while (colCount > 1) {
+            val lastCol = colCount - 1
+            var isEmptyCol = true
             for (row in 0 until rowCount) {
-                if (this[row, col] != null) {
-                    isEmpty = false
+                if (this[row, lastCol] != null) {
+                    isEmptyCol = false
                     break
                 }
             }
-            if (isEmpty) {
-                emptyColumns.add(col)
+            if (isEmptyCol) {
+                removeCol(lastCol)
+            } else {
+                break // Достигли первого непустого столбца слева от края
             }
         }
 
-        // Удаляем пустые столбцы справа налево
-        emptyColumns.sortedDescending().forEach { col ->
-            // Проверяем, не является ли этот столбец единственным
-            if (colCount > 1) {
-                removeCol(col)
-            }
-        }
-
-        // Находим пустые строки
-        val emptyRows = mutableListOf<Int>()
-        for (row in 0 until rowCount) {
-            var isEmpty = true
+        // Удаляем пустые строки только снизу
+        while (rowCount > 1) {
+            val lastRow = rowCount - 1
+            var isEmptyRow = true
             for (col in 0 until colCount) {
-                if (this[row, col] != null) {
-                    isEmpty = false
+                if (this[lastRow, col] != null) {
+                    isEmptyRow = false
                     break
                 }
             }
-            if (isEmpty) {
-                emptyRows.add(row)
-            }
-        }
-
-        // Удаляем пустые строки снизу вверх
-        emptyRows.sortedDescending().forEach { row ->
-            // Проверяем, не является ли эта строка единственной
-            if (rowCount > 1) {
-                removeRow(row)
+            if (isEmptyRow) {
+                removeRow(lastRow)
+            } else {
+                break // Достигли первой непустой строки выше нижнего края
             }
         }
     }

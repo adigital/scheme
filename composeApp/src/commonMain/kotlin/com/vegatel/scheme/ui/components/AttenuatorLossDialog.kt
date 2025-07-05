@@ -21,6 +21,9 @@ import androidx.compose.ui.unit.dp
 import com.vegatel.scheme.model.Element.Attenuator
 import com.vegatel.scheme.model.ElementMatrix
 
+private const val MIN_ATTENUATOR_LOSS = -20.0
+private const val MAX_ATTENUATOR_LOSS = 0.0
+
 @Composable
 fun AttenuatorLossDialog(
     elements: ElementMatrix,
@@ -37,7 +40,7 @@ fun AttenuatorLossDialog(
             title = { Text("Параметры аттенюатора") },
             text = {
                 Column {
-                    Text("Ослабление, дБ")
+                    Text("Ослабление, дБ (${MIN_ATTENUATOR_LOSS.toInt()} … ${MAX_ATTENUATOR_LOSS.toInt()})")
 
                     TextField(
                         value = lossInput,
@@ -56,7 +59,7 @@ fun AttenuatorLossDialog(
 
                                     else -> {
                                         sanitized.toDoubleOrNull()?.let { value ->
-                                            if (value in -20.0..0.0) {
+                                            if (value in MIN_ATTENUATOR_LOSS..MAX_ATTENUATOR_LOSS) {
                                                 onLossInputChange(
                                                     TextFieldValue(
                                                         text = sanitized,
@@ -86,7 +89,7 @@ fun AttenuatorLossDialog(
                             }
                             onDialogStateChange(null)
                         }),
-                        placeholder = { Text("0 … -20") },
+                        placeholder = { Text("$MIN_ATTENUATOR_LOSS … $MAX_ATTENUATOR_LOSS") },
                         singleLine = true,
                         modifier = Modifier.focusRequester(focusRequester)
                     )

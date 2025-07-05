@@ -91,7 +91,7 @@ sealed class Element {
 
     data class Repeater(
         override val id: Int = REPEATER_ID,
-        override val signalPower: Double = 10.0,
+        override val signalPower: Double = 30.0,
         val maxOutputPower: Double = 20.0,
         val endElementId: Int,
         val cable: Cable = Cable()

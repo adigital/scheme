@@ -90,7 +90,8 @@ data class SchemeState(
     val background: ImageBitmap? = null,
     val schemeScale: Float = 1f,
     val backgroundScale: Float = 1f,
-    val backgroundFileName: String? = null
+    val backgroundFileName: String? = null,
+    val considerAntennaGain: Boolean = AppSettings.considerAntennaGain
 )
 
 val initialSchemeState = SchemeState(
@@ -98,7 +99,8 @@ val initialSchemeState = SchemeState(
     fileName = null,
     isDirty = false,
     baseStationSignal = AppConfig.DEFAULT_BASE_STATION_SIGNAL_DBM,
-    frequency = 800
+    frequency = 800,
+    considerAntennaGain = AppSettings.considerAntennaGain
 )
 
 class AppState {
@@ -168,7 +170,7 @@ class AppState {
         get() = _schemeState
 }
 
-private const val MAX_HISTORY_SIZE = 10
+private const val MAX_HISTORY_SIZE = 100
 
 private val appState = AppState()
 
@@ -206,6 +208,12 @@ fun App() {
                     baseStationSignal = schemeState.baseStationSignal,
                     frequency = schemeState.frequency,
                     showExport = schemeState.background != null,
+                    considerAntennaGain = schemeState.considerAntennaGain,
+                    onToggleConsiderAntennaGain = {
+                        val newValue = !schemeState.considerAntennaGain
+                        AppSettings.considerAntennaGain = newValue
+                        appState.updateState(schemeState.copy(considerAntennaGain = newValue))
+                    },
                     onFrequencyChange = { newFreq ->
                         appState.updateState(schemeState.copy(frequency = newFreq))
                     },
@@ -334,6 +342,7 @@ fun App() {
                                         },
                                         baseStationSignal = schemeState.baseStationSignal,
                                         frequency = schemeState.frequency,
+                                        considerAntennaGain = schemeState.considerAntennaGain,
                                         resetKey = schemeVersion
                                     )
                                 }
@@ -378,6 +387,7 @@ fun App() {
                                 },
                                 baseStationSignal = schemeState.baseStationSignal,
                                 frequency = schemeState.frequency,
+                                considerAntennaGain = schemeState.considerAntennaGain,
                                 resetKey = schemeVersion
                             )
                         }

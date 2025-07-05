@@ -49,7 +49,8 @@ fun mwToDBm(mW: Double): Double {
 fun ElementMatrix.calculateSignalPower(
     elementId: Int,
     baseStationSignal: Double,
-    frequency: Int
+    frequency: Int,
+    considerAntennaGain: Boolean = true
 ): Double {
     // Кэш для хранения результатов расчета
     val cache = mutableMapOf<Int, Double>()
@@ -75,7 +76,9 @@ fun ElementMatrix.calculateSignalPower(
         val result = when {
             // Источники: антенны и нагрузки выше репитера
             !isElementBelowRepeater(elementId) && (element is Antenna || element is Load) -> {
-                element.signalPower + baseStationSignal
+                val gain =
+                    if (element is Antenna && !considerAntennaGain) 0.0 else element.signalPower
+                gain + baseStationSignal
             }
 
             // Комбайнеры: суммируем сигналы от всех подключенных сверху элементов
@@ -178,8 +181,10 @@ fun ElementMatrix.calculateSignalPower(
                     }
                 }
                 val inputSignalC = inputs.maxOrNull() ?: 0.0
-                // Общее signalPower у Coupler всегда 0.0
-                inputSignalC + element.signalPower
+                // Сигнал на "сквозном" (основном) выходе = вход – attenuation1
+                val mainOutput = inputSignalC - element.attenuation1
+                // signalPower у Coupler всегда 0.0
+                mainOutput + element.signalPower
             }
 
             // Антенна или нагрузка ниже репитера (линия принятия): используем endElementId для связи с родителем и учитываем signalPower
@@ -195,13 +200,23 @@ fun ElementMatrix.calculateSignalPower(
                         if (parentElem is Coupler) {
                             val childCoords = findElementById(element.id)
                             if (childCoords != null) {
-                                if (childCoords.second == parentCoords.second) parentElem.attenuation1
+                                // Для сквозного выхода (тот же столбец) attenuation1 уже учтён в parentPow
+                                if (childCoords.second == parentCoords.second) 0.0
                                 else if (childCoords.second == parentCoords.second + 1) parentElem.attenuation2
                                 else 0.0
                             } else 0.0
                         } else 0.0
                     } else 0.0
-                    parentPow + loss + element.signalPower - attenuation
+
+                    // Сначала применяем все пассивные потери (кабель + ответвитель)
+                    val powerAfterPassive = parentPow + loss - attenuation
+
+                    // Затем, при необходимости, добавляем усиление антенны (EIRP)
+                    if (element is Antenna && considerAntennaGain) {
+                        powerAfterPassive + element.signalPower
+                    } else {
+                        powerAfterPassive
+                    }
                 } else {
                     // fallback: находим элемент, подключённый сверху
                     var signal = 0.0
@@ -209,7 +224,9 @@ fun ElementMatrix.calculateSignalPower(
                         if (child?.fetchEndElementId() == elementId) {
                             val src = calculate(child.id)
                             val loss = calculateCableLoss(child.fetchCable(), frequency)
-                            signal = src + loss + (child.signalPower)
+                            val gain =
+                                if (child is Antenna && !considerAntennaGain) 0.0 else child.signalPower
+                            signal = src + loss + gain
                         }
                     }
                     signal
@@ -228,7 +245,7 @@ fun ElementMatrix.calculateSignalPower(
                     } else 0.0
                 } else {
                     // Выше репитера: вход ищем среди элементов, подключённых сверху (rowChild < row)
-                    val currentCoords = findElementById(elementId) ?: return@calculate 0.0
+                    val currentCoords = findElementById(elementId) ?: return 0.0
                     val elementRow = currentCoords.first
 
                     var input = 0.0
